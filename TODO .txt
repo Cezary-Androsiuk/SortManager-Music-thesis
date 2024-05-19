@@ -1,0 +1,99 @@
+INFO: elide: Text.ElideRight - gryzie się z ToolTip
+
+na później: 
+	ścieżka główna 
+	drag and drop file
+	AddTag w EditSong i AddSong
+
+
+
+DONE dodać walidację formularza dodawania edytowania itd
+DONE poprawić triswitch żeby można płynnie zmieniać wartości
+DONE POPRAWIĆ EDIT TAG, bo nie działa dobrze (dla edytowalnych tagów)DONE dodać kod w add/update song do dodawania wartości w tabeli songs_tags
+DONE ogarnąć dodawanie statystyk jak add date i analizaowanie pliku piosenki jak duration w add song 
+DONE !!! dodać ucinanie nadmiarowago tekstu wszędzie
+DONE zrobić jeśli się da wyświetlanie ToolTip po najechaniu na nazwę uciętego testu
+DONE MOŻNA dodać argumenty do signal w celu przekazania jaki błąd się pojawił
+DONE dodać model loaded i dopiero na sygnał otwierać nowe strony a na error otwierać popup
+DONE można przerobić addSong, addTag, editTag tak jest zrobione editSong (dodawanie elemtów tablicy na start)
+DONE updatować popupy zgodnie z PopupDeleteSongConfirm i/lub PopupFormSublitError
+DONE poprawić dodawanie i odczytywanie ścieżek plików w add/update song
+- zintegrować ścieżki wraz z główną podsiężką:
+- 	sprawdzić czy należą do ścieżki (są pod ścieżką ścieżki głównej "db_songs_main_path")
+- 	usunąć część głównej ścieżki w nowo dodanych ścieżkach piosenek
+- ustawić kolory dla deleteSongDelegate oraz deleteTagDelegate
+DONE obsłużyć interakcję z użytkownikiem jeżeli zawali ograniczenie UNIQUE w tag title lub song (title, path...)
+- podejrzeć zrobione funkcje robiąc (display models lists) czy innych dla: loadPlaylistSongs
+DONE dodać eksportowanie danych do json (może importowanie)
+DONE FIX white theme with popups
+- ? dodać żeby z stałych tagów, tam gdzie są wartości dla piosenek można było przejść do każdej pojedynczej Edit Song
+DONE Sprawdzić czy są jakieś problemy z ponowną initDatabase w Database
+DONE USUNĄĆ DATABASE W METODZIE deleteDatabase()
+- ? dodać napis "song list is empty" oraz "tag list is empty" w Songs.qml oraz Tags.qml gdy nie ma elementów do wyświetlenia
+- ? dodać skrolowanie z powrotem do momentu na liście w którym był użytkownik po np usunięciu tagu/piosenki i tym podobne
+- ? zmienić wyświetlanie tej linii która jest między włąściwościami tagu a piosenkami w EditTag.qml żeby jakoś sygnalizowało że o to chodzi, bo gdy nie ma piosenek w liscie to to wygląda dziwnie, jak by jakieś oddzielenie właściwości tagu od Delete Tag
+DONE dodać testowanie (w addSong, editSong itd) czy nazwa i ścieżki są unikalne w trakcie dodawania (nowy sygnał emitowany na przykład, ale nie wiem czy nie wykorzystać tamtego):
+DONE 	-piosenek
+DONE 	-tagów
+DONE dodać zamiast console.log otwieranie popupów
+DONE dodać "delete tag" wewnątrz edit Tag
+DONE dodać delete icon w liscie tags
+DONE dodać delete icon w liscie songs
+DONE dodać w editTag dla taga add date daty a nie liczby
+
+
+----------- ----------- przejście na jednolite tagi ----------- -----------
+
+- zobaczyć jakie sygnały są zbędne i nie używane
+DONE przerobić QList<Tag/Song *> na nowe klasy TagList oraz SongList zawierające odpowiednio QList<Tag *> QList<Song *>
+DONE przerobić song_id na id w SongDetails
+-  ? pomyśl nad przerobieniem wszystkich bool na int
+	- odśwież .arg w metodach debugPrintModel tak żeby więcej w jednym było 
+DONE MODELE POTRZEBUJĄ KOLEJNOŚCI 
+DONE w add song dodać sprawdzanie czy ścieżka path, jest unique
+- ustawienie author w trakcie dodawania piosenki (jeżeli nie jest ustawiony)
+- przy importowaniu piosenek po ich załadowaniu w importSongsDatabase będzie informacja ile piosenek zostanie dodanych, ile nowych tagów (bez opisu) zostanie dodanych a ile piosenek zostanie pominiętych
+- w podsumowaniu (popup) będzie TextField z podsumowaniem które pominięto
+- przy importowaniu tagów po ich załadowaniu w importTagsDatabase będzie informacja ile tagów zostanie dodanych, ile tagów zostanie nadpisanych
+- w podsumowaniu (popup) będzie TextField z podsumowaniem które nadpisano
+- trzeba sprawdzić czy użytkownik nie edytuje stałych tagów
+DONE AddTag przepisać na nowy tryb zarządzania tablicą
+DONE otoczyć transaction i commit całe addSong, editSong czy addTag ... bo tam najpierw się dodaje element a później się tworzy połączenia i ustawia wartości
+- dodać placeholder/opis pod że zostawienie title default ustawi tytuł pliku 
+DONE ustawić popupy dla Songs.qml i Tags.qml
+DONE dodać import songs 
+Poprawić popupy które nie powinny się zamykać na kiknięcie po za nie
+DONE ustawić personalizację dla zapisywania pozycji listy
+- testowanie unikalności przy edycji tagów unikalnych (song path)
+DONE poprawić personalizations.qml
+DONE poprawić file select delegate
+- zmienić nazewnictwo w klasie personalizations i w miejscach połączonych
+- ? poprawić ikonkę w select file i path
+DONE ZROZMIEĆ FileSelectField.qml oraz PathSelectField.qml
+- przerobić footery w listach
+- przerobić na lepsze sprawdzanie (takie jak w playlist) obsługę zapisywania scrollowania list
+- przerobić teksty w komponentach "delegate" na LeftTextInList
+- przebudować importDatabase na importTagsToDatabase i importSongsToDatabase
+- ? przerobić zakończenia dla tekstów nie będących na buttonach
+- ? przerobić zakończenia dla tekstów będących na buttonach
+- query.log
+- add tag type
+
+=================================================
+- import tags from json
+- import songs from json
+- export tags to json
+- export songs to json
+
+==========================
+playlist:
+1. po kliknięciu shuffle(to zmieniające kolejnosć piosenek) w momencie którym będzie jakaś lecieć, to po jej zakończeniu/wciśnięciu next odpali się pierwsza z playlisty
+2. po zakończeniu ostatniego kawałka zostanie przetosowana na nowo | 2. po zakończeniu ostatniego kawałka, playlista zacznie się od nowa
+3. po zmianie filtrów również nie przerywa piosenki ale następną jaką puści będzie ta z listy
+4. jak playlista będzie pusta a piosenka która gra się zakończy to player restartuje obecną piosenkę na początek i zatrzymuje
+5. filtry mają się zapisać razem z personalizations
+
+A. ZMIENIANIE PIOSENEK - w momencie zakończenia piosenki Player zapyta Playlist o następną, Playlist zwróci mu następna w kolejce (Playlist będzie miał wskaźnik na obecną piosenkę), i Player ją odtworzy
+B. USTAWIANIE FILTRÓW - po zapisaniu filtrów Database dostaje informacje jakich piosenek szukać, Database pobiera z bazy danych listę piosenek odpowiadających zagadnieniom, Database ładuje model dla playlistListView, Database wysyła do Playlist listę piosenek,
+C. ŁADOWANIE MODELU - Database ładuje model gdy wchodzi się pierwszy raz do PlaylistView oraz ładuje za każdym razem gdy zostaną zmienione filtry (listę trzyma w pamięci żeby nie ładować ponownie)
+D. SONG DETAILS W PLAYLIST VIEW - Database ładuje piosenkę dokładnie tak jak w EditSong 
