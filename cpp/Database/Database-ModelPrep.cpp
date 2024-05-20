@@ -532,11 +532,13 @@ void Database::loadPlaylistModel()
         emit this->signalPlaylistModelLoadError("error while executing query " + query.lastError().text());
         return;
     }
+    DB << "query executed";
 
     m_playlist_model = new SongList(this);
 
     // read selected data
     while(query.next()){
+        DB << "query iterate start";
         auto record = query.record();
 
         int song_id = record.value(0).toInt();
@@ -548,12 +550,15 @@ void Database::loadPlaylistModel()
         // value is not needed
 
         m_playlist_model->songs().append(song);
+        DB << "query iterate stop";
     }
+
+    DB << "iteration finished";
 
     this->debugPrintModel_playlist();
 
     DB << "playlist model loaded correctly!";
-    emit this->signalPlaylistModelLoaded();
+    emit this->signalPlaylistModelLoaded(m_playlist_model);
 }
 
 void Database::loadEditPlaylistSongModel(int song_id)

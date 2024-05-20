@@ -10,8 +10,9 @@ Database::Database(QObject *parent)
     m_edit_song_model(nullptr),
     m_all_tags_model(nullptr),
     m_add_tag_model(nullptr),
-    m_edit_tag_model(nullptr)
-    // m_playlist_songs_model(nullptr)
+    m_edit_tag_model(nullptr),
+    m_playlist_model(nullptr),
+    m_filters_model(nullptr)
     // m_songs_main_path("")
 {
     // DB << "DELETE OLD DATABASE" << " remove output: " << QFile(DATABASE_PATH).remove();

@@ -155,9 +155,9 @@ signals:
 
     // models loading playlist
     /// finished
-    void signalPlaylistModelLoaded();           // emited when playlist model was loaded correctly
+    void signalPlaylistModelLoaded(SongList listofsongs);           // emited when playlist model was loaded correctly
     void signalEditPlaylistSongModelLoaded();   // emited when edit playlist song model was loaded correctly
-    void signalFiltersModelLoaded();            // emited when filters model was loaded correctly
+    void signalFiltersModelLoaded();            // emited when filters model was loaded correctly to playlist
     /// error occur
     void signalPlaylistModelLoadError(QString desc);            // emited when any error occur while loading playlist model
     void signalEditPlaylistSongModelLoadError(QString desc);    // emited when any error occur while loading edit playlist song model

@@ -35,8 +35,8 @@ Page {
     Component.onCompleted: {
         console.log("Playlist.qml")
 
-        // for(var _song of backend.database.playlist_model.songs)
-        //     mdl.push(_song);
+        for(var _song of backend.database.playlist_model.songs)
+            mdl.push(_song);
         console.log("looped over songs and pushed to array")
 
         listViewLoader.active = true
