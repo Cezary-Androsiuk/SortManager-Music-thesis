@@ -204,7 +204,7 @@ ApplicationWindow {
 
 
     // Icons prefix
-    property string icon_audio_controls_prefix: "qrc:/SortManager-Music/assets/audioControls"
+    property string icon_audio_controls_prefix: "qrc:/SortManager-Music/assets/icons/audioControls"
     // Icons
     property string iac_next:       icon_audio_controls_prefix + "/ac-next.png"
     property string iac_pause:      icon_audio_controls_prefix + "/ac-pause.png"

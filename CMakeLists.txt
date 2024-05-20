@@ -4,7 +4,7 @@ project(SortManager-Music-v3 VERSION 0.1 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-cmake_policy(SET CMP0071 NEW)
+# cmake_policy(SET CMP0071 NEW)
 
 find_package(Qt6 6.4 REQUIRED COMPONENTS Quick Sql Multimedia)
 
@@ -94,16 +94,19 @@ qt_add_qml_module(appSortManager-Music
 
 
 
-    RESOURCES assets/audioControls/ac-play.png
-    RESOURCES assets/audioControls/ac-pause.png
-    RESOURCES assets/audioControls/ac-next.png
-    RESOURCES assets/audioControls/ac-previous.png
-    RESOURCES assets/audioControls/ac-playlist.png
-    RESOURCES assets/audioControls/ac-replay.png
+    RESOURCES assets/icons/audioControls/ac-play.png
+    RESOURCES assets/icons/audioControls/ac-pause.png
+    RESOURCES assets/icons/audioControls/ac-next.png
+    RESOURCES assets/icons/audioControls/ac-previous.png
+    RESOURCES assets/icons/audioControls/ac-playlist.png
+    RESOURCES assets/icons/audioControls/ac-replay.png
     RESOURCES assets/icons/select_file-idle.png
     RESOURCES assets/icons/select_file-hover.png
     RESOURCES assets/icons/filter-icon-25207.png
     RESOURCES assets/icons/trash_close.png assets/icons/trash_open.png
+    SOURCES cpp/Database/Database-DebugPrint.cpp
+    SOURCES cpp/Database/Database-ModelPrep.cpp
+    SOURCES cpp/Database/Database-DBOperations.cpp
 
 )
 
