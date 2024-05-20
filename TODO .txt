@@ -84,6 +84,7 @@ DONE ZROZMIEĆ FileSelectField.qml oraz PathSelectField.qml
 - import songs from json
 - export tags to json
 - export songs to json
+- test
 
 ==========================
 playlist:
