@@ -34,7 +34,7 @@ Item{
         }
         // mipmap: true // smooths image
 
-        source: Qt.resolvedUrl("qrc:/Music_directory_player/assets/icons/info.png")
+        source: Qt.resolvedUrl("qrc:/SortManager-Music/assets/icons/info.png")
     }
 
     ColorOverlay {

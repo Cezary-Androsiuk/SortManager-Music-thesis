@@ -10,7 +10,7 @@ Item{
     anchors.fill: parent
 
     property string dltText: ""
-    property int dltValue: 0
+    property string dltValue: ""
 
     LeftText{
         id: textElement

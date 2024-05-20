@@ -105,6 +105,8 @@ qt_add_qml_module(appSortManager-Music
     RESOURCES assets/icons/filter-icon-25207.png
     RESOURCES assets/icons/trash_close.png assets/icons/trash_open.png
 
+    RESOURCES assets/icons/info.png
+
 )
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.

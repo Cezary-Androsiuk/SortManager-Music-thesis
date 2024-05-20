@@ -107,6 +107,9 @@ public:
     Q_INVOKABLE void initializeWithTags();
     Q_INVOKABLE void createExampleData();
 
+    Q_INVOKABLE void initializeFilters();
+    Q_INVOKABLE void updateFilters();
+
     // accessors for parent
     void setSaveExecQuery(bool saveExecQuery);
     void setShowConstantTags(bool showConstantTags);
@@ -119,9 +122,11 @@ signals:
     /// finished
     void signalInitializedOnStart();    // emited after database was initialized successfully
     void signalInitializedWithTags();   // emited after database was builded successfully
+    void signalFiltersInitailized();
     /// error
     void signalInitializeOnStartFailed(QString desc);   // emited when any error occur while initializing database on start (mostly database open error)
     void signalInitializeWithTagsFailed(QString desc);  // emited when any error occur while initializing database with tags
+    void signalFiltersInitailizeFailed(QString desc);
 
     // database management
     /// finished
@@ -248,6 +253,8 @@ private:
     bool beginTransaction(void (Database::*signal)(QString), const char *caller_name = "");
     bool endTransaction(void (Database::*signal)(QString), const char *caller_name = "");
 
+    void debugPrint_filters() const;
+
     void debugPrintModel_all_songs() const;
     void debugPrintModel_add_song() const;
     void debugPrintModel_edit_song() const;
@@ -263,18 +270,21 @@ private:
     QString _debugPrintModel_TagDetails(TagDetails* const &model) const;    // (argument explanation in method's body)
 
 
+    void loadFilters();
     void queryToFile(QString query, QStringList param_names = {}, QVariantList param_values = {}) const;
 
 
     QSqlQuery prepPlaylistSongsQuery();//cQls tc_names, cQls tc_values, cQls tc_comparators, cQls te_names, cQlb te_values, D_EC) const;
 
 private:
-    bool m_database_initialized;
+    bool m_databaseInitialized;
     bool m_saveExecQuery;
     bool m_showConstantTags;
 
     // database handler
     QSqlDatabase m_database;
+
+    TagList *m_filters;
 
     // Models
     /// songs

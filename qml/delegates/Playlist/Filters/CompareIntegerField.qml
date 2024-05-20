@@ -11,7 +11,7 @@ Item{
 
     property string dltText: ""
     property int dltComboboxValue: 0
-    property int dltValue: 0
+    property string dltValue: ""
 
     LeftText{
         id: textElement

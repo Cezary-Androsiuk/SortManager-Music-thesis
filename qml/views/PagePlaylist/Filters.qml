@@ -19,6 +19,11 @@ Page {
     property bool saveListPosition: false
     property bool alwaysSaveListPosition: backend.personalization.alwaysKeepListPos
 
+    function closeFiltersPage(){
+        mainLoader.anchors.top = tabBar.bottom
+        playlistLoader.source = root.ppp_playlist
+    }
+
     /*
         received structure:
 
@@ -41,14 +46,14 @@ Page {
     Component.onCompleted: {
         console.log("Filters.qml")
 
-        // for(var _tag of backend.database.filters_model.tags)
-        // {
-        //     // console.log( "id:" +_tag.id+
-        //     //             ", name:" +_tag.name+ ", type:" +_tag.type+
-        //     //             ", comparison_way:" +_tag.comparison_way+ ", comparison_value:" +_tag.comparison_value)
-        //     mdl.push({ id: _tag.id, name: _tag.name, type: _tag.type,
-        //                  comparison_way: _tag.comparison_way, comparison_value: _tag.comparison_value })
-        // }
+        for(var _tag of backend.database.filters_model.tags)
+        {
+            // console.log( "id:" +_tag.id+
+            //             ", name:" +_tag.name+ ", type:" +_tag.type+
+            //             ", comparison_way:" +_tag.comparison_way+ ", comparison_value:" +_tag.comparison_value)
+            mdl.push({ id: _tag.id, name: _tag.name, type: _tag.type,
+                         comparison_way: _tag.comparison_way, comparison_value: _tag.comparison_value })
+        }
         console.log("model saved to variable")
 
         listViewLoader.active = true
@@ -57,6 +62,32 @@ Page {
 
     Connections{
         target: backend.database
+    }
+
+    Popup2{
+        id: pConfirmLeave
+        dltText: "Are you sure to exit Filters? Any changes will be discarded."
+        // text description will be set in onSignalFilterModelLoadError() function
+
+        dltTextLB: "Cancel"
+        dltTextRB: "Leave"
+
+        onDltClickedRB: {
+            closeFiltersPage()
+        }
+    }
+
+    Popup2{
+        id: pConfirmSave
+        dltText: "Are you sure to save Filters? Player will be stopped and reseted!"
+        // text description will be set in onSignalFilterModelLoadError() function
+
+        dltTextLB: "Cancel"
+        dltTextRB: "Save"
+
+        onDltClickedRB: {
+            submitMethod()
+        }
     }
 
     Loader{
@@ -124,7 +155,9 @@ Page {
     }
 
     function submitMethod(){
-        playlistLoader.source = root.ppp_playlist
+
+        Backend.database.updateFilters()
+        closeFiltersPage()
     }
 
 
@@ -157,8 +190,7 @@ Page {
             ToolTip.text: "Go Back"
 
             onClicked: {
-                mainLoader.anchors.top = tabBar.bottom
-                playlistLoader.source = root.ppp_playlist
+                pConfirmLeave.open()
             }
         }
 
@@ -180,7 +212,7 @@ Page {
             text: "SAVE"
             font.pixelSize: 15
 
-            onClicked: submitMethod()
+            onClicked: pConfirmSave.open()
         }
     }
 }

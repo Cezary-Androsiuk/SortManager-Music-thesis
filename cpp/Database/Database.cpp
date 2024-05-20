@@ -2,9 +2,10 @@
 
 Database::Database(QObject *parent)
     : QObject{parent},
-    m_database_initialized(false),
+    m_databaseInitialized(false),
     m_saveExecQuery(false),
     m_showConstantTags(true),
+    m_filters(nullptr),
     m_all_songs_model(nullptr),
     m_add_song_model(nullptr),
     m_edit_song_model(nullptr),
@@ -17,6 +18,9 @@ Database::Database(QObject *parent)
 {
     // DB << "DELETE OLD DATABASE" << " remove output: " << QFile(DATABASE_PATH).remove();
     // qDebug() << "\t\t+++ Database " << this;
+
+    QObject::connect(this, &Database::signalInitializedOnStart, this, &Database::initializeFilters);
+    QObject::connect(this, &Database::signalInitializedWithTags, this, &Database::initializeFilters);
 }
 
 Database::~Database()
@@ -47,7 +51,7 @@ void Database::initializeOnStart()
     }
 
     DB << "database initialized on start correctly!";
-    m_database_initialized = true;
+    m_databaseInitialized = true;
     emit this->signalInitializedOnStart();
 }
 
@@ -153,7 +157,7 @@ void Database::initializeWithTags()
     END_TRANSACTION(signalInitializeWithTagsFailed)
 
     DB << "database initialized with tags correctly!";
-    m_database_initialized = true;
+    m_databaseInitialized = true;
     emit this->signalInitializedWithTags();
 }
 
@@ -216,6 +220,52 @@ void Database::createExampleData()
 
         this->queryToFile(st);
     }
+}
+
+void Database::initializeFilters()
+{
+    // initailize with empty tag comparators (without any limits)
+
+    IS_DATABASE_OPEN(signalFiltersInitailizeFailed)
+
+    QString query_text("SELECT id, name, type, is_editable, is_immutable FROM tags;");
+    this->queryToFile(query_text);
+    QSqlQuery query(m_database);
+    if(!query.exec(query_text)){
+        WR << "executing query " << query.lastError();
+        emit this->signalFiltersInitailizeFailed("executing query " + query.lastError().text());
+        return;
+    }
+
+    m_filters = new TagList(this);
+
+    // set values to variable from database
+    while(query.next()){
+        auto record = query.record();
+
+        int tag_id = record.value(0).toInt();
+        QString tag_name = record.value(1).toString();
+        int tag_type = record.value(2).toInt();
+
+        TagWithComparator* tag = new TagWithComparator(m_filters);
+        tag->set_id(tag_id);
+        tag->set_name(tag_name);
+        tag->set_type(tag_type);
+        tag->set_comparison_way(0);
+        tag->set_comparison_value("");
+
+        m_filters->tags().append(tag);
+    }
+
+    this->debugPrint_filters();
+
+    DB << "filters loaded correctly";
+    emit this->signalFiltersInitailized();
+}
+
+void Database::updateFilters()
+{
+
 }
 
 void Database::setSaveExecQuery(bool saveExecQuery)
@@ -823,7 +873,7 @@ void Database::deleteDatabase()
     m_database.close();
     QSqlDatabase::removeDatabase(QSqlDatabase::defaultConnection);
 
-    m_database_initialized = false;
+    m_databaseInitialized = false;
 
     this->clear_models_memory();
 
@@ -833,7 +883,7 @@ void Database::deleteDatabase()
         if(!m_database.open())
         {
             WR << "Reopening database failed after failed with removing database file " << DATABASE_PATH;
-            m_database_initialized = true;
+            m_databaseInitialized = true;
             emit this->signalDeleteDatabaseError("Reopening database failed after failed with removing database file " + DATABASE_PATH);
         }
         emit this->signalDeleteDatabaseError("Removing database file " + DATABASE_PATH + " failed");
@@ -1437,37 +1487,60 @@ void Database::loadFiltersModel()
         return;
     }
 
-    /// after checking if model is loaded because, if it is loaded then we don't care about database
-    IS_DATABASE_OPEN(signalFiltersModelLoadError)
+    // /// after checking if model is loaded because, if it is loaded then we don't care about database
+    // IS_DATABASE_OPEN(signalFiltersModelLoadError)
 
-    QString query_text("SELECT id, name, type FROM tags;");
+    // QString query_text("SELECT id, name, type FROM tags;");
 
-    this->queryToFile(query_text);
-    QSqlQuery query(m_database);
-    if(!query.exec(query_text)){
-        WR << "executing query " << query.lastError();
-        emit this->signalFiltersModelLoadError("executing query " + query.lastError().text());
-        return;
-    }
+    // this->queryToFile(query_text);
+    // QSqlQuery query(m_database);
+    // if(!query.exec(query_text)){
+    //     WR << "executing query " << query.lastError();
+    //     emit this->signalFiltersModelLoadError("executing query " + query.lastError().text());
+    //     return;
+    // }
+
+    // m_filters_model = new TagList(this);
+
+    // int i = 0;
+
+    // // set values to variable from database
+    // while(query.next()){
+    //     auto record = query.record();
+
+    //     int tag_id = record.value(0).toInt();
+    //     QString tag_name = record.value(1).toString();
+    //     int tag_type = record.value(2).toInt();
+
+    //     TagWithComparator* tag = new TagWithComparator(m_filters_model);
+    //     tag->set_id(tag_id);
+    //     tag->set_name(tag_name);
+    //     tag->set_type(tag_type);
+    //     tag->set_comparison_way(
+    //         static_cast<const TagWithComparator*>(m_filters->c_ref_tags()[i])->get_comparison_way()
+    //         );
+    //     tag->set_comparison_value(
+    //         static_cast<const TagWithComparator*>(m_filters->c_ref_tags()[i])->get_comparison_value()
+    //         );
+
+    //     m_filters_model->tags().append(tag);
+    // }
 
     m_filters_model = new TagList(this);
-
-    // set values to variable from database
-    while(query.next()){
-        auto record = query.record();
-
-        int tag_id = record.value(0).toInt();
-        QString tag_name = record.value(1).toString();
-        int tag_type = record.value(2).toInt();
-
-        TagWithComparator* tag = new TagWithComparator(m_filters_model);
-        tag->set_id(tag_id);
-        tag->set_name(tag_name);
-        tag->set_type(tag_type);
-        tag->set_comparison_way(2);
-        tag->set_comparison_value("129");
-
-        m_filters_model->tags().append(tag);
+    for(const auto &filter : m_filters->c_ref_tags())
+    {
+        TagWithComparator *twc = static_cast<TagWithComparator*>(filter);
+        TagWithComparator *twcNew = new TagWithComparator(this);
+        twcNew->set_id(twc->get_id());
+        twcNew->set_name(twc->get_name());
+        twcNew->set_type(twc->get_type());
+        twcNew->set_value(twc->get_value());
+        twcNew->set_is_editable(twc->get_is_editable());
+        twcNew->set_is_required(twc->get_is_required());
+        twcNew->set_is_immutable(twc->get_is_immutable());
+        twcNew->set_comparison_way(twc->get_comparison_way());
+        twcNew->set_comparison_value(twc->get_comparison_value());
+        m_filters_model->tags().append(twcNew);
     }
 
     this->debugPrintModel_filters();
@@ -2625,7 +2698,7 @@ bool Database::isDatabaseOpen(void (Database::*signal)(QString), const char *cal
     // IS_DATABASE_OPEN(signalMethod)
     // can't be const (to emit signal can't function can't be constant)
     // can't be static (to emit signal method should be related with object (also i don't want to pass all required arguments))
-    if(!m_database_initialized){
+    if(!m_databaseInitialized){
         WR << "database wasn't initialized! While executing"
            << caller_name << "method, error:" << m_database.lastError();
         emit (this->*signal)("database wasn't initialized, error: " + m_database.lastError().text());
@@ -2672,6 +2745,18 @@ bool Database::endTransaction(void (Database::*signal)(QString), const char *cal
     }
 
     return true;
+}
+
+void Database::debugPrint_filters() const
+{
+#if PRINT_MODELS_LISTS
+    DB << "|";
+    DB << "|";
+    DB << "FILTERS:";
+    DB << this->_debugPrintModel_TagList(m_filters);
+    DB << "|";
+    DB << "|";
+#endif
 }
 
 
@@ -2879,6 +2964,19 @@ QString Database::_debugPrintModel_TagDetails(TagDetails* const &model) const
     return obj_data + "]}";
 }
 
+void Database::loadFilters()
+{
+    // if(m_all_songs_model != nullptr){
+    //     DB << "all songs model was already loaded - skipped";
+    //     emit this->signalAllSongsModelLoaded();
+    //     return;
+    // }
+
+    // /// after checking if model is loaded because, if it is loaded then we don't care about database
+    // IS_DATABASE_OPEN(signalAllSongsModelLoadError)
+
+}
+
 
 void Database::queryToFile(QString query, QStringList param_names, QVariantList param_values) const
 {
@@ -2920,7 +3018,7 @@ void Database::queryToFile(QString query, QStringList param_names, QVariantList 
 
 QSqlQuery Database::prepPlaylistSongsQuery()//cQls tc_names, cQls tc_values, cQls tc_comparators, cQls te_names, cQlb te_values, int *error_code) const
 {
-    // if(!m_database_initialized){
+    // if(!m_databaseInitialized){
     //     WR << "database wasnot initalized";
     //     EC(1);
     //     return QSqlQuery();
