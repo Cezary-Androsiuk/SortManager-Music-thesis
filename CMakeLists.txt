@@ -104,9 +104,6 @@ qt_add_qml_module(appSortManager-Music
     RESOURCES assets/icons/select_file-hover.png
     RESOURCES assets/icons/filter-icon-25207.png
     RESOURCES assets/icons/trash_close.png assets/icons/trash_open.png
-    SOURCES cpp/Database/Database-DebugPrint.cpp
-    SOURCES cpp/Database/Database-ModelPrep.cpp
-    SOURCES cpp/Database/Database-DBOperations.cpp
 
 )
 

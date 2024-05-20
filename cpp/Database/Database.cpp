@@ -844,6 +844,639 @@ void Database::deleteDatabase()
     emit this->signalDeletedDatabase();
 }
 
+void Database::loadAllSongs()
+{
+    if(m_all_songs_model != nullptr){
+        DB << "all songs model was already loaded - skipped";
+        emit this->signalAllSongsModelLoaded();
+        return;
+    }
+
+    /// after checking if model is loaded because, if it is loaded then we don't care about database
+    IS_DATABASE_OPEN(signalAllSongsModelLoadError)
+
+    // select all song_id and Title tags (btw Title id is 2)
+    // this "AS title" is useless but as a comment to describe what is value
+    QString query_text("SELECT song_id, value AS title FROM songs_tags WHERE tag_id = 2;");
+
+    this->queryToFile(query_text);
+    QSqlQuery query(m_database);
+    if(!query.exec(query_text)){
+        WR << "executing select query " << query.lastError();
+        emit this->signalAllSongsModelLoadError("error while executing query " + query.lastError().text());
+        return;
+    }
+
+    m_all_songs_model = new SongList(this);
+
+    // read selected data
+    while(query.next()){
+        auto record = query.record();
+
+        int song_id = record.value(0).toInt();
+        QString song_title = record.value(1).toString();
+
+        Song *song = new Song(m_all_songs_model);
+        song->set_id(song_id);
+        song->set_title(song_title);
+        // value is not needed
+
+        m_all_songs_model->songs().append(song);
+    }
+
+    this->debugPrintModel_all_songs();
+
+    DB << "all songs model loaded correctly!";
+    emit this->signalAllSongsModelLoaded();
+}
+
+void Database::loadAddSongModel()
+{
+    if(m_add_song_model != nullptr){
+        DB << "add song model was already loaded - skipped";
+        emit this->signalAddSongModelLoaded();
+        return;
+    }
+
+    /// after checking if model is loaded because, if it is loaded then we don't care about database
+    IS_DATABASE_OPEN(signalAddSongModelLoadError)
+
+    // get editable tags from rows of tags table
+    QSqlQuery query(m_database);
+    QString query_text("SELECT id, name, type, is_required FROM tags WHERE is_editable = 1;");
+    this->queryToFile(query_text);
+    if(!query.exec(query_text)){
+        WR << "executing query " << query.lastError();
+        emit this->signalAddSongModelLoadError("executing query " + query.lastError().text());
+        return;
+    }
+
+    m_add_song_model = new SongDetails(this);
+    // id is 0 by default
+
+    TagList *tags_for_song_details = new TagList(m_add_song_model);
+
+    while(query.next()){
+        auto record = query.record();
+
+        auto id = record.value(0).toInt();
+        auto name = record.value(1).toString();
+        auto type = record.value(2).toInt();
+        auto is_required = record.value(3).toBool();
+
+        Tag* tag = new Tag(m_add_song_model);
+        tag->set_id(id);
+        tag->set_name(name);
+        tag->set_type(type);
+        tag->set_is_editable(1);
+        tag->set_is_required(is_required);
+
+        tags_for_song_details->tags().append(tag);
+    }
+
+    // sort by tag id
+    std::sort(
+        tags_for_song_details->tags().begin(),
+        tags_for_song_details->tags().end(),
+        [](Tag *a, Tag *b){return a->get_id() < b->get_id();}
+        );
+
+    m_add_song_model->set_tags(tags_for_song_details);
+
+    this->debugPrintModel_add_song();
+
+    DB << "add song model loaded correctly";
+    emit this->signalAddSongModelLoaded();
+}
+
+void Database::loadEditSongModel(int song_id)
+{
+    if(m_edit_song_model != nullptr){
+        if(m_edit_song_model->get_id() == song_id){
+            DB << "song with id=" << song_id << " already loaded";
+            emit this->signalEditSongModelLoaded();
+            return;
+        }
+        delete m_edit_song_model;
+    }
+
+    /// after checking if model is loaded because, if it is loaded then we don't care about database
+    IS_DATABASE_OPEN(signalEditSongModelLoadError)
+
+    QSqlQuery query(m_database);
+    QString query_text(QString("SELECT tags.id, tags.name, tags.type, tags.is_editable, tags.is_required, songs_tags.value "
+                               "FROM songs_tags "
+                               "JOIN tags ON songs_tags.tag_id = tags.id "
+                               "WHERE songs_tags.song_id = %1;").arg(song_id));
+    this->queryToFile(query_text);
+    if(!query.exec(query_text)){
+        WR << "error while executing query " << query.lastError();
+        emit this->signalEditSongModelLoadError("error while executing query " + query.lastError().text());
+        return;
+    }
+
+    m_edit_song_model = new SongDetails(this);
+    m_edit_song_model->set_id(song_id);
+
+    TagList *tags_for_song_details = new TagList(m_edit_song_model);
+
+    while(query.next()){
+        auto record = query.record();
+
+        auto id = record.value(0).toInt();
+        auto name = record.value(1).toString();
+        auto type = record.value(2).toInt();
+        auto is_editable = record.value(3).toBool();
+        auto is_required = record.value(4).toBool();
+        auto value = record.value(5).toString();
+        if(id == 11 || id == 12) // Add Date or Update Date tag
+        {
+            auto int_value = value.toInt();
+            auto add_date_dt = QDateTime::fromSecsSinceEpoch(int_value);
+            add_date_dt.setTimeZone(QTimeZone::systemTimeZone());
+            value = add_date_dt.toString("hh:mm dd-MM-yyyy"); // yyyy-MM-dd hh:mm
+        }
+
+        Tag* tag = new Tag(m_add_song_model);
+        tag->set_id(id);
+        tag->set_name(name);
+        tag->set_type(type);
+        tag->set_is_editable(is_editable);
+        tag->set_is_required(is_required);
+        tag->set_value(value);
+
+        tags_for_song_details->tags().append(tag);
+    }
+
+    // sort by tag id
+    std::sort(
+        tags_for_song_details->tags().begin(),
+        tags_for_song_details->tags().end(),
+        [](Tag *a, Tag *b){return a->get_id() < b->get_id();}
+        );
+
+    m_edit_song_model->set_tags(tags_for_song_details);
+
+    this->debugPrintModel_edit_song();
+
+    DB << "edit song ( id:" << song_id << ") model loaded correctly";
+    emit this->signalEditSongModelLoaded();
+}
+
+
+void Database::loadAllTags()
+{
+    if(m_all_tags_model != nullptr){
+        DB << "all tags model was already loaded - skipped";
+        emit this->signalAllTagsModelLoaded();
+        return;
+    }
+
+    /// after checking if model is loaded because, if it is loaded then we don't care about database
+    IS_DATABASE_OPEN(signalAllTagsModelLoadError)
+
+    QString query_text("SELECT id, name, type, is_editable, is_immutable FROM tags");
+    // if user don't want to show constant tags, then change query
+    if(!m_showConstantTags)
+        query_text += " WHERE is_immutable = 0;";
+    else
+        query_text += ";";
+
+    this->queryToFile(query_text);
+    QSqlQuery query(m_database);
+    if(!query.exec(query_text)){
+        WR << "executing query " << query.lastError();
+        emit this->signalAllTagsModelLoadError("executing query " + query.lastError().text());
+        return;
+    }
+
+    m_all_tags_model = new TagList(this);
+
+    // set values to variable from database
+    while(query.next()){
+        auto record = query.record();
+
+        int tag_id = record.value(0).toInt();
+        QString tag_name = record.value(1).toString();
+        int tag_type = record.value(2).toInt();
+        bool tag_is_editable = record.value(3).toInt();
+        bool tag_is_immutable = record.value(4).toBool();
+
+        Tag* tag = new Tag(m_all_tags_model);
+        // used by Tags.qml and import Database
+        tag->set_id(tag_id);
+        tag->set_name(tag_name);
+
+        // used by Tags.qml
+        tag->set_is_immutable(tag_is_immutable);
+
+        // used by import Database
+        tag->set_is_editable(tag_is_editable);
+        tag->set_type(tag_type);
+
+        m_all_tags_model->tags().append(tag);
+    }
+
+    this->debugPrintModel_all_tags();
+
+    DB << (m_showConstantTags ? "all" : "all editable") << "tags model loaded correctly";
+    emit this->signalAllTagsModelLoaded();
+}
+
+void Database::loadAddTagModel()
+{
+    if(m_add_tag_model != nullptr){
+        DB << "add tag model was already loaded - skipped";
+        emit this->signalAddTagModelLoaded();
+        return;
+    }
+
+    /// after checking if model is loaded because, if it is loaded then we don't care about database
+    IS_DATABASE_OPEN(signalAddTagModelLoadError)
+
+    // select all song_id and Title tags (btw Title id is 2)
+    // this "AS title" is useless but as a comment to describe what is value
+    // values are not required because user will be choosing what type of tag it is
+    QSqlQuery query(m_database);
+    QString query_text = "SELECT song_id, value AS title FROM songs_tags WHERE tag_id = 2;";
+    this->queryToFile(query_text);
+    if(!query.exec(query_text)){
+        WR << "error while executing SELECT query " << query.lastError();
+        emit this->signalAddTagModelLoadError("error while executing SELECT query " + query.lastError().text());
+        return;
+    }
+
+    m_add_tag_model = new TagDetails(this);
+    // m_add_tag_model parameters like name/type will be default and qml will take care of interpreting fields by name
+
+    SongList *songs_for_tag_details = new SongList(this);
+
+    while(query.next()){
+        auto record = query.record();
+
+        int song_id = record.value(0).toInt();
+        auto title = record.value(1).toString();
+
+        Song* song = new Song(m_add_tag_model);
+        song->set_id(song_id);
+        song->set_title(title);
+        // song value will be default
+
+        songs_for_tag_details->songs().append(song);
+    }
+
+    m_add_tag_model->set_songs(songs_for_tag_details);
+
+    this->debugPrintModel_add_tag();
+
+    DB << "add tag model loaded correctly!";
+    emit this->signalAddTagModelLoaded();
+}
+
+void Database::loadEditTagModel(int tag_id)
+{
+    if(m_edit_tag_model != nullptr){
+        if(m_edit_tag_model->get_id() == tag_id){
+            DB << "tag with id=" << tag_id << " already loaded";
+            emit this->signalEditTagModelLoaded();
+            return;
+        }
+        delete m_edit_tag_model;
+    }
+
+    /// after checking if model is loaded because, if it is loaded then we don't care about database
+    IS_DATABASE_OPEN(signalEditTagModelLoadError)
+
+    bool is_date_tag = false;
+
+    // vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv set tag parameters vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+    QSqlQuery query(m_database);
+    QString query_text = QString("SELECT * FROM tags WHERE id = %1;").arg(tag_id);
+    this->queryToFile(query_text);
+    if(!query.exec(query_text)){
+        WR << "error while executing SELECT query " << query.lastError();
+        emit this->signalAddTagModelLoadError("error while executing SELECT query " + query.lastError().text());
+        return;
+    }
+
+    m_edit_tag_model = new TagDetails(this);
+    // qml will take care of interpreting fields by name
+
+    // set tag parameters to variables
+    if(query.next())
+    {
+        auto record = query.record();
+        for(int i=0; i<record.count(); i++){
+            QString column_name = record.fieldName(i);
+            auto column_value = record.value(i);
+
+            // the following code is based on trust (for myself) that data in database are correct
+            // actually all load models are rebuilded :)
+            if(column_name == "id"){
+                int cv_int = column_value.toInt();
+                m_edit_tag_model->set_id(cv_int);
+            }
+            else if(column_name == "name"){
+                QString string(column_value.toString());
+                if(string.contains("Date", Qt::CaseSensitive))
+                    is_date_tag = true;
+                m_edit_tag_model->set_name(string);
+            }
+            else if(column_name == "description"){
+                QString string(column_value.toString());
+                m_edit_tag_model->set_description(string);
+            }
+            else if(column_name == "add_date"){
+                int cv_int = column_value.toInt();
+
+                auto add_date_dt = QDateTime::fromSecsSinceEpoch(cv_int);
+                add_date_dt.setTimeZone(QTimeZone::systemTimeZone());
+                auto add_date_str = add_date_dt.toString("hh:mm dd-MM-yyyy"); // yyyy-MM-dd hh:mm
+
+                m_edit_tag_model->set_add_date(add_date_str);
+            }
+            else if(column_name == "update_date"){
+                int cv_int = column_value.toInt();
+
+                auto update_date_dt = QDateTime::fromSecsSinceEpoch(cv_int);
+                update_date_dt.setTimeZone(QTimeZone::systemTimeZone());
+                auto update_date_str = update_date_dt.toString("hh:mm dd-MM-yyyy"); // yyyy-MM-dd hh:mm
+
+                m_edit_tag_model->set_update_date(update_date_str);
+            }
+            else if(column_name == "type"){
+                int cv_int = column_value.toInt();
+                m_edit_tag_model->set_type(cv_int);
+            }
+            else if(column_name == "is_immutable"){
+                bool value = column_value.toBool();
+                m_edit_tag_model->set_is_immutable(value);
+            }
+            else if(column_name == "is_editable"){
+                bool value = column_value.toBool();
+                m_edit_tag_model->set_is_editable(value);
+            }
+            else if(column_name == "is_required"){
+                bool value = column_value.toBool();
+                m_edit_tag_model->set_is_required(value);
+            }
+        }
+    }
+    else
+    {
+        WR << "error while going through SELECT query (no result) " << query.lastError();
+        delete m_edit_tag_model;
+        m_edit_tag_model = nullptr;
+        emit this->signalAddTagModelLoadError("error while going through SELECT query (no result) " + query.lastError().text());
+        return;
+    }
+
+    // vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv set songs parameters vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+    // this query is a mystery, GPT made it for me, but after i "press" him...
+    // however this can be solved with two queries (one selecting titles of the song and another to select values between song and current tag)
+    // select title:                                            SELECT song_id, value AS title      FROM songs_tags WHERE tag_id = 2
+    // select values related between songs and tag(with id=4):  SELECT song_id, value AS song_value FROM songs_tags WHERE tag_id = 4;
+    query_text = QString("SELECT song_id,                                               "
+                         "    MAX(CASE WHEN tag_id = 2 THEN value END) AS title,        "
+                         "    MAX(CASE WHEN tag_id = %1 THEN value END) AS song_value   "
+                         "FROM songs_tags                                               "
+                         "WHERE tag_id IN (2, %1)                                       "
+                         "GROUP BY song_id;                                             ").arg(tag_id);
+
+    this->queryToFile(query_text);
+    if(!query.exec(query_text)){
+        WR << "error while executing SELECT query " << query.lastError();
+        delete m_edit_tag_model;
+        m_edit_tag_model = nullptr;
+        emit this->signalAddTagModelLoadError("error while executing SELECT query " + query.lastError().text());
+        return;
+    }
+
+    SongList *songs_for_tag_details = new SongList(m_edit_tag_model);
+
+    while(query.next()){
+        auto record = query.record();
+
+        int song_id = record.value(0).toInt();
+        auto title = record.value(1).toString();
+        auto value = record.value(2).toString();
+        if(is_date_tag)
+        {
+            auto int_value = value.toInt();
+            auto add_date_dt = QDateTime::fromSecsSinceEpoch(int_value);
+            add_date_dt.setTimeZone(QTimeZone::systemTimeZone());
+            value = add_date_dt.toString("hh:mm dd-MM-yyyy"); // yyyy-MM-dd hh:mm
+        }
+
+
+        Song* song = new Song(m_edit_tag_model);
+        song->set_id(song_id);
+        song->set_title(title);
+        song->set_value(value);
+
+        songs_for_tag_details->songs().append(song);
+    }
+
+    m_edit_tag_model->set_songs(songs_for_tag_details);
+
+    this->debugPrintModel_edit_tag();
+
+    DB << "edit tag ( id:" << tag_id << ") model loaded correctly!";
+    emit this->signalEditTagModelLoaded();
+}
+
+/*void Database::loadPlaylistSongs(cQls tc_names, cQls tc_comparators, cQls tc_values, cQls te_names, cQlb te_values)
+{
+    WR << "load playlist not finished!";
+    return;
+
+    // /// after checking if model is loaded because, if it is loaded then we don't care about database
+    // IS_DATABASE_OPEN(signalPlaylistSongsModelLoadError)
+
+    // int local_error_code;
+    // QSqlQuery query(this->prepPlaylistSongsQuery(
+    //     tc_names, tc_values, tc_comparators, te_names, te_values, &local_error_code));
+    // this->queryToFile(query.lastQuery(), query.boundValueNames(), query.boundValues());
+    // if(local_error_code != 0){
+    //     WR << "error while preparing playlist song query:" << local_error_code;
+    //     emit this->signalPlaylistSongsModelLoadError("");
+    //     return;
+    // }
+
+
+    // for(auto& song : this->m_playlist_songs){
+    //     delete song;
+    // }
+    // this->m_playlist_songs.clear();
+
+
+    // if(!query.exec()){
+    //     WR << "executing query " << query.lastError();
+    //     emit this->signalPlaylistSongsModelLoadError("");
+    //     return;
+    // }
+
+    // // // debug print
+    // // auto blank_record = query.record();
+    // // for(int i=0; i<blank_record.count(); i++)
+    // //     qDebug() << blank_record.fieldName(i);
+
+    // while(query.next()){
+    //     auto record = query.record();
+
+    //     // // debug pring
+    //     // for(int i=0; i<record.count(); i++){
+    //     //     qDebug() << record.value(i) ;
+    //     // }
+
+    //     bool local_error_code;
+    //     int song_id = record.value(0).toInt(&local_error_code);
+    //     if(!local_error_code){
+    //         WR << "error while converting id to int: " << record.value(0);
+    //         emit this->signalPlaylistSongsModelLoadError("");
+    //         return;
+    //     }
+
+    //     QString title = record.value(1).toString();
+
+    //     // song will be removed after this (database instance) is removed
+    //     // also when a new songs are attempted to load by this method
+    //     Song* song = new Song(this);
+    //     song->set_song_id(song_id);
+    //     song->set_song_title(title);
+    //     this->m_playlist_songs.append(song);
+    // }
+
+    // // emit songs playlist changed
+
+    // DB << "playlist songs model loaded correctly";
+    // emit this->signalPlaylistSongsModelLoaded();
+}*/
+
+void Database::loadPlaylistModel()
+{
+    if(m_playlist_model != nullptr){
+        DB << "playlist model was already loaded - skipped";
+        emit this->signalPlaylistModelLoaded(m_playlist_model);
+        return;
+    }
+
+    /// after checking if model is already loaded because, if it is loaded then we don't care about database
+    IS_DATABASE_OPEN(signalPlaylistModelLoadError)
+
+    // select all song_id and Title tags (btw Title id is 2)
+    // this "AS title" is useless but as a comment to describe what is value
+    QString query_text("SELECT song_id, value AS title FROM songs_tags WHERE tag_id = 2;");
+
+    this->queryToFile(query_text);
+    QSqlQuery query(m_database);
+    if(!query.exec(query_text)){
+        WR << "executing select query " << query.lastError();
+        emit this->signalPlaylistModelLoadError("error while executing query " + query.lastError().text());
+        return;
+    }
+    DB << "query executed";
+
+    m_playlist_model = new SongList(this);
+
+    // read selected data
+    while(query.next()){
+        DB << "query iterate start";
+        auto record = query.record();
+
+        int song_id = record.value(0).toInt();
+        QString song_title = record.value(1).toString();
+
+        Song *song = new Song(m_playlist_model);
+        song->set_id(song_id);
+        song->set_title(song_title);
+        // value is not needed
+
+        m_playlist_model->songs().append(song);
+        DB << "query iterate stop";
+    }
+
+    DB << "iteration finished";
+
+    this->debugPrintModel_playlist();
+
+    DB << "playlist model loaded correctly!";
+    emit this->signalPlaylistModelLoaded(m_playlist_model);
+}
+
+void Database::loadEditPlaylistSongModel(int song_id)
+{
+    // NOTE: loaded data, can be reached by m_edit_song_model
+
+    QString load_error;
+    auto lambda_model = [&](QString desc){
+        /// [&] means get reference from parents variables
+        /// desc is value received from signalEditSongModelLoadError(QString desc)
+        load_error = desc; // some warning occur, but i don't see a better way
+    };
+
+    auto connection_model = connect(this, &Database::signalEditSongModelLoadError, lambda_model);
+
+    this->loadEditSongModel(song_id);
+
+    if(load_error != ""){
+        WR << "Error while loading edit song model for edit playlist:" << load_error;
+        emit this->signalEditPlaylistSongModelLoadError("Error while loading edit song model for edit playlist: " + load_error);
+        return;
+    }
+    disconnect(connection_model);
+
+    emit this->signalEditPlaylistSongModelLoaded();
+}
+
+void Database::loadFiltersModel()
+{
+    if(m_filters_model != nullptr){
+        DB << "filters model was already loaded - skipped";
+        emit this->signalFiltersModelLoaded();
+        return;
+    }
+
+    /// after checking if model is loaded because, if it is loaded then we don't care about database
+    IS_DATABASE_OPEN(signalFiltersModelLoadError)
+
+    QString query_text("SELECT id, name, type FROM tags;");
+
+    this->queryToFile(query_text);
+    QSqlQuery query(m_database);
+    if(!query.exec(query_text)){
+        WR << "executing query " << query.lastError();
+        emit this->signalFiltersModelLoadError("executing query " + query.lastError().text());
+        return;
+    }
+
+    m_filters_model = new TagList(this);
+
+    // set values to variable from database
+    while(query.next()){
+        auto record = query.record();
+
+        int tag_id = record.value(0).toInt();
+        QString tag_name = record.value(1).toString();
+        int tag_type = record.value(2).toInt();
+
+        TagWithComparator* tag = new TagWithComparator(m_filters_model);
+        tag->set_id(tag_id);
+        tag->set_name(tag_name);
+        tag->set_type(tag_type);
+        tag->set_comparison_way(2);
+        tag->set_comparison_value("129");
+
+        m_filters_model->tags().append(tag);
+    }
+
+    this->debugPrintModel_filters();
+
+    DB << "filters model loaded correctly!";
+    emit this->signalFiltersModelLoaded();
+}
+
+
 SongList *Database::get_all_songs_model() const
 {
     return m_all_songs_model;
@@ -883,6 +1516,1063 @@ TagList *Database::get_filters_model() const
 {
     return m_filters_model;
 }
+
+void Database::addSong(QVariantList new_song_data)
+{
+    IS_DATABASE_OPEN(signalAddSongError)
+
+    /*
+        received structure:
+
+        new_song_data - QVariantList:
+            id - int: from QML fields
+            value - QString: from QML fields
+
+        example:
+        QList(
+            QVariant(
+                QVariantMap,
+                QMap(
+                    ("id", QVariant(int, 2))
+                    ("value", QVariant(QString, "asd"))
+                )
+            ),
+            QVariant(
+                QVariantMap,
+                QMap(
+                    ("id", QVariant(int, 3))
+                    ("value", QVariant(QString, "wre"))
+                )
+            ),
+            ...
+        )
+
+        NOTE: received structure contains only editable fields
+    */
+
+    // in list there is no duration or add_date (because for add model was sended only editable fields)
+    // DB << "QVariant(nullptr) =" << QVariant(nullptr);
+
+    auto lambda_get_value_by_id = [&](int id) -> QVariant{
+        for(const auto &list_variant : new_song_data)
+        {
+            auto map = list_variant.toMap();
+            if(map["id"].toInt() == id)
+                return map["value"];
+        }
+
+        WR << "id:" << id << "not found in the new_song_data - QVariantList!";
+        return QVariant(QString(""));
+    };
+
+    auto lambda_get_map_index_by_id = [&](int id) -> int{
+        int i=0;
+        for(const auto &list_variant : new_song_data)
+        {
+            if(list_variant.toMap()["id"].toInt() == id)
+                return i;
+            ++i;
+        }
+
+        WR << "id:" << id << "not found in the new_song_data - QVariantList!";
+        return -1;
+    };
+
+    // ONLY SONG PATH IS UNIQUE
+    QString tmp_song_path = lambda_get_value_by_id(9 /*Song Path field id*/).toString();
+    QString song_path(tmp_song_path);
+
+    if(song_path.isEmpty())
+    {
+        WR << "error song path can't be empty!";
+        emit this->signalAddSongError("error song path can't be empty!");
+        return;
+    }
+
+    if(!song_path.contains("file:///"))
+        song_path = "file:///" + song_path;
+
+    QSqlQuery query(m_database);
+    QString query_text("SELECT song_id FROM songs_tags WHERE tag_id = 9 AND value = :value;"); // tag_id = 9 is Song Path tag
+
+    if(!query.prepare(query_text))
+    {
+        WR << "error while prepating SELECT query " << query.lastError();
+        emit this->signalAddSongError("error while prepating SELECT query " + query.lastError().text());
+        return;
+    }
+
+    query.bindValue(":value", song_path);
+
+    this->queryToFile(query.lastQuery(), query.boundValueNames(), query.boundValues());
+    if(!query.exec())
+    {
+        WR << "error while executing SELECT query " << query.lastError();
+        emit this->signalAddSongError("error while executing SELECT query " + query.lastError().text());
+        return;
+    }
+
+    if(query.next())
+    {
+        // if select query return any records, that means in db exist song with the same song path
+        // can't be any other song with the same song path as given
+        DB << "Song Path should be unique, but this path belong to song with id =" << query.value(0).toInt();
+        emit this->signalAddSongError(
+            "Song Path should be unique, but this path belong to song with id = " + query.value(0).toString());
+        return;
+    }
+
+    // get song duration
+    QMediaPlayer mp;
+
+    /// wait for the event (load media)
+    QEventLoop loop;
+    connect(&mp, &QMediaPlayer::mediaStatusChanged, &loop, &QEventLoop::quit);
+    mp.setSource(song_path);
+    loop.exec();
+    if(mp.mediaStatus() != QMediaPlayer::LoadedMedia){
+        WR << "error while loading song: " << mp.errorString();
+        emit this->signalAddSongError("error while loading song: " + mp.errorString());
+        return;
+    }
+
+    // ------------------------------ set not editable fields -----------------------------
+
+    // set title if needed
+    /// test if first field is title (as it should be)
+    /// // actually I don't check this, I trust myself... I hope
+    QString song_title(mp.metaData().value(QMediaMetaData::Title).toString()); // will be used in setting icon
+    if(lambda_get_value_by_id(2 /*Title field id*/).toString() == ""){
+        if(song_title == ""){
+            WR << "song file doesn't contains Title metadata, setting file name as the Title";
+            song_title = QFileInfo(song_path).baseName();
+        }
+        DB << "setting own title to" << song_title;
+        int index = lambda_get_map_index_by_id(2/*Title field id*/);
+        if(index == -1) // Title not exist
+        {
+            WR << "error, Title field not found!";
+            emit this->signalAddSongError("error, Title field not found!");
+            return;
+        }
+        else // Title field found
+        {
+            auto map = new_song_data[index].toMap();
+            map["value"] = song_title;
+            // this way because new_song_data[0].toMap() returns constant map
+            new_song_data[index] = map;
+        }
+    }
+
+    // // set Thumbnail Path // not works :c
+    // if(lambda_get_value_by_id(10 /*Thumbnail Path field id*/).toString() == ""){
+    //     /// only for my structure of files
+    //     QString tmp_song_path = song_path;
+    //     tmp_song_path.replace("/songs", "");
+    //     QDir song_dir(QFileInfo(tmp_song_path).path());
+    //     QString thumbnail_path = song_dir.path() + "/icons/" + song_title + " (BQ).jpg";
+    //     if(QFile::exists(thumbnail_path))
+    //     {
+    //         int index = lambda_get_map_index_by_id(10/*Thumbnail Path field id*/);
+    //         if(index == -1) // Thumbnail Path not exist
+    //         {
+    //             WR << "error, Thumbnail Path field not found!";
+    //             emit this->signalAddSongError("error, Thumbnail Path field not found!");
+    //             return;
+    //         }
+    //         else // Thumbnail Path field found
+    //         {
+    //             auto map = new_song_data[index].toMap();
+    //             map["value"] = thumbnail_path;
+    //             new_song_data[index] = map;
+    //         }
+    //     }
+    //     else
+    //     {
+    //         DB << "cannot set not existing thumbnail path" << thumbnail_path;
+    //         DB << "auto setting thumbail works only in home environment";
+    //     }
+    // }
+
+    // set duration
+    auto duration = QString::number(mp.duration());
+    if(mp.duration() <= 0){
+        WR << "error, duration <= 0 is a bad sign!";
+        emit this->signalAddSongError("error, duration <= 0 is a bad sign!");
+        return;
+    }
+    new_song_data.append(
+        QVariant(
+            QVariantMap({{"id", 7/*id of Duration field*/},{"value", duration}})));
+
+    // add song date
+    QDateTime dt;
+    dt.setTimeZone(QTimeZone::systemTimeZone());
+    auto current_time = QString::number(dt.currentSecsSinceEpoch());
+    new_song_data.append(
+        QVariant(
+            QVariantMap({{"id", 11/*id of Add Date field*/},{"value", current_time}})));
+
+    // update song date
+    new_song_data.append(
+        QVariant(
+            QVariantMap({{"id", 12/*id of Update Date field*/},{"value", current_time}})));
+
+    int song_id;
+
+    BEGIN_TRANSACTION
+    {
+        // ------------------------------ add new song to database -----------------------------
+
+        query_text = "INSERT INTO songs DEFAULT VALUES;";
+        this->queryToFile(query_text);
+        if(!query.exec(query_text)){
+            WR << "error while executing INSERT INTO songs query " << query.lastError();
+            DB << "cancelling transaction ...";
+            m_database.rollback();
+            emit this->signalAddSongError(
+                "error while executing INSERT INTO songs query " + query.lastError().text());
+            return;
+        }
+
+        song_id = query.lastInsertId().toInt();
+
+        // add ID field
+        new_song_data.append(
+            QVariant(
+                QVariantMap({{"id", 1/*id of ID field*/},{"value", song_id}})));
+
+        // ------------------------------ add values to table songs_tags -----------------------------
+
+        for(const auto &param : new_song_data)
+        {
+            auto map = param.toMap();
+            if(!query.prepare("INSERT INTO songs_tags (song_id, tag_id, value) VALUES (:song_id, :tag_id, :value);"))
+            {
+                WR << "error while preparing INSERT INTO songs_tags query " << query.lastError();
+                DB << "last query: " << query.lastQuery();
+                DB << "cancelling transaction ...";
+                m_database.rollback();
+                emit this->signalAddSongError(
+                    "error while preparing INSERT INTO songs_tags query " + query.lastError().text());
+                return;
+            }
+
+            query.bindValue(":song_id", song_id);
+            query.bindValue(":tag_id", map["id"].toInt());
+            query.bindValue(":value", this->notNull(map["value"].toString()));
+
+            this->queryToFile(query.lastQuery(), query.boundValueNames(), query.boundValues());
+
+            if(!query.exec())
+            {
+                WR << "error while executing INSERT INTO songs_tags query " << query.lastError();
+                DB << "last query: " << query.lastQuery();
+                DB << "values: {song_id: '" << song_id << "', tag_id: '" << map["id"].toInt()
+                   << "', value: '" << map["value"].toString() << "'}";
+                DB << "cancelling transaction ...";
+                m_database.rollback();
+                emit this->signalAddSongError(
+                    "error while executing INSERT INTO songs_tags query " + query.lastError().text());
+                return;
+            }
+        }
+    }
+    END_TRANSACTION(signalAddSongError)
+
+    ///
+    /// NOTE: after these operations values in songs_tags won't be in numerical order (i mean tag_id)
+    ///
+
+    this->clear_models_memory(); // after that, if user enter any model (allSongs, addSong, editTag, ...), data for him will be loaded again
+
+    DB << "song ( id:" << song_id << ") added correctly!";
+    emit this->signalAddedSong();
+}
+
+void Database::editSong(int song_id, QVariantList song_data)
+{
+    IS_DATABASE_OPEN(signalEditSongError)
+
+    /*
+        received structure:
+
+        new_song_data - QVariantList:
+            id - int: from QML fields
+            value - QString: from QML fields
+
+        example:
+        QList(
+            QVariant(
+                QVariantMap,
+                QMap(
+                    ("id", QVariant(int, 2))
+                    ("value", QVariant(QString, "asd"))
+                )
+            ),
+            QVariant(
+                QVariantMap,
+                QMap(
+                    ("id", QVariant(int, 3))
+                    ("value", QVariant(QString, "wre"))
+                )
+            ),
+            ...
+        )
+
+        NOTE: received structure contains only editable fields
+    */
+
+    // in list there is no duration or add_date (because for add model was sended only editable fields)
+
+    auto lambda_get_value_by_id = [&](int id) -> QVariant{
+        for(const auto &list_variant : song_data)
+        {
+            auto map = list_variant.toMap();
+            if(map["id"].toInt() == id)
+                return map["value"];
+        }
+        return QVariant(QString(""));
+    };
+
+    auto lambda_get_map_index_by_id = [&](int id) -> int{
+        int i=0;
+        for(const auto &list_variant : song_data)
+        {
+            if(list_variant.toMap()["id"].toInt() == id)
+                return i;
+            ++i;
+        }
+        return -1;
+    };
+
+    // ONLY SONG PATH IS UNIQUE
+    QString tmp_song_path = lambda_get_value_by_id(9 /*Song Path field id*/).toString();
+    QString song_path(tmp_song_path);
+
+    if(song_path.isEmpty())
+    {
+        WR << "error song path can't be empty!";
+        emit this->signalAddSongError("error song path can't be empty!");
+        return;
+    }
+
+    if(!song_path.contains("file:///"))
+        song_path = "file:///" + song_path;
+
+    QSqlQuery query(m_database);
+    QString query_text("SELECT song_id, value FROM songs_tags WHERE tag_id = 9 AND value = :value;"); // tag_id = 9 is Song Path tag
+
+    if(!query.prepare(query_text))
+    {
+        WR << "error while prepating SELECT query " << query.lastError();
+        emit this->signalEditSongError("error while prepating SELECT query " + query.lastError().text());
+        return;
+    }
+
+    query.bindValue(":value", song_path);
+
+    this->queryToFile(query.lastQuery(), query.boundValueNames(), query.boundValues());
+    if(!query.exec())
+    {
+        WR << "error while executing SELECT query " << query.lastError();
+        emit this->signalEditSongError("error while executing SELECT query " + query.lastError().text());
+        return;
+    }
+
+    bool song_path_changed = true;
+
+    if(query.next())
+    {
+        if(query.value(0).toInt() != song_id)
+        {
+            // if select query return any record with different id that current
+            //   that means in db exist song with the same song path as given
+            // if return record with the same id, that means user not changed tag name while editing
+            DB << "Song Path should be unique, but this path belong to song with id =" << query.value(0).toInt();
+            emit this->signalEditSongError(
+                "Song Path should be unique, but this path belong to song with id = " + query.value(0).toString());
+            return;
+        }
+        song_path_changed = false; // found in db song path related with the same id
+    }
+
+
+    // auto tmp = song_data[6/* 6 should be Title*/].toMap();
+    // tmp["value"] = QString("G:/JDownloader2/0_music/2021.08.19_Searching_New_1/songs/24kGoldn - Mood (Lyrics) ft. Iann Dior (1080p_30fps_H264-128kbit_AAC).mp4");
+    // // this way because song_data[6].toMap() returns constant map
+    // song_data[6/* 6 should be Title*/] = tmp;
+    // WR << "TMP song path";
+
+    if(song_path_changed)
+    {
+        // get song duration
+        QMediaPlayer mp;
+
+        /// wait for the event (load media)
+        QEventLoop loop;
+        connect(&mp, &QMediaPlayer::mediaStatusChanged, &loop, &QEventLoop::quit);
+        mp.setSource(song_path);
+        loop.exec();
+        if(mp.mediaStatus() != QMediaPlayer::LoadedMedia){
+            WR << "error while loading song: " << mp.errorString();
+            emit this->signalEditSongError("error while loading song: " + mp.errorString());
+            return;
+        }
+
+        // ------------------------------ set not editable fields -----------------------------
+
+        // set title if needed
+        /// test if first field is title (as it should be)
+        /// // actually I don't check this, I trust myself... I hope
+        QString song_title(mp.metaData().value(QMediaMetaData::Title).toString()); // will be used in setting icon
+        if(lambda_get_value_by_id(2 /*Title field id*/).toString() == ""){
+            if(song_title == ""){
+                WR << "song file doesn't contains Title metadata, setting file name as the Title";
+                song_title = QFileInfo(song_path).baseName();
+            }
+            DB << "setting own title to" << song_title;
+            int index = lambda_get_map_index_by_id(2/*Title field id*/);
+            if(index == -1) // Title not exist
+            {
+                WR << "error, Title field not found!";
+                emit this->signalAddSongError("error, Title field not found!");
+                return;
+            }
+            else // Title field found
+            {
+                auto map = song_data[index].toMap();
+                map["value"] = song_title;
+                // this way because song_data[0].toMap() returns constant map
+                song_data[index] = map;
+            }
+        }
+
+        // // set Thumbnail Path // not works :c
+        // if(lambda_get_value_by_id(10 /*Thumbnail Path field id*/).toString() == ""){
+        //     /// only for my structure of files
+        //     QString tmp_song_path = song_path;
+        //     tmp_song_path.replace("/songs", "");
+        //     QDir song_dir(QFileInfo(tmp_song_path).path());
+        //     QString thumbnail_path = song_dir.path() + "/icons/" + song_title + " (BQ).jpg";
+        //     if(QFile::exists(thumbnail_path))
+        //     {
+        //         int index = lambda_get_map_index_by_id(10/*Thumbnail Path field id*/);
+        //         if(index == -1) // Thumbnail Path not exist
+        //         {
+        //             WR << "error, Thumbnail Path field not found!";
+        //             emit this->signalAddSongError("error, Thumbnail Path field not found!");
+        //             return;
+        //         }
+        //         else // Thumbnail Path field found
+        //         {
+        //             auto map = song_data[index].toMap();
+        //             map["value"] = thumbnail_path;
+        //             song_data[index] = map;
+        //         }
+        //     }
+        //     else
+        //     {
+        //         DB << "cannot set not existing thumbnail path" << thumbnail_path;
+        //         DB << "auto setting thumbail works only in home environment";
+        //     }
+        // }
+        {
+            // set duration
+            auto duration = QString::number(mp.duration());
+            int index = lambda_get_map_index_by_id(7/*id of Duration field*/);
+            if(index == -1)
+            {
+                song_data.append(
+                    QVariant(
+                        QVariantMap({{"id", 7/*id of Duration field*/},{"value", duration}})));
+            }
+            else
+            {
+                auto map = song_data[index].toMap();
+                map["value"] = duration;
+                song_data[index] = map;
+            }
+        }
+
+    }
+
+    {
+        // update song date
+        QDateTime dt;
+        dt.setTimeZone(QTimeZone::systemTimeZone());
+        auto current_time = QString::number(dt.currentSecsSinceEpoch());
+        int index = lambda_get_map_index_by_id(12/*id of Update Date field*/);
+        if(index == -1)
+        {
+            song_data.append(
+                QVariant(
+                    QVariantMap({{"id", 12/*id of Update Date field*/},{"value", current_time}})));
+        }
+        else
+        {
+            auto map = song_data[index].toMap();
+            map["value"] = current_time;
+            song_data[index] = map;
+        }
+    }
+
+
+    BEGIN_TRANSACTION
+    {
+        // ------------------------------ add values to table songs_tags -----------------------------
+
+        for(const auto &param : song_data)
+        {
+
+            auto map = param.toMap();
+            if(!query.prepare("UPDATE songs_tags SET "
+                               "value = :value "
+                               "WHERE song_id = :song_id AND tag_id = :tag_id;"))
+            {
+                WR << "error while preparing INSERT INTO songs_tags query " << query.lastError();
+                DB << "last query: " << query.lastQuery();
+                DB << "cancelling transaction ...";
+                m_database.rollback();
+                emit this->signalEditSongError(
+                    "error while preparing INSERT INTO songs_tags query " + query.lastError().text());
+                return;
+            }
+
+            query.bindValue(":value", this->notNull(map["value"].toString()));
+            query.bindValue(":song_id", song_id);
+            query.bindValue(":tag_id", map["id"].toInt());
+
+            this->queryToFile(query.lastQuery(), query.boundValueNames(), query.boundValues());
+
+            if(!query.exec())
+            {
+                WR << "error while executing UPDATE songs_tags query " << query.lastError();
+                DB << "last query: " << query.lastQuery();
+                DB << "values: {song_id: '" << song_id << "', tag_id: '" << map["id"].toInt()
+                   << "', value: '" << map["value"].toString() << "'}";
+                DB << "cancelling transaction ...";
+                m_database.rollback();
+                emit this->signalEditSongError(
+                    "error while executing UPDATE songs_tags query " + query.lastError().text());
+                return;
+            }
+        }
+    }
+    END_TRANSACTION(signalEditSongError)
+
+    ///
+    /// NOTE: after these operations values in songs_tags won't be in numerical order (i mean tag_id)
+    ///
+
+    this->clear_models_memory(); // after that, if user enter any model (allSongs, addSong, editTag, ...), data for him will be loaded again
+
+    DB << "song ( id:" << song_id << ") edited correctly!";
+    emit this->signalEditedSong();
+}
+
+void Database::deleteSong(int song_id)
+{
+    IS_DATABASE_OPEN(signalDeleteSongError)
+
+    BEGIN_TRANSACTION
+    {
+        QSqlQuery query(m_database);
+        if(!query.prepare("DELETE FROM songs WHERE id = :id")){
+            WR << "error while preparing DELETE song query with id: " << song_id << ", error: " << query.lastError();
+            emit this->signalDeleteSongError("error while preparing DELETE song query with id: "
+                                             + QString::number(song_id) + ", error: " + query.lastError().text());
+            return;
+        }
+        query.bindValue(":id", song_id);
+        this->queryToFile(query.lastQuery(), query.boundValueNames(), query.boundValues());
+        if(!query.exec()){
+            WR << "error while executing DELETE song query with id: " << song_id << ", error: " << query.lastError();
+            emit this->signalDeleteSongError("error while executing DELETE song query with id: "
+                                             + QString::number(song_id) + ", error: " + query.lastError().text());
+            return;
+        }
+
+        // records in songs_tags, that contains deleted song_id will be also deleted because of constraint "ON DELETE CASCADE"
+        // actually i find out that "ON DELETE CASCADE" is not working (but earlier worked :<)... then i will make it the hard way...
+
+        if(!query.prepare("DELETE FROM songs_tags WHERE song_id = :id")){
+            WR << "error while preparing DELETE songs_tags query with id: " << song_id << ", error: " << query.lastError();
+            emit this->signalDeleteSongError("error while preparing DELETE songs_tags query with id: "
+                                             + QString::number(song_id) + ", error: " + query.lastError().text());
+            return;
+        }
+        query.bindValue(":id", song_id);
+        this->queryToFile(query.lastQuery(), query.boundValueNames(), query.boundValues());
+        if(!query.exec()){
+            WR << "error while executing DELETE songs_tags query with id: " << song_id << ", error: " << query.lastError();
+            emit this->signalDeleteSongError("error while executing DELETE songs_tags query with id: "
+                                             + QString::number(song_id) + ", error: " + query.lastError().text());
+            return;
+        }
+    }
+    END_TRANSACTION(signalDeleteSongError)
+
+    this->clear_models_memory(); // after that, if user enter any model (allSongs, addSong, editTag, ...), data for him will be loaded again
+
+    DB << "song with id: " << song_id << " deleted correctly";
+    emit this->signalDeletedSong();
+}
+
+void Database::addTag(QVariantList new_tag_data)
+{
+    IS_DATABASE_OPEN(signalAddTagError)
+
+    /*
+        received structure:
+
+        new_tag_data - QVariantList:
+            type - QString: "param" or "song"
+            id - int: from QML fields
+            value - QString: from QML fields
+
+        example:
+        QList(
+            QVariant(
+                QVariantMap,
+                QMap(
+                    ("delegate_type", QVariant(QString, "param"))
+                    ("name", QVariant(QString, "Name"))
+                    ("value", QVariant(QString, "some tag name"))
+                )
+            ),
+            QVariant(
+                QVariantMap,
+                QMap(
+                    ("delegate_type", QVariant(QString, "param"))
+                    ("name", QVariant(QString, "Description"))
+                    ("value", QVariant(QString, ""))
+                )
+            ),
+
+            QVariant(
+                QVariantMap,
+                QMap(
+                    ("delegate_type", QVariant(QString, "song"))
+                    ("id", QVariant(int, 1))
+                    ("value", QVariant(QString, "0"))
+                )
+            ),
+            ...
+        )
+
+        NOTE: received structure contains only editable fields
+    */
+
+    // ------------------------------ test tag name ifis unique -----------------------------
+    QString tag_name = new_tag_data[0/* 0 should be Name*/].toMap()["value"].toString();
+
+    QSqlQuery query(m_database);
+    QString query_text("SELECT id FROM tags WHERE name = :name;");
+    if(!query.prepare(query_text))
+    {
+        WR << "error while prepating SELECT query " << query.lastError();
+        emit this->signalAddTagError("error while prepating SELECT query " + query.lastError().text());
+        return;
+    }
+
+    query.bindValue(":name", tag_name);
+
+    this->queryToFile(query.lastQuery(), query.boundValueNames(), query.boundValues());
+    if(!query.exec())
+    {
+        WR << "error while executing SELECT query " << query.lastError();
+        emit this->signalAddTagError("error while executing SELECT query " + query.lastError().text());
+        return;
+    }
+
+    if(query.next())
+    {
+        // if select query return any records, that means in db exist tag with the same name
+        // can't be any other tag with the same name as given
+        DB << "Tag name should be unique, but this name belong to Tag with id =" << query.value(0).toInt();
+        emit this->signalAddTagError(
+            "Tag name should be unique, but this name belong to Tag with id = " + query.value(0).toString());
+        return;
+    }
+
+    int tag_id;
+
+    // ------------------------------ split data params and songs -----------------------------
+
+    QMap<QString, QString> got_params;
+    QMap<int, QString> got_songs;
+    for(const auto &i : new_tag_data)
+    {
+        auto map = i.toMap(); // Name, Description, Type
+        if(map["delegate_type"].toString() == "param")
+            got_params.insert(map["name"].toString(), map["value"].toString());
+        else if(map["delegate_type"].toString() == "song")
+            got_songs.insert(map["id"].toInt(), map["value"].toString());
+    }
+
+    BEGIN_TRANSACTION
+    {
+        // ------------------------------ add new tag to database -----------------------------
+
+        if(!query.prepare("INSERT INTO tags "
+                           "(name, description, add_date, update_date, "
+                           "type, is_immutable, is_editable, is_required) "
+                           "VALUES "
+                           "(:name, :desc, :addd, :updd, :type, 0, 1, 0);"))
+        {
+            WR << "error while preparing INSERT INTO tags query " << query.lastError();
+            DB << "last query: " << query.lastQuery();
+            DB << "cancelling transaction ...";
+            m_database.rollback();
+            emit this->signalAddTagError(
+                "error while preparing INSERT INTO tags query " + query.lastError().text());
+            return;
+        }
+
+        QDateTime dt;
+        dt.setTimeZone(QTimeZone::systemTimeZone());
+        auto current_time = dt.currentSecsSinceEpoch();
+
+        query.bindValue(":name", this->notNull(got_params["Name"]));
+        query.bindValue(":desc", this->notNull(got_params["Description"]));
+        query.bindValue(":addd", current_time);
+        query.bindValue(":updd", current_time);
+        query.bindValue(":type", got_params["Type"].toInt());
+
+        this->queryToFile(query.lastQuery(), query.boundValueNames(), query.boundValues());
+        if(!query.exec()){
+            WR << "error while executing INSERT INTO tags query " << query.lastError();
+            DB << "cancelling transaction ...";
+            m_database.rollback();
+            emit this->signalAddTagError(
+                "error while executing INSERT INTO tags query " + query.lastError().text());
+            return;
+        }
+
+        tag_id = query.lastInsertId().toInt();
+
+        // ------------------------------ add values to table songs_tags -----------------------------
+
+        for(auto it = got_songs.constBegin(); it != got_songs.constEnd(); ++it)
+        {
+            if(!query.prepare("INSERT INTO songs_tags (song_id, tag_id, value) VALUES (:song_id, :tag_id, :value);"))
+            {
+                WR << "error while preparing INSERT INTO songs_tags query " << query.lastError();
+                DB << "last query: " << query.lastQuery();
+                DB << "cancelling transaction ...";
+                m_database.rollback();
+                emit this->signalAddTagError(
+                    "error while preparing INSERT INTO songs_tags query " + query.lastError().text());
+                return;
+            }
+
+            query.bindValue(":song_id", it.key());
+            query.bindValue(":tag_id", tag_id);
+            query.bindValue(":value", this->notNull(it.value()));
+
+            this->queryToFile(query.lastQuery(), query.boundValueNames(), query.boundValues());
+
+            if(!query.exec())
+            {
+                WR << "error while executing INSERT INTO songs_tags query " << query.lastError();
+                DB << "last query: " << query.lastQuery();
+                DB << "values: {song_id: '" << it.key() << "', tag_id: '" << tag_id
+                   << "', value: '" << it.value() << "'}";
+                DB << "cancelling transaction ...";
+                m_database.rollback();
+                emit this->signalAddTagError(
+                    "error while executing INSERT INTO songs_tags query " + query.lastError().text());
+                return;
+            }
+        }
+    }
+    END_TRANSACTION(signalAddTagError)
+
+    // after that, if user enter any model (allSongs, addSong, editTag, ...),
+    // data for him need to be loaded again
+    this->clear_models_memory();
+
+    DB << "tag ( id:" << tag_id << ") added correctly!";
+    emit this->signalAddedTag();
+}
+
+void Database::editTag(int tag_id, QVariantList tag_data)
+{
+    IS_DATABASE_OPEN(signalEditTagError)
+
+    /*
+        received structure:
+
+        new_tag_data - QVariantList:
+            type - QString: "param" or "song"
+            id - int: from QML fields
+            value - QString: from QML fields
+
+        example:
+        QList(
+            QVariant(
+                QVariantMap,
+                QMap(
+                    ("delegate_type", QVariant(QString, "param"))
+                    ("name", QVariant(QString, "Name"))
+                    ("value", QVariant(QString, "some tag name"))
+                )
+            ),
+            QVariant(
+                QVariantMap,
+                QMap(
+                    ("delegate_type", QVariant(QString, "param"))
+                    ("name", QVariant(QString, "Description"))
+                    ("value", QVariant(QString, ""))
+                )
+            ),
+
+            QVariant(
+                QVariantMap,
+                QMap(
+                    ("delegate_type", QVariant(QString, "song"))
+                    ("id", QVariant(int, 1))
+                    ("value", QVariant(QString, "0"))
+                )
+            ),
+            ...
+        )
+
+        NOTE: received structure contains only editable fields
+    */
+
+    // ------------------------------ test tag name if is unique -----------------------------
+    QString tag_name = tag_data[0/* 0 should be Name*/].toMap()["value"].toString();
+
+    QSqlQuery query(m_database);
+    QString query_text("SELECT id FROM tags WHERE name = :name;");
+    if(!query.prepare(query_text))
+    {
+        WR << "error while prepating SELECT query " << query.lastError();
+        emit this->signalEditTagError("error while prepating SELECT query " + query.lastError().text());
+        return;
+    }
+
+    query.bindValue(":name", tag_name);
+
+    this->queryToFile(query.lastQuery(), query.boundValueNames(), query.boundValues());
+    if(!query.exec())
+    {
+        WR << "error while executing SELECT query " << query.lastError();
+        emit this->signalEditTagError("error while executing SELECT query " + query.lastError().text());
+        return;
+    }
+
+    if(query.next())
+    {
+        if(query.value(0).toInt() != tag_id)
+        {
+            // if select query return any record with different id that current
+            //   that means in db exist tag with the same name as given
+            // if return record with the same id, that means user not changed tag name while editing
+            DB << "Tag name should be unique, but this name belong to Tag with id =" << query.value(0).toInt();
+            emit this->signalEditTagError(
+                "Tag name should be unique, but this name belong to Tag with id = " + query.value(0).toString());
+            return;
+        }
+    }
+
+    // ------------------------------ split data params and songs -----------------------------
+
+    QMap<QString, QString> got_params;
+    QMap<int, QString> got_songs;
+    for(const auto &i : tag_data)
+    {
+        auto map = i.toMap(); // Name, Description
+        if(map["delegate_type"].toString() == "param")
+            got_params.insert(map["name"].toString(), map["value"].toString());
+        else if(map["delegate_type"].toString() == "song")
+            got_songs.insert(map["id"].toInt(), map["value"].toString());
+    }
+
+    BEGIN_TRANSACTION
+    {
+        // ------------------------------ update tag in database -----------------------------
+
+        if(!query.prepare("UPDATE tags SET "
+                           "name = :name, description = :desc, update_date = :updd "
+                           "WHERE id = :id;"))
+        {
+            WR << "error while preparing UPDATE tags query " << query.lastError();
+            DB << "last query: " << query.lastQuery();
+            DB << "cancelling transaction ...";
+            m_database.rollback();
+            emit this->signalEditTagError(
+                "error while preparing UPDATE tags query " + query.lastError().text());
+            return;
+        }
+
+        QDateTime dt;
+        dt.setTimeZone(QTimeZone::systemTimeZone());
+        auto current_time = dt.currentSecsSinceEpoch();
+
+        query.bindValue(":name", this->notNull(got_params["Name"]));
+        query.bindValue(":desc", this->notNull(got_params["Description"]));
+        query.bindValue(":updd", current_time);
+        query.bindValue(":id", tag_id);
+
+        this->queryToFile(query.lastQuery(), query.boundValueNames(), query.boundValues());
+        if(!query.exec()){
+            WR << "error while executing UPDATE tags query " << query.lastError();
+            DB << "cancelling transaction ...";
+            m_database.rollback();
+            emit this->signalEditTagError(
+                "error while executing UPDATE tags query " + query.lastError().text());
+            return;
+        }
+
+        // ------------------------------ update values in table songs_tags -----------------------------
+
+        for(auto it = got_songs.constBegin(); it != got_songs.constEnd(); ++it)
+        {
+            if(!query.prepare("UPDATE songs_tags SET value = :value WHERE song_id = :song_id AND tag_id = :tag_id;"))
+            {
+                WR << "error while preparing UPDATE songs_tags query " << query.lastError();
+                DB << "last query: " << query.lastQuery();
+                DB << "cancelling transaction ...";
+                m_database.rollback();
+                emit this->signalEditTagError(
+                    "error while preparing UPDATE songs_tags query " + query.lastError().text());
+                return;
+            }
+
+            query.bindValue(":value", this->notNull(it.value()));
+            query.bindValue(":song_id", it.key());
+            query.bindValue(":tag_id", tag_id);
+
+            this->queryToFile(query.lastQuery(), query.boundValueNames(), query.boundValues());
+
+            if(!query.exec())
+            {
+                WR << "error while executing UPDATE songs_tags query " << query.lastError();
+                DB << "last query: " << query.lastQuery();
+                DB << "values: {song_id: '" << it.key() << "', tag_id: '" << tag_id
+                   << "', value: '" << it.value() << "'}";
+                DB << "cancelling transaction ...";
+                m_database.rollback();
+                emit this->signalEditTagError(
+                    "error while executing UPDATE songs_tags query " + query.lastError().text());
+                return;
+            }
+        }
+    }
+    END_TRANSACTION(signalEditTagError)
+
+    // after that, if user enter any model (allSongs, addSong, editTag, ...),
+    // data for him need to be loaded again
+    this->clear_models_memory();
+
+    DB << "tag ( id:" << tag_id << ") updated correctly!";
+    emit this->signalEditedTag();
+}
+
+void Database::deleteTag(int tag_id)
+{
+    IS_DATABASE_OPEN(signalDeleteTagError)
+
+    BEGIN_TRANSACTION
+    {
+        QSqlQuery query(m_database);
+        if(!query.prepare("DELETE FROM tags WHERE id = :id")){
+            WR << "error while preparing DELETE tag query with id: " << tag_id << ", error: " << query.lastError();
+            emit this->signalDeleteTagError("error while preparing DELETE tag query with id: "
+                                            + QString::number(tag_id) + ", error: " + query.lastError().text());
+            return;
+        }
+        query.bindValue(":id", tag_id);
+        DB << query.boundValues();
+        // this->queryToFile();
+        this->queryToFile(query.lastQuery(), query.boundValueNames(), query.boundValues());
+        if(!query.exec()){
+            WR << "error while executing DELETE tag query with id: " << tag_id << ", error: " << query.lastError();
+            emit this->signalDeleteTagError("error while executing DELETE tag query with id: "
+                                            + QString::number(tag_id) + ", error: " + query.lastError().text());
+            return;
+        }
+
+        // records in songs_tags, that contains deleted tag_id will be also deleted because of constraint "ON DELETE CASCADE"
+        // actually i find out that "ON DELETE CASCADE" is not working (but earlier worked :<)... then i will make it the hard way...
+
+        if(!query.prepare("DELETE FROM songs_tags WHERE tag_id = :id")){
+            WR << "error while preparing DELETE songs_tags query with id: " << tag_id << ", error: " << query.lastError();
+            emit this->signalDeleteTagError("error while preparing DELETE songs_tags query with id: "
+                                            + QString::number(tag_id) + ", error: " + query.lastError().text());
+            return;
+        }
+        query.bindValue(":id", tag_id);
+        DB << query.boundValues();
+        // this->queryToFile();
+        this->queryToFile(query.lastQuery(), query.boundValueNames(), query.boundValues());
+        if(!query.exec()){
+            WR << "error while executing DELETE songs_tags query with id: " << tag_id << ", error: " << query.lastError();
+            emit this->signalDeleteTagError("error while executing DELETE songs_tags query with id: "
+                                            + QString::number(tag_id) + ", error: " + query.lastError().text());
+            return;
+        }
+    }
+    END_TRANSACTION(signalDeleteTagError)
+
+    this->clear_models_memory(); // after that, if user enter any model (allSongs, addSong, editTag, ...), data for him will be loaded again
+
+    DB << "tag with id: " << tag_id << " deleted correctly";
+    emit this->signalDeletedTag();
+}
+
+void Database::editPlaylistSong(int song_id, QVariantList song_data)
+{
+    // NOTE: loaded data, can be reached by m_edit_song_model
+
+    QString load_error;
+    auto lambda_model = [&](QString desc){
+        /// [&] means get reference from parents variables
+        /// desc is value received from signalEditSongModelLoadError(QString desc)
+        load_error = desc; // some warning occur, but i don't see a better way
+    };
+
+    auto connection_model = connect(this, &Database::signalEditSongError, lambda_model);
+
+    this->editSong(song_id, song_data);
+
+    if(load_error != ""){
+        WR << "Error while editing song for editing playlist song:" << load_error;
+        emit this->signalEditPlaylistSongError("Error while editing song for editing playlist song:" + load_error);
+        return;
+    }
+    disconnect(connection_model);
+
+    emit this->signalEditedPlaylistSong();
+}
+
+// void Database::deletePlaylistSong(int song_id)
+// {
+//     // NOTE: loaded data, can be reached by m_edit_song_model
+
+//     QString load_error;
+//     auto lambda_model = [&](QString desc){
+//         /// [&] means get reference from parents variables
+//         /// desc is value received from signalEditSongModelLoadError(QString desc)
+//         load_error = desc; // some warning occur, but i don't see a better way
+//     };
+
+//     auto connection_model = connect(this, &Database::signalDeleteSongError, lambda_model);
+
+//     this->deleteSong(song_id);
+
+//     if(load_error != ""){
+//         WR << "Error while loading edit song model for edit playlist model:" << load_error;
+//         emit this->signalDeletePlaylistSongError("Error while loading edit song model for edit playlist model: " + load_error);
+//         return;
+//     }
+//     disconnect(connection_model);
+
+//     emit this->signalDeletedPlaylistSong();
+// }
 
 
 void Database::clear_models_memory()
@@ -984,6 +2674,212 @@ bool Database::endTransaction(void (Database::*signal)(QString), const char *cal
     return true;
 }
 
+
+void Database::debugPrintModel_all_songs() const
+{
+#if PRINT_MODELS_LISTS
+    DB << "|";
+    DB << "|";
+    DB << "ALL SONGS MODEL:";
+    DB << this->_debugPrintModel_SongList(m_all_songs_model);
+    DB << "|";
+    DB << "|";
+#endif
+}
+
+void Database::debugPrintModel_add_song() const
+{
+#if PRINT_MODELS_LISTS
+    DB << "|";
+    DB << "|";
+    DB << "ADD SONG MODEL:";
+    DB << this->_debugPrintModel_SongDetails(m_add_song_model);
+    DB << "|";
+    DB << "|";
+#endif
+}
+
+void Database::debugPrintModel_edit_song() const
+{
+#if PRINT_MODELS_LISTS
+    DB << "|";
+    DB << "|";
+    DB << "EDIT SONG MODEL:";
+    DB << this->_debugPrintModel_SongDetails(m_edit_song_model);
+    DB << "|";
+    DB << "|";
+#endif
+}
+
+void Database::debugPrintModel_all_tags() const
+{
+#if PRINT_MODELS_LISTS
+    DB << "|";
+    DB << "|";
+    DB << "ALL TAGS MODEL:";
+    DB << this->_debugPrintModel_TagList(m_all_tags_model);
+    DB << "|";
+    DB << "|";
+#endif
+}
+
+void Database::debugPrintModel_add_tag() const
+{
+#if PRINT_MODELS_LISTS
+    DB << "|";
+    DB << "|";
+    DB << "ADD TAG MODEL:";
+    DB << this->_debugPrintModel_TagDetails(m_add_tag_model);
+    DB << "|";
+    DB << "|";
+#endif
+}
+
+void Database::debugPrintModel_edit_tag() const
+{
+#if PRINT_MODELS_LISTS
+    DB << "|";
+    DB << "|";
+    DB << "EDIT TAG MODEL:";
+    DB << this->_debugPrintModel_TagDetails(m_edit_tag_model);
+    DB << "|";
+    DB << "|";
+#endif
+}
+
+void Database::debugPrintModel_playlist() const
+{
+#if PRINT_MODELS_LISTS
+    DB << "|";
+    DB << "|";
+    DB << "PLAYLIST MODEL:";
+    DB << this->_debugPrintModel_SongList(m_playlist_model);
+    DB << "|";
+    DB << "|";
+#endif
+}
+
+void Database::debugPrintModel_filters() const
+{
+#if PRINT_MODELS_LISTS
+    DB << "|";
+    DB << "|";
+    DB << "FILTERS MODEL:";
+    DB << this->_debugPrintModel_TagList(m_filters_model);
+    DB << "|";
+    DB << "|";
+#endif
+}
+
+QString Database::_debugPrintModel_SongList(SongList * const &model) const
+{
+    /* fistly:  XD reference to pointer variable, that is sick
+     * secondly:
+     * const pointer not variable:
+     *     const int *x - can't:  *x = 7; | can  x = &y;
+     *     int const *x - can't:  *x = 7; | can  x = &y;
+     *     int *const x - can:  *x = 7; | can't  x = &y;
+     * that way because both methods is const and if we passing an reference to a pointer,
+     *     we need to provide that place on what this pointer points won't change
+    */
+    QString obj_data("[");
+    for(const auto &s : model->c_ref_songs()){
+        obj_data += QString("{id: '%1', title: '%2', value: '%3'}")
+                        .arg(s->get_id())
+                        .arg(s->get_title(),
+                             s->get_value());
+        obj_data += (s == model->c_ref_songs().last() ? "" : ", ");
+    }
+    return obj_data + "]";
+}
+
+QString Database::_debugPrintModel_SongDetails(SongDetails* const &model) const
+{
+    /* fistly:  XD reference to pointer variable, that is sick
+     * secondly:
+     * const pointer not variable:
+     *     const int *x - can't:  *x = 7; | can  x = &y;
+     *     int const *x - can't:  *x = 7; | can  x = &y;
+     *     int *const x - can:  *x = 7; | can't  x = &y;
+     * that way because both methods is const and if we passing an reference to a pointer,
+     *     we need to provide that place on what this pointer points won't change
+    */
+    QString obj_data( QString("{song_id: '%1', tags: [").arg(model->get_id()) );
+    for(const auto &t : model->get_tags()->c_ref_tags()){
+        obj_data += QString("{id: '%1', name: '%2', value: '%3', type: '%4', "
+                            "is_immutable: '%5', is_editable: '%6', is_required: '%7'}")
+                        .arg(t->get_id())
+                        .arg(t->get_name(),
+                             t->get_value())
+                        .arg(t->get_type())
+                        .arg(t->get_is_immutable())
+                        .arg(t->get_is_editable()) // bool is a nightmare
+                        .arg(t->get_is_required());
+        obj_data += (t == model->get_tags()->c_ref_tags().last() ? "" : ", ");
+    }
+    return obj_data + "]}";
+}
+
+QString Database::_debugPrintModel_TagList(TagList * const &model) const
+{
+    /* fistly:  XD reference to pointer variable, that is sick
+     * secondly:
+     * const pointer not variable:
+     *     const int *x - can't:  *x = 7; | can  x = &y;
+     *     int const *x - can't:  *x = 7; | can  x = &y;
+     *     int *const x - can:  *x = 7; | can't  x = &y;
+     * that way because both methods is const and if we passing an reference to a pointer,
+     *     we need to provide that place on what this pointer points won't change
+    */
+    QString obj_data("[");
+    for(const auto &t : model->c_ref_tags()){
+        obj_data += QString("{id: '%1', name: '%2', value: '%3', type: '%4', "
+                            "is_immutable: '%5', is_editable: '%6', is_required: '%7'}")
+                        .arg(t->get_id())
+                        .arg(t->get_name(),
+                             t->get_value())
+                        .arg(t->get_type())
+                        .arg(t->get_is_immutable())
+                        .arg(t->get_is_editable()) // bool is a nightmare
+                        .arg(t->get_is_required());
+        obj_data += (t == model->c_ref_tags().last() ? "" : ", ");
+    }
+    return obj_data + "]";
+}
+
+QString Database::_debugPrintModel_TagDetails(TagDetails* const &model) const
+{
+    /* fistly:  XD reference to pointer variable, that is sick
+     * secondly:
+     * const pointer not variable:
+     *     const int *x - can't:  *x = 7; | can  x = &y;
+     *     int const *x - can't:  *x = 7; | can  x = &y;
+     *     int *const x - can:  *x = 7; | can't  x = &y;
+     * that way because both methods is const and if we passing an reference to a pointer,
+     *     we need to provide that place on what this pointer points won't change
+    */
+    QString obj_data(QString("{id: '%1', name: '%2', description: '%3', add_date: '%4', update_date: '%5', "
+                             "type: '%6', is_immutable: '%7', is_editable: '%8', is_required: '%9', songs: [")
+                         .arg(model->get_id())
+                         .arg(model->get_name(),
+                              model->get_description(),
+                              model->get_add_date(),
+                              model->get_update_date())
+                         .arg(model->get_type())
+                         .arg(model->get_is_immutable())
+                         .arg(model->get_is_editable()) // bool is a nightmare
+                         .arg(model->get_is_required()) );
+    for(const auto &s : model->get_songs()->c_ref_songs()){
+        obj_data += QString("{id: '%1', title: '%2', value: '%3'}")
+                        .arg(s->get_id())
+                        .arg(s->get_title(),
+                             s->get_value());
+        obj_data += (s == model->get_songs()->c_ref_songs().last() ? "" : ", ");
+    }
+    return obj_data + "]}";
+}
+
+
 void Database::queryToFile(QString query, QStringList param_names, QVariantList param_values) const
 {
     if(!m_saveExecQuery)
@@ -1083,6 +2979,6 @@ QSqlQuery Database::prepPlaylistSongsQuery()//cQls tc_names, cQls tc_values, cQl
 
     // EC(0);
     // return query;
-    emit this->signalPlaylistModelLoaded();
+    // emit this->signalPlaylistModelLoaded();
     return QSqlQuery();
 }

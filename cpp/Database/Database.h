@@ -155,7 +155,7 @@ signals:
 
     // models loading playlist
     /// finished
-    void signalPlaylistModelLoaded(SongList listofsongs);           // emited when playlist model was loaded correctly
+    void signalPlaylistModelLoaded(SongList* listofsongs);           // emited when playlist model was loaded correctly
     void signalEditPlaylistSongModelLoaded();   // emited when edit playlist song model was loaded correctly
     void signalFiltersModelLoaded();            // emited when filters model was loaded correctly to playlist
     /// error occur
@@ -273,12 +273,10 @@ private:
     bool m_saveExecQuery;
     bool m_showConstantTags;
 
-    // QString m_songs_main_path;
-
     // database handler
     QSqlDatabase m_database;
 
-    // Containers
+    // Models
     /// songs
     SongList* m_all_songs_model;
     SongDetails* m_add_song_model;
