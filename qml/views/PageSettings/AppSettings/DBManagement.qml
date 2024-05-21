@@ -135,11 +135,6 @@ Page {
         onDltClickedRB: {
             backend.database.deleteDatabase();
             // initialized after signal
-
-
-
-            console.log("DEBUG ONLY! ----- example data DBManagement.qml")
-            backend.database.createExampleData();
         }
     }
 

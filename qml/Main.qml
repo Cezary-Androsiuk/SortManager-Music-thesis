@@ -60,11 +60,11 @@ ApplicationWindow {
         function onSignalInitializeOnStartFailed(desc)
         {
             console.log("received signal onSignalInitializeOnStartFailed from Database with arg: " + desc);
-            console.log("DEBUG ONLY! ----- database example data Main.qml")
-            backend.database.initializeWithTags();
-            backend.database.createExampleData();
-            // pInitializeOnStartFailed.open();
-            // pInitializeOnStartFailed.dltDesc = desc
+            // console.log("DEBUG ONLY! ----- database example data Main.qml")
+            // backend.database.initializeWithTags();
+            // backend.database.createExampleData();
+            pInitializeOnStartFailed.open();
+            pInitializeOnStartFailed.dltDesc = desc
         }
 
         // initialize database with tags
@@ -289,6 +289,7 @@ ApplicationWindow {
         focus: true
 
         Keys.onEscapePressed: root.close()
+        Keys.onDeletePressed: backend.database.createExampleData();
         // Keys.onLeftPressed: {
         //     if(tabBar.currentIndex > 0)
         //         tabBar.currentIndex --;
