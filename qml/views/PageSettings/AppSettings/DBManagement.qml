@@ -123,6 +123,7 @@ Page {
 
     Popup1{
         id: pGlobalOk
+        dltTextMB: "OK"
     }
 
     Popup2{

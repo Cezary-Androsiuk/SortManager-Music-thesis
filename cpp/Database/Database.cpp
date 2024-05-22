@@ -29,6 +29,17 @@ Database::~Database()
 
     // all dynamically allocated variables are deleted along with the Database instance is deleting
 }
+void Database::setSaveExecQuery(bool saveExecQuery)
+{
+    m_saveExecQuery = saveExecQuery;
+}
+
+void Database::setShowConstantTags(bool showConstantTags)
+{
+    m_showConstantTags = showConstantTags;
+    // to remove all_tags_model (if was loaded)
+    this->clear_models_memory();
+}
 
 void Database::initializeOnStart()
 {
@@ -165,48 +176,53 @@ void Database::createExampleData()
 {
     QSqlQuery query(m_database);
     QList<QString> stl;
+
+#define TMP_SHORT_1 stl.append("INSERT INTO songs_tags (song_id, tag_id, value) VALUES "
+#define TMP_SHORT_2 stl.append(QString(
+
     // add song 1
     stl.append("INSERT INTO songs DEFAULT VALUES;");
-    stl.append("INSERT INTO songs_tags (song_id, tag_id, value) VALUES (1, 1, 1);");
-    stl.append("INSERT INTO songs_tags (song_id, tag_id, value) VALUES (1, 2, 'example song title');");
-    stl.append("INSERT INTO songs_tags (song_id, tag_id, value) VALUES (1, 3, 'song author');");
-    stl.append("INSERT INTO songs_tags (song_id, tag_id, value) VALUES (1, 4, 'long description');");
-    stl.append("INSERT INTO songs_tags (song_id, tag_id, value) VALUES (1, 5, 10);");
-    stl.append("INSERT INTO songs_tags (song_id, tag_id, value) VALUES (1, 6, 999);");
-    stl.append("INSERT INTO songs_tags (song_id, tag_id, value) VALUES (1, 7, 1010);");
-    stl.append("INSERT INTO songs_tags (song_id, tag_id, value) VALUES (1, 8, 'tekst piosenki');");
-    stl.append("INSERT INTO songs_tags (song_id, tag_id, value) VALUES (1, 9, 'path//');");
-    stl.append("INSERT INTO songs_tags (song_id, tag_id, value) VALUES (1, 10, 'path//');");
-    stl.append("INSERT INTO songs_tags (song_id, tag_id, value) VALUES (1, 11, 1711679000);");
-    stl.append("INSERT INTO songs_tags (song_id, tag_id, value) VALUES (1, 12, 1711679000);");
+    TMP_SHORT_1 "(1, 1, 1);");
+    TMP_SHORT_1 "(1, 2, 'example song title');");
+    TMP_SHORT_1 "(1, 3, 'song author');");
+    TMP_SHORT_1 "(1, 4, 'long description');");
+    TMP_SHORT_1 "(1, 5, 10);");
+    TMP_SHORT_1 "(1, 6, 999);");
+    TMP_SHORT_1 "(1, 7, 1010);");
+    TMP_SHORT_1 "(1, 8, 'tekst piosenki');");
+    TMP_SHORT_1 "(1, 9, 'path//');");
+    TMP_SHORT_1 "(1, 10, 'path//');");
+    TMP_SHORT_1 "(1, 11, 1711679000);");
+    TMP_SHORT_1 "(1, 12, 1711679000);");
 
     // add song 2
     stl.append("INSERT INTO songs DEFAULT VALUES;");
-    stl.append("INSERT INTO songs_tags (song_id, tag_id, value) VALUES (2, 1, 2);");
-    stl.append("INSERT INTO songs_tags (song_id, tag_id, value) VALUES (2, 2, 'new song');");
-    stl.append("INSERT INTO songs_tags (song_id, tag_id, value) VALUES (2, 3, 'new author');");
-    stl.append("INSERT INTO songs_tags (song_id, tag_id, value) VALUES (2, 4, 'longer description');");
-    stl.append("INSERT INTO songs_tags (song_id, tag_id, value) VALUES (2, 5, 10);");
-    stl.append("INSERT INTO songs_tags (song_id, tag_id, value) VALUES (2, 6, 999);");
-    stl.append("INSERT INTO songs_tags (song_id, tag_id, value) VALUES (2, 7, 1010);");
-    stl.append("INSERT INTO songs_tags (song_id, tag_id, value) VALUES (2, 8, 'tekst piosenki');");
-    stl.append("INSERT INTO songs_tags (song_id, tag_id, value) VALUES (2, 9, 'path//');");
-    stl.append("INSERT INTO songs_tags (song_id, tag_id, value) VALUES (2, 10, 'path//');");
-    stl.append("INSERT INTO songs_tags (song_id, tag_id, value) VALUES (2, 11, 1711679000);");
-    stl.append("INSERT INTO songs_tags (song_id, tag_id, value) VALUES (2, 12, 1711679000);");
+    TMP_SHORT_1 "(2, 1, 2);");
+    TMP_SHORT_1 "(2, 2, 'new song');");
+    TMP_SHORT_1 "(2, 3, 'new author');");
+    TMP_SHORT_1 "(2, 4, 'longer description');");
+    TMP_SHORT_1 "(2, 5, 10);");
+    TMP_SHORT_1 "(2, 6, 999);");
+    TMP_SHORT_1 "(2, 7, 1010);");
+    TMP_SHORT_1 "(2, 8, 'tekst piosenki');");
+    TMP_SHORT_1 "(2, 9, 'path//');");
+    TMP_SHORT_1 "(2, 10, 'path//');");
+    TMP_SHORT_1 "(2, 11, 1711679000);");
+    TMP_SHORT_1 "(2, 12, 1711679000);");
 
-#define TMP_SHORT stl.append(QString(
     // add tag 1
-    TMP_SHORT"INSERT INTO tags (name, description, add_date, update_date, type, is_immutable, is_editable, is_required) VALUES ('own tag', 'own tag desc', 1711679891, 1711679891, 2, 0, 1, 0);"));
-    TMP_SHORT"INSERT INTO songs_tags (song_id, tag_id) SELECT songs.id AS song_id, 13 AS tag_id FROM songs;"));
-    TMP_SHORT"UPDATE songs_tags SET value = '0' WHERE song_id = 1 AND tag_id = 13;"));
-    TMP_SHORT"UPDATE songs_tags SET value = '1' WHERE song_id = 2 AND tag_id = 13;"));
+    TMP_SHORT_2 "INSERT INTO tags (name, description, add_date, update_date, type, is_immutable, is_editable, is_required) "
+                "VALUES ('own tag', 'own tag desc', 1711679891, 1711679891, 2, 0, 1, 0);"));
+    TMP_SHORT_2 "INSERT INTO songs_tags (song_id, tag_id) SELECT songs.id AS song_id, 13 AS tag_id FROM songs;"));
+    TMP_SHORT_2 "UPDATE songs_tags SET value = '0' WHERE song_id = 1 AND tag_id = 13;"));
+    TMP_SHORT_2 "UPDATE songs_tags SET value = '1' WHERE song_id = 2 AND tag_id = 13;"));
 
     // add tag 2
-    TMP_SHORT"INSERT INTO tags (name, description, add_date, update_date, type, is_immutable, is_editable, is_required) VALUES ('own more flexible tag', 'flexible desc', 1711679891, 1711679891, 1, 0, 1, 0);"));
-    TMP_SHORT"INSERT INTO songs_tags (song_id, tag_id) SELECT songs.id AS song_id, 14 AS tag_id FROM songs;"));
-    TMP_SHORT"UPDATE songs_tags SET value = '%1' WHERE song_id = 1 AND tag_id = 14;").arg(""));
-    TMP_SHORT"UPDATE songs_tags SET value = '%1' WHERE song_id = 2 AND tag_id = 14;").arg("some text that user input while adding tag"));
+    TMP_SHORT_2 "INSERT INTO tags (name, description, add_date, update_date, type, is_immutable, is_editable, is_required) "
+                "VALUES ('own more flexible tag', 'flexible desc', 1711679891, 1711679891, 1, 0, 1, 0);"));
+    TMP_SHORT_2 "INSERT INTO songs_tags (song_id, tag_id) SELECT songs.id AS song_id, 14 AS tag_id FROM songs;"));
+    TMP_SHORT_2 "UPDATE songs_tags SET value = '%1' WHERE song_id = 1 AND tag_id = 14;").arg(""));
+    TMP_SHORT_2 "UPDATE songs_tags SET value = '%1' WHERE song_id = 2 AND tag_id = 14;").arg("some text that user input while adding tag"));
 
     for(const auto &st : stl)
     {
@@ -261,23 +277,6 @@ void Database::initializeFilters()
 
     DB << "filters loaded correctly";
     emit this->signalFiltersInitailized();
-}
-
-void Database::updateFilters()
-{
-
-}
-
-void Database::setSaveExecQuery(bool saveExecQuery)
-{
-    m_saveExecQuery = saveExecQuery;
-}
-
-void Database::setShowConstantTags(bool showConstantTags)
-{
-    m_showConstantTags = showConstantTags;
-    // to remove all_tags_model (if was loaded)
-    this->clear_models_memory();
 }
 
 void Database::exportDatabase(const QUrl &output_qurl)
@@ -1405,9 +1404,10 @@ void Database::loadEditTagModel(int tag_id)
 
 void Database::loadPlaylistModel()
 {
+    DB << " - staring playlist load";
     if(m_playlist_model != nullptr){
         DB << "playlist model was already loaded - skipped";
-        emit this->signalPlaylistModelLoaded(m_playlist_model);
+        emit this->signalPlaylistModelLoaded();
         return;
     }
 
@@ -1425,13 +1425,13 @@ void Database::loadPlaylistModel()
         emit this->signalPlaylistModelLoadError("error while executing query " + query.lastError().text());
         return;
     }
-    DB << "query executed";
+    DB << " - query executed";
 
     m_playlist_model = new SongList(this);
 
     // read selected data
     while(query.next()){
-        DB << "query iterate start";
+        DB << " - query iterate start";
         auto record = query.record();
 
         int song_id = record.value(0).toInt();
@@ -1443,15 +1443,15 @@ void Database::loadPlaylistModel()
         // value is not needed
 
         m_playlist_model->songs().append(song);
-        DB << "query iterate stop";
+        DB << " - query iterate stop";
     }
 
-    DB << "iteration finished";
+    DB << " - iteration finished";
 
     this->debugPrintModel_playlist();
 
     DB << "playlist model loaded correctly!";
-    emit this->signalPlaylistModelLoaded(m_playlist_model);
+    emit this->signalPlaylistModelLoaded();
 }
 
 void Database::loadEditPlaylistSongModel(int song_id)
@@ -1547,47 +1547,6 @@ void Database::loadFiltersModel()
 
     DB << "filters model loaded correctly!";
     emit this->signalFiltersModelLoaded();
-}
-
-
-SongList *Database::get_all_songs_model() const
-{
-    return m_all_songs_model;
-}
-
-SongDetails *Database::get_edit_song_model() const
-{
-    return m_edit_song_model;
-}
-
-SongDetails *Database::get_add_song_model() const
-{
-    return m_add_song_model;
-}
-
-TagList *Database::get_all_tags_model() const
-{
-    return m_all_tags_model;
-}
-
-TagDetails *Database::get_edit_tag_model() const
-{
-    return m_edit_tag_model;
-}
-
-TagDetails *Database::get_add_tag_model() const
-{
-    return m_add_tag_model;
-}
-
-SongList *Database::get_playlist_model() const
-{
-    return m_playlist_model;
-}
-
-TagList *Database::get_filters_model() const
-{
-    return m_filters_model;
 }
 
 void Database::addSong(QVariantList new_song_data)
@@ -2622,6 +2581,11 @@ void Database::editPlaylistSong(int song_id, QVariantList song_data)
     emit this->signalEditedPlaylistSong();
 }
 
+void Database::updateFilters(QVariantList filters)
+{
+
+}
+
 // void Database::deletePlaylistSong(int song_id)
 // {
 //     // NOTE: loaded data, can be reached by m_edit_song_model
@@ -2678,6 +2642,7 @@ void Database::clear_models_memory()
     m_edit_tag_model = nullptr;
 
 
+    // playlist model will be only deleted while refreshing playlist (change filters / press refresh button / start initialize)
     // if(m_playlist_songs_model != nullptr)
     //     delete m_playlist_songs_model;
     // m_playlist_songs_model = nullptr;
@@ -2758,7 +2723,6 @@ void Database::debugPrint_filters() const
     DB << "|";
 #endif
 }
-
 
 void Database::debugPrintModel_all_songs() const
 {
@@ -2977,7 +2941,6 @@ void Database::loadFilters()
 
 }
 
-
 void Database::queryToFile(QString query, QStringList param_names, QVariantList param_values) const
 {
     if(!m_saveExecQuery)
@@ -3079,4 +3042,44 @@ QSqlQuery Database::prepPlaylistSongsQuery()//cQls tc_names, cQls tc_values, cQl
     // return query;
     // emit this->signalPlaylistModelLoaded();
     return QSqlQuery();
+}
+
+SongList *Database::get_all_songs_model() const
+{
+    return m_all_songs_model;
+}
+
+SongDetails *Database::get_edit_song_model() const
+{
+    return m_edit_song_model;
+}
+
+SongDetails *Database::get_add_song_model() const
+{
+    return m_add_song_model;
+}
+
+TagList *Database::get_all_tags_model() const
+{
+    return m_all_tags_model;
+}
+
+TagDetails *Database::get_edit_tag_model() const
+{
+    return m_edit_tag_model;
+}
+
+TagDetails *Database::get_add_tag_model() const
+{
+    return m_add_tag_model;
+}
+
+SongList *Database::get_playlist_model() const
+{
+    return m_playlist_model;
+}
+
+TagList *Database::get_filters_model() const
+{
+    return m_filters_model;
 }

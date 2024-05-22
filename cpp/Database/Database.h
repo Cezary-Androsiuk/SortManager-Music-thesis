@@ -31,36 +31,19 @@
 #include "cpp/Tag/TagList.h"
 #include "cpp/Filter/Filter.h"
 
-// declaration of error code
-#define D_EC int* error_code = nullptr
+#define DATABASE_PATH QString("./SortManager-Music.db")     /// database directory
+#define DB_TAG_NAME_REG_EX "^[a-z][_a-z0-9]*$"              /// regular expression describes what is naming convension of tag names in database
+#define QUERY_LOG_PATH "./query.log"                        /// query log directory - stores all executed queries
+#define QUERY_ARCHIVE_LOG_PATH "./query_prev.log"           /// previous query log directory (as archive) - stores all executed queries
+#define PRINT_MODELS_LISTS true                             /// if true -> model will be printed to console, before will be sended to QML after load
 
-// path to database
-#define DATABASE_PATH QString("./SortManager-Music.db")
-
-// regular expression describes what is naming convension of tag names in database
-#define DB_TAG_NAME_REG_EX "^[a-z][_a-z0-9]*$"
-
-// path to query log file
-#define QUERY_LOG_PATH "./query.log"
-#define QUERY_ARCHIVE_LOG_PATH "./query_prev.log"
-#define PRINT_MODELS_LISTS true
-
-// shortcuts that make code more readable and consistent
+// ------------------------- shortcuts that make code more readable and consistent ------------------------- //
+/// is database open
 #define IS_DATABASE_OPEN(signal) if(!Database::isDatabaseOpen(&Database::signal, __PRETTY_FUNCTION__)) return;
-
-// #define BEGIN_TRANSACTION(signal) if(!Database::beginTransaction(&Database::signal, __PRETTY_FUNCTION__)) return;
-#define BEGIN_TRANSACTION \
-/*DB << "before BEGIN_TRANSACTION";*/\
-bool is_transaction_started_here = false; \
-if(m_database.transaction()){\
-/*DB << "transaction started";*/\
-is_transaction_started_here = true; }
-
-#define END_TRANSACTION(signal)\
-/*DB << "before END_TRANSACTION";*/\
-if(is_transaction_started_here){\
-/*DB << "transaction stopped";*/\
-if(!Database::endTransaction(&Database::signal, __PRETTY_FUNCTION__)) return; }
+/// transactions start
+#define BEGIN_TRANSACTION bool is_transaction_started_here = false; if(m_database.transaction()){ is_transaction_started_here = true; }
+/// transactions end
+#define END_TRANSACTION(signal) if(is_transaction_started_here){ if(!Database::endTransaction(&Database::signal, __PRETTY_FUNCTION__)) return; }
 
 
 class Database : public QObject
@@ -100,91 +83,85 @@ public:
     explicit Database(QObject *parent = nullptr);
     ~Database();
 
-    // starting aapplication
-    Q_INVOKABLE void initializeOnStart();
-
-    // building new database
-    Q_INVOKABLE void initializeWithTags();
-    Q_INVOKABLE void createExampleData();
-
-    Q_INVOKABLE void initializeFilters();
-    Q_INVOKABLE void updateFilters();
-
-    // accessors for parent
+    // setters for personalizations
     void setSaveExecQuery(bool saveExecQuery);
     void setShowConstantTags(bool showConstantTags);
     // void set_songs_main_path(const QString &path);
 
-signals:
-    // errors should have "QString desc" because they will also send the message about error
 
-    // database init
+    /// errors should have "QString desc" because they will also send the message about error
+signals: // -------------------------------------------------- database init -------------------------------------------------- //
     /// finished
-    void signalInitializedOnStart();    // emited after database was initialized successfully
-    void signalInitializedWithTags();   // emited after database was builded successfully
+    void signalInitializedOnStart();    /// emited after database was initialized successfully
+    void signalInitializedWithTags();   /// emited after database was builded successfully
     void signalFiltersInitailized();
     /// error
-    void signalInitializeOnStartFailed(QString desc);   // emited when any error occur while initializing database on start (mostly database open error)
-    void signalInitializeWithTagsFailed(QString desc);  // emited when any error occur while initializing database with tags
+    void signalInitializeOnStartFailed(QString desc);   /// emited when any error occur while initializing database on start (mostly database open error)
+    void signalInitializeWithTagsFailed(QString desc);  /// emited when any error occur while initializing database with tags
     void signalFiltersInitailizeFailed(QString desc);
 
-    // database management
+signals: // -------------------------------------------------- db management -------------------------------------------------- //
     /// finished
-    void signalExportedDatabase();          // emited when data was correctly exported from the database to json
+    void signalExportedDatabase();          /// emited when data was correctly exported from the database to json
     void signalImportedDatabase();    //TO DELETE emited when data was correctly imported to the database
-    void signalImportedTagsToDatabase();    // emited when data was correctly imported Tags to the database
-    void signalImportedSongsToDatabase();   // emited when data was correctly imported Songs to the database
-    void signalDeletedDatabase();           // emited when data was correctly deleted from the database
+    void signalImportedTagsToDatabase();    /// emited when data was correctly imported Tags to the database
+    void signalImportedSongsToDatabase();   /// emited when data was correctly imported Songs to the database
+    void signalDeletedDatabase();           /// emited when data was correctly deleted from the database
     /// error
-    void signalExportDatabaseError(QString desc);           // emited when an error occur while exporting data from the database to json
+    void signalExportDatabaseError(QString desc);           /// emited when an error occur while exporting data from the database to json
     void signalImportDatabaseError(QString desc);     //TO DELETE emited when an error occur while importing data to the database
-    void signalImportTagsToDatabaseError(QString desc);     // emited when an error occur while importing Tags data to the database
-    void signalImportSongsToDatabaseError(QString desc);    // emited when an error occur while importing Songs data to the database
-    void signalDeleteDatabaseError(QString desc);           // emited when an error occur while deleting data from the database
+    void signalImportTagsToDatabaseError(QString desc);     /// emited when an error occur while importing Tags data to the database
+    void signalImportSongsToDatabaseError(QString desc);    /// emited when an error occur while importing Songs data to the database
+    void signalDeleteDatabaseError(QString desc);           /// emited when an error occur while deleting data from the database
 
-    // models loading songs tags
+signals: // -------------------------------------------------- load models -------------------------------------------------- //
+    // songs
     /// finished
-    void signalAllSongsModelLoaded();       // emited when all songs model was loaded correctly
-    void signalAddSongModelLoaded();        // emited when add song model was loaded correctly
-    void signalEditSongModelLoaded();       // emited when edit song model was loaded correctly
-    void signalAllTagsModelLoaded();        // emited when all tags model was loaded correctly
-    void signalAddTagModelLoaded();         // emited when add tag model was loaded correctly
-    void signalEditTagModelLoaded();        // emited when edit tag model was loaded correctly
+    void signalAllSongsModelLoaded();       /// emited when all songs model was loaded correctly
+    void signalAddSongModelLoaded();        /// emited when add song model was loaded correctly
+    void signalEditSongModelLoaded();       /// emited when edit song model was loaded correctly
     /// error
-    void signalAllSongsModelLoadError(QString desc);    // emited when any error occur while loading all songs model
-    void signalAddSongModelLoadError(QString desc);     // emited when any error occur while loading add song model
-    void signalEditSongModelLoadError(QString desc);    // emited when any error occur while loading edit song model
-    void signalAllTagsModelLoadError(QString desc);     // emited when any error occur while loading all tags model
-    void signalAddTagModelLoadError(QString desc);      // emited when any error occur while loading add tag model
-    void signalEditTagModelLoadError(QString desc);     // emited when any error occur while loading edit tag model
+    void signalAllSongsModelLoadError(QString desc);    /// emited when any error occur while loading all songs model
+    void signalAddSongModelLoadError(QString desc);     /// emited when any error occur while loading add song model
+    void signalEditSongModelLoadError(QString desc);    /// emited when any error occur while loading edit song model
 
-    // models loading playlist
+    // tags
     /// finished
-    void signalPlaylistModelLoaded(SongList* listofsongs);           // emited when playlist model was loaded correctly
-    void signalEditPlaylistSongModelLoaded();   // emited when edit playlist song model was loaded correctly
-    void signalFiltersModelLoaded();            // emited when filters model was loaded correctly to playlist
-    /// error occur
-    void signalPlaylistModelLoadError(QString desc);            // emited when any error occur while loading playlist model
-    void signalEditPlaylistSongModelLoadError(QString desc);    // emited when any error occur while loading edit playlist song model
-    void signalFiltersModelLoadError(QString desc);             // emited when any error occur while loading filters model
+    void signalAllTagsModelLoaded();        /// emited when all tags model was loaded correctly
+    void signalAddTagModelLoaded();         /// emited when add tag model was loaded correctly
+    void signalEditTagModelLoaded();        /// emited when edit tag model was loaded correctly
+    /// error
+    void signalAllTagsModelLoadError(QString desc);     /// emited when any error occur while loading all tags model
+    void signalAddTagModelLoadError(QString desc);      /// emited when any error occur while loading add tag model
+    void signalEditTagModelLoadError(QString desc);     /// emited when any error occur while loading edit tag model
 
-    // actions on database
+    // playlist
     /// finished
-    void signalAddedSong();     // emited when song was added correctly
-    void signalEditedSong();    // emited when song was edited correctly
-    void signalDeletedSong();   // emited when song was deleted correctly
-    void signalAddedTag();      // emited when tag was added correctly
-    void signalEditedTag();     // emited when tag was edited correctly
-    void signalDeletedTag();    // emited when tag was deleted correctly
+    void signalPlaylistModelLoaded();           /// emited when playlist model was loaded correctly                         // SongList* listofsongs
+    void signalEditPlaylistSongModelLoaded();   /// emited when edit playlist song model was loaded correctly
+    void signalFiltersModelLoaded();            /// emited when filters model was loaded correctly to playlist
     /// error occur
-    void signalAddSongError(QString desc);      // emited when any error occur while adding song
-    void signalEditSongError(QString desc);     // emited when any error occur while editing song
-    void signalDeleteSongError(QString desc);   // emited when any error occur while deleting song
-    void signalAddTagError(QString desc);       // emited when any error occur while adding tag
-    void signalEditTagError(QString desc);      // emited when any error occur while editing tag
-    void signalDeleteTagError(QString desc);    // emited when any error occur while deleting tag
+    void signalPlaylistModelLoadError(QString desc);            /// emited when any error occur while loading playlist model
+    void signalEditPlaylistSongModelLoadError(QString desc);    /// emited when any error occur while loading edit playlist song model
+    void signalFiltersModelLoadError(QString desc);             /// emited when any error occur while loading filters model
 
-    // actions on playlist
+signals: // -------------------------------------------------- database actions -------------------------------------------------- //
+    /// finished
+    void signalAddedSong();     /// emited when song was added correctly
+    void signalEditedSong();    /// emited when song was edited correctly
+    void signalDeletedSong();   /// emited when song was deleted correctly
+    void signalAddedTag();      /// emited when tag was added correctly
+    void signalEditedTag();     /// emited when tag was edited correctly
+    void signalDeletedTag();    /// emited when tag was deleted correctly
+    /// error occur
+    void signalAddSongError(QString desc);      /// emited when any error occur while adding song
+    void signalEditSongError(QString desc);     /// emited when any error occur while editing song
+    void signalDeleteSongError(QString desc);   /// emited when any error occur while deleting song
+    void signalAddTagError(QString desc);       /// emited when any error occur while adding tag
+    void signalEditTagError(QString desc);      /// emited when any error occur while editing tag
+    void signalDeleteTagError(QString desc);    /// emited when any error occur while deleting tag
+
+signals: // -------------------------------------------------- playlist actions -------------------------------------------------- //
     /// finished
     void signalEditedPlaylistSong();    // emited when playlist song was edited correctly
     // void signalDeletedPlaylistSong();   // emited when playlist song was deleted correctly
@@ -193,60 +170,51 @@ signals:
     // void signalDeletePlaylistSongError(QString desc);   // emited when any error occur while deleting playlist song
 
 
-public slots:
-    // frontend (QML) actions
+public slots: // database init
+    void initializeOnStart();       /// starting aapplication
+    void initializeWithTags();      /// building new database
+    void createExampleData();
+    void initializeFilters();
+
+public slots: // db management
     void exportDatabase(const QUrl &output_qurl);
     void importTagsToDatabase(const QUrl &output_qurl);
     void importSongsToDatabase(const QUrl &output_qurl);
     void importDatabase(const QUrl &output_qurl); // TO DELETE
     void deleteDatabase();
 
-public slots:
-    // load models
-    /// songs
+public slots: // load models
+    // songs
     void loadAllSongs();
     void loadAddSongModel();
-    void loadEditSongModel(int song_id); // argument is used to tell what song user want to edit
-    /// tags
+    void loadEditSongModel(int song_id);            /// argument is used to tell what song user want to edit
+    // tags
     void loadAllTags();
     void loadAddTagModel();
-    void loadEditTagModel(int tag_id); // argument is used to tell what tag user want to edit
-    /// playlist
+    void loadEditTagModel(int tag_id);              /// argument is used to tell what tag user want to edit
+    // playlist
     void loadPlaylistModel();
-    void loadEditPlaylistSongModel(int song_id); // argument is used to tell what song user want to edit
+    void loadEditPlaylistSongModel(int song_id);    /// argument is used to tell what song user want to edit
     void loadFiltersModel();
 
-public:
-    // model accessors
-    /// songs
-    SongList *get_all_songs_model() const;
-    SongDetails *get_edit_song_model() const;
-    SongDetails *get_add_song_model() const;
-    /// tags
-    TagList *get_all_tags_model() const;
-    TagDetails *get_edit_tag_model() const;
-    TagDetails *get_add_tag_model() const;
-    /// playlist
-    SongList *get_playlist_model() const;
-    TagList *get_filters_model() const;
-
-public slots:
-    // actions on database
-    /// songs
+public slots: // database actions
+    // songs
     void addSong(QVariantList new_song_data);
     void editSong(int song_id, QVariantList song_data);
     void deleteSong(int song_id);
-    /// tags
+    // tags
     void addTag(QVariantList new_tag_data);
     void editTag(int tag_id, QVariantList tag_data);
     void deleteTag(int tag_id);
-    /// playlist
+
+public slots:
+    // playlist actions
     void editPlaylistSong(int song_id, QVariantList song_data);
+    void updateFilters(QVariantList filters);
     // void deletePlaylistSong(int song_id);
 
-private:
-    // other methods to support
-    void clear_models_memory();
+private: // other methods to support
+    void clear_models_memory();             /// clears models from memory, cause something was changed and their need to be loaded again
 
     static QString notNull(const QString &value);
     bool isDatabaseOpen(void (Database::*signal)(QString), const char *caller_name = "");
@@ -275,6 +243,21 @@ private:
 
 
     QSqlQuery prepPlaylistSongsQuery();//cQls tc_names, cQls tc_values, cQls tc_comparators, cQls te_names, cQlb te_values, D_EC) const;
+
+
+public:
+    // model accessors
+    /// songs
+    SongList *get_all_songs_model() const;
+    SongDetails *get_edit_song_model() const;
+    SongDetails *get_add_song_model() const;
+    /// tags
+    TagList *get_all_tags_model() const;
+    TagDetails *get_edit_tag_model() const;
+    TagDetails *get_add_tag_model() const;
+    /// playlist
+    SongList *get_playlist_model() const;
+    TagList *get_filters_model() const;
 
 private:
     bool m_databaseInitialized;

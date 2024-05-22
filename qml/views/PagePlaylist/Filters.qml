@@ -64,18 +64,18 @@ Page {
         target: backend.database
     }
 
-    Popup2{
-        id: pConfirmLeave
-        dltText: "Are you sure to exit Filters? Any changes will be discarded."
-        // text description will be set in onSignalFilterModelLoadError() function
+    // Popup2{
+    //     id: pConfirmLeave
+    //     dltText: "Are you sure to exit Filters? Any changes will be discarded."
+    //     // text description will be set in onSignalFilterModelLoadError() function
 
-        dltTextLB: "Cancel"
-        dltTextRB: "Leave"
+    //     dltTextLB: "Cancel"
+    //     dltTextRB: "Leave"
 
-        onDltClickedRB: {
-            closeFiltersPage()
-        }
-    }
+    //     onDltClickedRB: {
+    //         closeFiltersPage()
+    //     }
+    // }
 
     Popup2{
         id: pConfirmSave
@@ -155,9 +155,19 @@ Page {
     }
 
     function submitMethod(){
+        var result_list = []
+        for(var element in pageFilters.mdl)
+        {
+            result_list.push(
+                        {
+                            id: element.id,
+                            comparison_way: element.comparison_way,
+                            comparison_value: element.comparison_value
+                        })
+        }
 
         Backend.database.updateFilters()
-        closeFiltersPage()
+        // page is closed if filters update was completed succesfully
     }
 
 
@@ -189,9 +199,7 @@ Page {
             ToolTip.visible: hovered
             ToolTip.text: "Go Back"
 
-            onClicked: {
-                pConfirmLeave.open()
-            }
+            onClicked: closeFiltersPage() // pConfirmLeave.open()
         }
 
         Text{
