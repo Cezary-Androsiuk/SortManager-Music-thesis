@@ -25,7 +25,8 @@ Popup {
     signal dltClickedMB() // clicked middle button
     signal dltClickedRB() // clicked right button
 
-    readonly property bool noDesc: (dltDesc === "")
+    readonly property bool noDesc:
+        ((dltDesc === "") || (backend.personalization.showErrorDesc === false))
 
     height: noDesc ? 160 : 240
     width: 310
@@ -68,6 +69,7 @@ Popup {
             id: areaTexts
             dltText: popup3.dltText
             dltDesc: popup3.dltDesc
+            dltNoDesc: popup3.noDesc
         }
 
         Item{

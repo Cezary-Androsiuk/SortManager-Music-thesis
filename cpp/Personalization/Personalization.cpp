@@ -9,7 +9,8 @@ Personalization::Personalization(QObject *parent)
     m_showConstantTags(DEFAULT_SHOW_CONSTANT_TAGS),
     m_defaultAddTagType(DEFAULT_DEFAULT_ADD_TAG_TYPE),
     m_alwaysKeepListPos(DEFAULT_ALWAYS_KEEP_LIST_POS),
-    m_songOpenPath(DEFAULT_SONGS_OPEN_PATH)
+    m_songOpenPath(DEFAULT_SONGS_OPEN_PATH),
+    m_showErrorDesc(DEFAULT_SHOW_ERROR_DESC)
 {
 
 }
@@ -30,6 +31,7 @@ void Personalization::printValues() const
     DB << "\t - defaultAddTagType: " << m_defaultAddTagType;
     DB << "\t - alwaysKeepListPos: " << m_alwaysKeepListPos;
     DB << "\t - songOpenPath: " << m_songOpenPath;
+    DB << "\t - showErrorDesc: " << m_showErrorDesc;
 #endif
 }
 
@@ -45,6 +47,7 @@ void Personalization::setDefaultPersonalizationData()
     m_defaultAddTagType = DEFAULT_DEFAULT_ADD_TAG_TYPE;
     m_alwaysKeepListPos = DEFAULT_ALWAYS_KEEP_LIST_POS;
     m_songOpenPath = DEFAULT_SONGS_OPEN_PATH;
+    m_showErrorDesc = DEFAULT_SHOW_ERROR_DESC;
 
     m_errorCodeIfOccurWhileLoading = 0;
 }
@@ -113,6 +116,9 @@ void Personalization::loadPersonalizationFromJson()
     key = "songs open path";
     CHECK_KEY(this->setSongOpenPath(jp[key].toString()))
 
+    key = "show error description";
+    CHECK_KEY(this->setShowErrorDesc(jp[key].toBool()));
+
 
     DB << "personalization data readed!";
     this->printValues();
@@ -154,6 +160,7 @@ void Personalization::savePersonalizationToJson()
     json_object["default add tag type"] = this->getDefaultAddTagType();
     json_object["always keep list position"] = this->getAlwaysKeepListPos();
     json_object["songs open path"] = this->getSongOpenPath();
+    json_object["show error description"] = this->getShowErrorDesc();
 
     QJsonDocument json_data(json_object);
 
@@ -216,6 +223,11 @@ QString Personalization::getSongOpenPath() const
     return m_songOpenPath;
 }
 
+bool Personalization::getShowErrorDesc() const
+{
+    return m_showErrorDesc;
+}
+
 void Personalization::setIsDarkTheme(bool isDarkTheme)
 {
     if(m_isDarkTheme != isDarkTheme)
@@ -223,7 +235,6 @@ void Personalization::setIsDarkTheme(bool isDarkTheme)
         m_isDarkTheme = isDarkTheme;
         emit this->isDarkThemeChanged();
     }
-
 }
 
 void Personalization::setSaveExecQuery(bool saveExecQuery)
@@ -243,7 +254,6 @@ void Personalization::setDarkAccentColor(const QColor &darkAccentColor)
         m_darkAccentColor = darkAccentColor;
         emit this->darkAccentColorChanged();
     }
-
 }
 
 void Personalization::setLightAccentColor(const QColor &lightAccentColor)
@@ -253,7 +263,6 @@ void Personalization::setLightAccentColor(const QColor &lightAccentColor)
         m_lightAccentColor = lightAccentColor;
         emit this->lightAccentColorChanged();
     }
-
 }
 
 void Personalization::setShowConstantTags(bool showConstantTags)
@@ -273,7 +282,6 @@ void Personalization::setDefaultAddTagType(int defaultAddTagType)
         m_defaultAddTagType = defaultAddTagType;
         emit this->defaultAddTagTypeChanged();
     }
-
 }
 
 void Personalization::setAlwaysKeepListPos(bool alwaysKeepListPos)
@@ -283,7 +291,6 @@ void Personalization::setAlwaysKeepListPos(bool alwaysKeepListPos)
         m_alwaysKeepListPos = alwaysKeepListPos;
         emit this->alwaysKeepListPosChanged();
     }
-
 }
 
 void Personalization::setSongOpenPath(const QString &songOpenPath)
@@ -293,5 +300,13 @@ void Personalization::setSongOpenPath(const QString &songOpenPath)
         m_songOpenPath = songOpenPath;
         emit this->songOpenPathChanged();
     }
+}
 
+void Personalization::setShowErrorDesc(bool showErrorDesc)
+{
+    if(m_showErrorDesc != showErrorDesc)
+    {
+        m_showErrorDesc = showErrorDesc;
+        emit this->showErrorDescChanged();
+    }
 }

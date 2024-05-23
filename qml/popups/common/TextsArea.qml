@@ -1,9 +1,9 @@
 import QtQuick 2.15
 
 Item{
-    property string dltText
-    property string dltDesc
-    readonly property bool noDesc: (dltDesc === "")
+    required property string dltText
+    required property string dltDesc
+    required property bool dltNoDesc
     readonly property int pwidth: parent.width
 
     id: areaTexts
@@ -21,7 +21,7 @@ Item{
             left: parent.left
             right: parent.right
         }
-        height: noDesc ? parent.height : parent.height * 3/6
+        height: dltNoDesc ? parent.height : parent.height * 3/6
 
         Text{
             id: message
@@ -44,7 +44,7 @@ Item{
             bottom: parent.bottom
         }
 
-        visible: !noDesc
+        visible: !dltNoDesc
 
         Rectangle{
             anchors.fill: parent

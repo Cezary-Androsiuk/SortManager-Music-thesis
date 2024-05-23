@@ -27,6 +27,7 @@
 #define DEFAULT_DEFAULT_ADD_TAG_TYPE -1
 #define DEFAULT_ALWAYS_KEEP_LIST_POS false
 #define DEFAULT_SONGS_OPEN_PATH "C:/"
+#define DEFAULT_SHOW_ERROR_DESC true
 
 #define CHECK_KEY(arg) if(jp.contains(key)) arg;\
 else WR << PERSONALIZATION_JSON_PATH << " file not contains value related with '" << key << "' key";
@@ -43,6 +44,7 @@ class Personalization : public QObject
     Q_PROPERTY(int defaultAddTagType    READ getDefaultAddTagType   WRITE setDefaultAddTagType  NOTIFY defaultAddTagTypeChanged FINAL)
     Q_PROPERTY(bool alwaysKeepListPos   READ getAlwaysKeepListPos   WRITE setAlwaysKeepListPos  NOTIFY alwaysKeepListPosChanged FINAL)
     Q_PROPERTY(QString songOpenPath     READ getSongOpenPath        WRITE setSongOpenPath       NOTIFY songOpenPathChanged      FINAL)
+    Q_PROPERTY(bool showErrorDesc       READ getShowErrorDesc       WRITE setShowErrorDesc      NOTIFY showErrorDescChanged     FINAL)
 
 public:
     explicit Personalization(QObject *parent = nullptr);
@@ -71,6 +73,7 @@ public: // getters / setters
     int getDefaultAddTagType() const;
     int getAlwaysKeepListPos() const;
     QString getSongOpenPath() const;
+    bool getShowErrorDesc() const;
 
     void setIsDarkTheme(bool isDarkTheme);
     void setSaveExecQuery(bool saveExecQuery);
@@ -80,6 +83,7 @@ public: // getters / setters
     void setDefaultAddTagType(int defaultAddTagType);
     void setAlwaysKeepListPos(bool alwaysKeepListPos);
     void setSongOpenPath(const QString &songOpenPath);
+    void setShowErrorDesc(bool showErrorDesc);
 
 signals:
     void isDarkThemeChanged();
@@ -92,6 +96,7 @@ signals:
     void defaultAddTagTypeChanged();
     void alwaysKeepListPosChanged();
     void songOpenPathChanged();
+    void showErrorDescChanged();
 
 private:
     int m_errorCodeIfOccurWhileLoading;
@@ -104,6 +109,7 @@ private:
     int m_defaultAddTagType;
     bool m_alwaysKeepListPos;
     QString m_songOpenPath;
+    bool m_showErrorDesc;
 };
 
 #endif // PERSONALIZATION_H

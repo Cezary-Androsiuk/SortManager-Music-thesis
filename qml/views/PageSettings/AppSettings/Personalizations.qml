@@ -21,6 +21,7 @@ Page {
         mdl.push({id: 550, name: "Always keep a list position"})
         // mdl.push({id: 600, name: "Songs Open Path"})
         // mdl.push({id: 700, name: "Songs Main Path"})
+        mdl.push({id: 800, name: "Show error description"})
 
         listViewLoader.active = true
     }
@@ -78,6 +79,7 @@ Page {
                     else if(modelData.id === 550) switchFieldDelegate;
                     // else if(modelData.id === 600) pathSelectDelegate;
                     // else if(modelData.id === 700) pathSelectDelegate;
+                    else if(modelData.id === 800) switchFieldDelegate;
                 }
 
                 Component {
@@ -92,6 +94,7 @@ Page {
                             else if(modelData.id === 200) backend.personalization.saveExecQuery
                             else if(modelData.id === 400) backend.personalization.showConstantTags
                             else if(modelData.id === 550) backend.personalization.alwaysKeepListPos
+                            else if(modelData.id === 800) backend.personalization.showErrorDesc
                         }
                         onDltValueChanged: {
                             if(false); // below lines are so beauty when equal <3
@@ -117,7 +120,7 @@ Page {
                                     root.last_pos_filters = 0
                                 }
                             }
-
+                            else if(modelData.id === 800) backend.personalization.showErrorDesc = dltValue
                         }
                     }
                 }
