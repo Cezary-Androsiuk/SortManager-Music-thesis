@@ -127,7 +127,6 @@ Item{
             // if was relesed, still containing the mouse activate click
             if(msArea.containsMouse)
             {
-                console.log("text")
                 userClicked()
             }
         }

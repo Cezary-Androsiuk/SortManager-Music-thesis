@@ -254,7 +254,7 @@ Page {
         {
             if(_element.is_required && ((""+_element.value) === ""))
             {
-                console.log(_element.value)
+                // console.log(_element.value)
                 openPopupEmptyField(_element.name)
                 return;
             }
