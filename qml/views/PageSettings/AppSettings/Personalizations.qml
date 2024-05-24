@@ -98,8 +98,9 @@ Page {
                                 else if(modelData.id === 800) backend.personalization.showErrorDesc
                             }
                             onDltValueChanged: {
+                                console.log("value changed")
                                 if(false); // below lines are so beauty when equal <3
-                                else if(modelData.id === 100) backend.personalization.app_theme = dltValue
+                                else if(modelData.id === 100) backend.personalization.isDarkTheme = dltValue
                                 else if(modelData.id === 200) backend.personalization.saveExecQuery = dltValue
                                 else if(modelData.id === 400) backend.personalization.showConstantTags = dltValue
                                 else if(modelData.id === 550)
