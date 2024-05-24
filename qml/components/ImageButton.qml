@@ -10,10 +10,29 @@ Item{
     property string dltDescription: ""
     required property string dltImageIdle
     required property string dltImageHover
+    property bool dltBackgroundVisible: false
+    property bool dltUsePopupColor: false
 
+    // text colors
     property color dltIdleColor: root.color_element_idle
     property color dltHoverColor: root.color_element_hover
     property color dltPressColor: root.color_element_press
+
+
+    // background colors
+    property color dltBacgroundIdleColor: root.color_background
+    property color dltBackgroundHoverColor: root.color_button_hover
+
+    property color dltBacgroundIdleColorPopup: root.dark_theme ? root.rgb(66, 66, 66) : root.rgb(255,255,255)
+    property color dltBackgroundHoverColorPopup: root.dark_theme ? root.rgb(96, 96, 96) : root.rgb(215,215,215)
+
+    readonly property color fixedBackgroundIdleColor: dltUsePopupColor ? dltBacgroundIdleColorPopup : dltBacgroundIdleColor
+    readonly property color fixedBackgroundHoverColor: dltUsePopupColor ? dltBackgroundHoverColorPopup : dltBackgroundHoverColor
+
+    readonly property color fixedBackgroundColor:
+        msArea.containsMouse ? fixedBackgroundHoverColor : fixedBackgroundIdleColor
+
+
 
     property bool dltDarkThemeRefresh: root.dark_theme
     onDltDarkThemeRefreshChanged: {
@@ -21,6 +40,13 @@ Item{
         //    allways refreshing after changing dark_theme state
         // i think that is caused by some interaction with containsMouse
         colorOverlay.color = dltIdleColor
+    }
+
+    Rectangle{
+        id: background
+        anchors.fill: parent
+        visible: dltBackgroundVisible
+        color: fixedBackgroundColor
     }
 
     signal userClicked()

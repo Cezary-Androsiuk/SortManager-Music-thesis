@@ -163,6 +163,7 @@ Page {
                                 dltImageIdle: Qt.resolvedUrl("qrc:/SortManager-Music/assets/icons/refresh_36px.png")
                                 dltImageHover: dltImageIdle
                                 onUserClicked: backend.database.refreshPlaylist()
+                                dltBackgroundVisible: true
                             }
                         }
 

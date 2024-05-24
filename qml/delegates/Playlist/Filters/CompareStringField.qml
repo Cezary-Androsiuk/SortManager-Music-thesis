@@ -24,16 +24,17 @@ Item{
         id: textMiddleElement
         dltAnchorRight: textRightElement.left
         dltModel: [
-            // {image: "...", desc: "do not compare"},
-            // {image: "=", desc: "is equal to"},
-            // {image: "≠", desc: "is different than"},
-            // {image: "≈", desc: "as case insensitive, is equal to"},
-            // {image: "≉", desc: "as case insensitive, is different than"}
-            {image: Qt.resolvedUrl("qrc:/SortManager-Music/assets/icons/more_64px.png"), desc: "do not compare"},
-            {image: Qt.resolvedUrl("qrc:/SortManager-Music/assets/icons/equal_sign_64px.png"), desc: "is equal to"},
-            {image: Qt.resolvedUrl("qrc:/SortManager-Music/assets/icons/not_equal_64px.png"), desc: "is equal to"},
-            {image: Qt.resolvedUrl("qrc:/SortManager-Music/assets/icons/approximately_equal_64px.png"), desc: "is equal to"},
-            {image: Qt.resolvedUrl("qrc:/SortManager-Music/assets/icons/approximately_not_equal_64px.png"), desc: "is equal to"}
+            {image: "...", desc: "do not compare"},
+            {image: "=", desc: "is equal to"},
+            {image: "≠", desc: "is different than"},
+            {image: "≈", desc: "as case insensitive, is equal to"},
+            {image: "≉", desc: "as case insensitive, is different than"}
+
+            // {image: Qt.resolvedUrl("qrc:/SortManager-Music/assets/icons/more_64px.png"), desc: "do not compare"},
+            // {image: Qt.resolvedUrl("qrc:/SortManager-Music/assets/icons/equal_sign_64px.png"), desc: "is equal to"},
+            // {image: Qt.resolvedUrl("qrc:/SortManager-Music/assets/icons/not_equal_64px.png"), desc: "is equal to"},
+            // {image: Qt.resolvedUrl("qrc:/SortManager-Music/assets/icons/approximately_equal_64px.png"), desc: "is equal to"},
+            // {image: Qt.resolvedUrl("qrc:/SortManager-Music/assets/icons/approximately_not_equal_64px.png"), desc: "is equal to"}
         ]
         width: height
         dltIndex: dltComboboxValue
