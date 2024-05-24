@@ -22,7 +22,7 @@ Item{
             }
             mipmap: true // smooths image
 
-            source: "qrc:/SortManager-Music/assets/icons/trash_close.png"
+            source: Qt.resolvedUrl("qrc:/SortManager-Music/assets/icons/trash_close_512px.png")
         }
 
         ColorOverlay {
@@ -37,11 +37,11 @@ Item{
             hoverEnabled: true
 
             onEntered: {
-                img.source = "qrc:/SortManager-Music/assets/icons/trash_open.png";
+                img.source = Qt.resolvedUrl("qrc:/SortManager-Music/assets/icons/trash_open_512px.png");
                 colorOverlay.color = root.rgb(180, 50, 50);
             }
             onExited: {
-                img.source = "qrc:/SortManager-Music/assets/icons/trash_close.png";
+                img.source = Qt.resolvedUrl("qrc:/SortManager-Music/assets/icons/trash_close_512px.png");
                 colorOverlay.color = root.dark_theme ? rgb(96,96,96) : rgb(158,158,158);
             }
             onPressed: dltClicked()

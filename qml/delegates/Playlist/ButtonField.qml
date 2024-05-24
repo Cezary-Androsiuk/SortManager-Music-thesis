@@ -62,7 +62,7 @@ Item{
             right: parent.right
         }
 
-        text: "▶" //(index !== 2 ? "▶" : "")
+        // text: "▶" //(index !== 2 ? "▶" : "")
         font.pixelSize: 30
         onClicked: dltClickedPlay()
     }

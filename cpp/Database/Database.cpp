@@ -21,6 +21,16 @@ Database::Database(QObject *parent)
 
     QObject::connect(this, &Database::signalInitializedOnStart, this, &Database::initializeFilters);
     QObject::connect(this, &Database::signalInitializedWithTags, this, &Database::initializeFilters);
+
+
+    QObject::connect(this, &Database::signalFiltersInitailized, this, &Database::loadPlaylistList);
+    QObject::connect(this, &Database::signalFiltersInitailized, this, &Database::loadPlaylistModel);
+
+    QObject::connect(this, &Database::signalPlaylistRefreshed, this, &Database::loadPlaylistList);
+    QObject::connect(this, &Database::signalPlaylistRefreshed, this, &Database::loadPlaylistModel);
+
+    QObject::connect(this, &Database::signalFiltersUpdated, this, &Database::loadPlaylistList);
+    QObject::connect(this, &Database::signalFiltersUpdated, this, &Database::loadPlaylistModel);
 }
 
 Database::~Database()
@@ -38,7 +48,7 @@ void Database::setShowConstantTags(bool showConstantTags)
 {
     m_showConstantTags = showConstantTags;
     // to remove all_tags_model (if was loaded)
-    this->clear_models_memory();
+    this->clearModelsMemory();
 }
 
 void Database::initializeOnStart()
@@ -240,43 +250,22 @@ void Database::createExampleData()
 
 void Database::initializeFilters()
 {
-    // initailize with empty tag comparators (without any limits)
-
     IS_DATABASE_OPEN(signalFiltersInitailizeFailed)
 
-    QString query_text("SELECT id, name, type, is_editable, is_immutable FROM tags;");
-    this->queryToFile(query_text);
-    QSqlQuery query(m_database);
-    if(!query.exec(query_text)){
-        WR << "executing query " << query.lastError();
-        emit this->signalFiltersInitailizeFailed("executing query " + query.lastError().text());
+    // initailize with empty tag comparators (without any limits)
+
+    QString errorCode = this->fillFiltersWithValidTags();
+    if(!errorCode.isNull()){
+        WR << errorCode;
+        emit this->signalFiltersUpdateError(errorCode);
         return;
-    }
-
-    m_filters = new TagList(this);
-
-    // set values to variable from database
-    while(query.next()){
-        auto record = query.record();
-
-        int tag_id = record.value(0).toInt();
-        QString tag_name = record.value(1).toString();
-        int tag_type = record.value(2).toInt();
-
-        TagWithComparator* tag = new TagWithComparator(m_filters);
-        tag->set_id(tag_id);
-        tag->set_name(tag_name);
-        tag->set_type(tag_type);
-        tag->set_comparison_way(0);
-        tag->set_comparison_value("");
-
-        m_filters->tags().append(tag);
     }
 
     this->debugPrint_filters();
 
-    DB << "filters loaded correctly";
+    DB << "filters initialized correctly";
     emit this->signalFiltersInitailized();
+    // this will trigger PlaylistList and loadPlaylistModel
 }
 
 void Database::exportDatabase(const QUrl &output_qurl)
@@ -874,7 +863,7 @@ void Database::deleteDatabase()
 
     m_databaseInitialized = false;
 
-    this->clear_models_memory();
+    this->clearModelsMemory();
 
     if(!QFile(DATABASE_PATH).remove())
     {
@@ -1404,12 +1393,16 @@ void Database::loadEditTagModel(int tag_id)
 
 void Database::loadPlaylistModel()
 {
+    // method will be trigger only by signalFiltersInitailized, signalPlaylistRefreshed and signalFiltersUpdated
+
     DB << " - staring playlist load";
     if(m_playlist_model != nullptr){
-        DB << "playlist model was already loaded - skipped";
-        emit this->signalPlaylistModelLoaded();
-        return;
+        // DB << "playlist model was already loaded - skipped";
+        // emit this->signalPlaylistModelLoaded();
+        // return;
+        delete m_filters_model;
     }
+    m_filters_model = nullptr;
 
     /// after checking if model is already loaded because, if it is loaded then we don't care about database
     IS_DATABASE_OPEN(signalPlaylistModelLoadError)
@@ -1485,46 +1478,11 @@ void Database::loadFiltersModel()
         DB << "filters model was already loaded - skipped";
         emit this->signalFiltersModelLoaded();
         return;
+        // delete m_filters_model;
     }
+    // m_filters_model = nullptr;
 
-    // /// after checking if model is loaded because, if it is loaded then we don't care about database
-    // IS_DATABASE_OPEN(signalFiltersModelLoadError)
-
-    // QString query_text("SELECT id, name, type FROM tags;");
-
-    // this->queryToFile(query_text);
-    // QSqlQuery query(m_database);
-    // if(!query.exec(query_text)){
-    //     WR << "executing query " << query.lastError();
-    //     emit this->signalFiltersModelLoadError("executing query " + query.lastError().text());
-    //     return;
-    // }
-
-    // m_filters_model = new TagList(this);
-
-    // int i = 0;
-
-    // // set values to variable from database
-    // while(query.next()){
-    //     auto record = query.record();
-
-    //     int tag_id = record.value(0).toInt();
-    //     QString tag_name = record.value(1).toString();
-    //     int tag_type = record.value(2).toInt();
-
-    //     TagWithComparator* tag = new TagWithComparator(m_filters_model);
-    //     tag->set_id(tag_id);
-    //     tag->set_name(tag_name);
-    //     tag->set_type(tag_type);
-    //     tag->set_comparison_way(
-    //         static_cast<const TagWithComparator*>(m_filters->c_ref_tags()[i])->get_comparison_way()
-    //         );
-    //     tag->set_comparison_value(
-    //         static_cast<const TagWithComparator*>(m_filters->c_ref_tags()[i])->get_comparison_value()
-    //         );
-
-    //     m_filters_model->tags().append(tag);
-    // }
+    // use m_filters model
 
     m_filters_model = new TagList(this);
     for(const auto &filter : m_filters->c_ref_tags())
@@ -1816,7 +1774,7 @@ void Database::addSong(QVariantList new_song_data)
     /// NOTE: after these operations values in songs_tags won't be in numerical order (i mean tag_id)
     ///
 
-    this->clear_models_memory(); // after that, if user enter any model (allSongs, addSong, editTag, ...), data for him will be loaded again
+    this->clearModelsMemory(); // after that, if user enter any model (allSongs, addSong, editTag, ...), data for him will be loaded again
 
     DB << "song ( id:" << song_id << ") added correctly!";
     emit this->signalAddedSong();
@@ -2097,7 +2055,7 @@ void Database::editSong(int song_id, QVariantList song_data)
     /// NOTE: after these operations values in songs_tags won't be in numerical order (i mean tag_id)
     ///
 
-    this->clear_models_memory(); // after that, if user enter any model (allSongs, addSong, editTag, ...), data for him will be loaded again
+    this->clearModelsMemory(); // after that, if user enter any model (allSongs, addSong, editTag, ...), data for him will be loaded again
 
     DB << "song ( id:" << song_id << ") edited correctly!";
     emit this->signalEditedSong();
@@ -2145,7 +2103,7 @@ void Database::deleteSong(int song_id)
     }
     END_TRANSACTION(signalDeleteSongError)
 
-    this->clear_models_memory(); // after that, if user enter any model (allSongs, addSong, editTag, ...), data for him will be loaded again
+    this->clearModelsMemory(); // after that, if user enter any model (allSongs, addSong, editTag, ...), data for him will be loaded again
 
     DB << "song with id: " << song_id << " deleted correctly";
     emit this->signalDeletedSong();
@@ -2323,7 +2281,7 @@ void Database::addTag(QVariantList new_tag_data)
 
     // after that, if user enter any model (allSongs, addSong, editTag, ...),
     // data for him need to be loaded again
-    this->clear_models_memory();
+    this->clearModelsMemory();
 
     DB << "tag ( id:" << tag_id << ") added correctly!";
     emit this->signalAddedTag();
@@ -2498,7 +2456,7 @@ void Database::editTag(int tag_id, QVariantList tag_data)
 
     // after that, if user enter any model (allSongs, addSong, editTag, ...),
     // data for him need to be loaded again
-    this->clear_models_memory();
+    this->clearModelsMemory();
 
     DB << "tag ( id:" << tag_id << ") updated correctly!";
     emit this->signalEditedTag();
@@ -2550,69 +2508,93 @@ void Database::deleteTag(int tag_id)
     }
     END_TRANSACTION(signalDeleteTagError)
 
-    this->clear_models_memory(); // after that, if user enter any model (allSongs, addSong, editTag, ...), data for him will be loaded again
+    this->clearModelsMemory(); // after that, if user enter any model (allSongs, addSong, editTag, ...), data for him will be loaded again
 
     DB << "tag with id: " << tag_id << " deleted correctly";
     emit this->signalDeletedTag();
 }
 
-void Database::editPlaylistSong(int song_id, QVariantList song_data)
+void Database::refreshPlaylist()
 {
-    // NOTE: loaded data, can be reached by m_edit_song_model
+    DB << "/////// start ///////";
+    // emit this->signalPlaylistRefreshError("");
+    // error will not be emited, cause there is no place for that
 
-    QString load_error;
-    auto lambda_model = [&](QString desc){
-        /// [&] means get reference from parents variables
-        /// desc is value received from signalEditSongModelLoadError(QString desc)
-        load_error = desc; // some warning occur, but i don't see a better way
-    };
-
-    auto connection_model = connect(this, &Database::signalEditSongError, lambda_model);
-
-    this->editSong(song_id, song_data);
-
-    if(load_error != ""){
-        WR << "Error while editing song for editing playlist song:" << load_error;
-        emit this->signalEditPlaylistSongError("Error while editing song for editing playlist song:" + load_error);
-        return;
-    }
-    disconnect(connection_model);
-
-    emit this->signalEditedPlaylistSong();
+    // this->clearFiltersModelsMemory();
+    DB << "/////// before signal ///////";
+    DB << "refreshed playlist correctly";
+    emit this->signalPlaylistRefreshed();
+    // this will trigger PlaylistList and loadPlaylistModel
+    DB << "/////// stop ///////";
 }
 
 void Database::updateFilters(QVariantList filters)
 {
+    DB << "/////// start ///////";
+    IS_DATABASE_OPEN(signalFiltersInitailizeFailed)
+    DB << filters;
+    /*
+        received structure:
 
+        filters - QVariantList:
+            id - int
+            comparison_way - int
+            comparison_value - QString
+
+        example:
+        QList(
+            QVariant(
+                QVariantMap,
+                QMap(
+                    ("id", QVariant(int, 2))
+                    ("value", QVariant(QString, "asd"))
+                )
+            ),
+            QVariant(
+                QVariantMap,
+                QMap(
+                    ("id", QVariant(int, 3))
+                    ("value", QVariant(QString, "wre"))
+                )
+            ),
+            ...
+        )
+
+        NOTE: received structure contains only editable fields
+    */
+
+    QString errorCode = this->fillFiltersWithValidTags();
+    if(!errorCode.isNull()){
+        WR << errorCode;
+        emit this->signalFiltersUpdateError(errorCode);
+        return;
+    }
+
+
+
+    this->debugPrint_filters();
+    // this->clearFiltersModelsMemory();
+    DB << "/////// before signal ///////";
+    DB << "filters updated correctly";
+    emit this->signalFiltersUpdated();
+    // this will trigger PlaylistList and loadPlaylistModel
+    DB << "/////// stop ///////";
 }
 
-// void Database::deletePlaylistSong(int song_id)
-// {
-//     // NOTE: loaded data, can be reached by m_edit_song_model
+void Database::loadPlaylistList()
+{
+    DB << "/////// start ///////";
+    // create list
+    // list will be deleted in signal received
 
-//     QString load_error;
-//     auto lambda_model = [&](QString desc){
-//         /// [&] means get reference from parents variables
-//         /// desc is value received from signalEditSongModelLoadError(QString desc)
-//         load_error = desc; // some warning occur, but i don't see a better way
-//     };
+    DB << "/////// before signal ///////";
+    DB << "playlist list loaded correctly";
+    emit this->signalPlaylistListLoaded(new TagList()/* RIP memory */);
+    // this will trigger Playlist::loadPlaylist(TagList)
+    DB << "/////// stop ///////";
+}
 
-//     auto connection_model = connect(this, &Database::signalDeleteSongError, lambda_model);
-
-//     this->deleteSong(song_id);
-
-//     if(load_error != ""){
-//         WR << "Error while loading edit song model for edit playlist model:" << load_error;
-//         emit this->signalDeletePlaylistSongError("Error while loading edit song model for edit playlist model: " + load_error);
-//         return;
-//     }
-//     disconnect(connection_model);
-
-//     emit this->signalDeletedPlaylistSong();
-// }
-
-
-void Database::clear_models_memory()
+void Database::clearModelsMemory()
 {
     // remove loaded models from memory
 
@@ -2640,12 +2622,55 @@ void Database::clear_models_memory()
     if(m_edit_tag_model != nullptr)
         delete m_edit_tag_model;
     m_edit_tag_model = nullptr;
+}
 
+void Database::clearPlaylistModelsMemory()
+{
+    if(m_playlist_model != nullptr)
+        delete m_playlist_model;
+    m_playlist_model = nullptr;
+}
 
-    // playlist model will be only deleted while refreshing playlist (change filters / press refresh button / start initialize)
-    // if(m_playlist_songs_model != nullptr)
-    //     delete m_playlist_songs_model;
-    // m_playlist_songs_model = nullptr;
+void Database::clearFiltersModelsMemory()
+{
+    if(m_filters_model != nullptr)
+        delete m_filters_model;
+    m_filters_model = nullptr;
+}
+
+QString Database::fillFiltersWithValidTags()
+{
+    QString query_text("SELECT id, name, type, is_editable, is_immutable FROM tags;");
+    this->queryToFile(query_text);
+    QSqlQuery query(m_database);
+    if(!query.exec(query_text)){
+        return QString("executing query " + query.lastError().text());
+    }
+
+    if(m_filters != nullptr)
+        delete m_filters;
+    m_filters = nullptr;
+
+    m_filters = new TagList(this);
+
+    // set values to variable from database (to contains values, only existing in db)
+    while(query.next()){
+        auto record = query.record();
+
+        int tag_id = record.value(0).toInt();
+        QString tag_name = record.value(1).toString();
+        int tag_type = record.value(2).toInt();
+
+        TagWithComparator* tag = new TagWithComparator(m_filters);
+        tag->set_id(tag_id);
+        tag->set_name(tag_name);
+        tag->set_type(tag_type);
+        tag->set_comparison_way(0);
+        tag->set_comparison_value("");
+
+        m_filters->tags().append(tag);
+    }
+    return QString(); // QString().isNull() == true
 }
 
 QString Database::notNull(const QString &value)
@@ -2926,19 +2951,6 @@ QString Database::_debugPrintModel_TagDetails(TagDetails* const &model) const
         obj_data += (s == model->get_songs()->c_ref_songs().last() ? "" : ", ");
     }
     return obj_data + "]}";
-}
-
-void Database::loadFilters()
-{
-    // if(m_all_songs_model != nullptr){
-    //     DB << "all songs model was already loaded - skipped";
-    //     emit this->signalAllSongsModelLoaded();
-    //     return;
-    // }
-
-    // /// after checking if model is loaded because, if it is loaded then we don't care about database
-    // IS_DATABASE_OPEN(signalAllSongsModelLoadError)
-
 }
 
 void Database::queryToFile(QString query, QStringList param_names, QVariantList param_values) const

@@ -46,7 +46,6 @@ ApplicationWindow {
 
         function onBackendInitialized(){
             console.log("backend initialized")
-            Backend.database.initializeOnStart()
         }
     }
 
@@ -201,17 +200,6 @@ ApplicationWindow {
     property string ppsst_edittag:              page_prefix + "/PageSettings/Tags/EditTag.qml"
 
     property string current_main_loader_page: path_page_player
-
-
-    // Icons prefix
-    property string icon_audio_controls_prefix: "qrc:/SortManager-Music/assets/icons/audioControls"
-    // Icons
-    property string iac_next:       icon_audio_controls_prefix + "/ac-next.png"
-    property string iac_pause:      icon_audio_controls_prefix + "/ac-pause.png"
-    property string iac_play:       icon_audio_controls_prefix + "/ac-play.png"
-    property string iac_playlist:   icon_audio_controls_prefix + "/ac-playlist.png"
-    property string iac_previous:   icon_audio_controls_prefix + "/ac-previous.png"
-    property string iac_replay:     icon_audio_controls_prefix + "/ac-replay.png"
 
 
     // ListView last positions

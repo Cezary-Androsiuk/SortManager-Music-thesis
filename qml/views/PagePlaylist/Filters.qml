@@ -166,7 +166,7 @@ Page {
                         })
         }
 
-        Backend.database.updateFilters()
+        Backend.database.updateFilters(result_list)
         // page is closed if filters update was completed succesfully
     }
 

@@ -4,6 +4,7 @@ import QtQuick.Controls.Material
 import Qt5Compat.GraphicalEffects
 
 import "qrc:/SortManager-Music/qml/popups"
+import "qrc:/SortManager-Music/qml/components" // ImageButton
 import "qrc:/SortManager-Music/qml/delegates/Playlist"
 
 Page {
@@ -11,7 +12,8 @@ Page {
     anchors.fill: parent
 
     property int delegateHeight: 40
-    property int headerHeight: 60
+    property int headerHeight: 45
+    property int headerSeparatorSpace: 1
     property int delegateWidth: width
 
     property var mdl: []
@@ -139,72 +141,100 @@ Page {
                 header: Item{
                     width: parent.width - 15 /*scrollbar offset*/
                     height: headerHeight
-                    Rectangle{
-                        anchors{
-                            left: parent.left
-                            right: parent.right
-                            bottom: parent.bottom
-                            bottomMargin: 5
-                            leftMargin: 20
-                            rightMargin: 20
-                        }
-                        height: 1
-                        opacity: 0.3
-                        color: root.color_accent1
-                    }
 
-                    Text{
-                        text: "SEARCH + FILTERS"
+                    Item{
+                        id: headerContent
                         anchors{
-                            verticalCenter: parent.verticalCenter
-                            left: parent.left
-                            leftMargin: 20
+                            fill: parent
+                            bottomMargin: headerSeparatorSpace
                         }
-                        font.pixelSize: 20
-                        color: root.color_accent1
+
+                        Item{
+                            id: refreshField
+                            anchors{
+                                top: parent.top
+                                left: parent.left
+                                bottom: parent.bottom
+                            }
+                            width: height
+
+                            ImageButton{
+                                dltDescription: "Refresh List"
+                                dltImageIdle: Qt.resolvedUrl("qrc:/SortManager-Music/assets/icons/refresh_36px.png")
+                                dltImageHover: dltImageIdle
+                                onUserClicked: backend.database.refreshPlaylist()
+                            }
+                        }
+
+                        Item{
+                            id: searchField
+                            anchors{
+                                left: refreshField.right
+                                right: shuffleField.left
+                                top: parent.top
+                                bottom: parent.bottom
+                            }
+                            Rectangle{
+                                anchors{
+                                    fill: parent
+                                    leftMargin: 5
+                                    rightMargin: 5
+                                    topMargin: 8
+                                    bottomMargin: 8
+                                }
+                                color: root.color_accent1
+                                opacity: 0.1
+                            }
+
+                        }
+
+                        Item{
+                            id: shuffleField
+                            anchors{
+                                top: parent.top
+                                bottom: parent.bottom
+                                right: filtersField.left
+                            }
+                            width: height
+
+                            ImageButton{
+                                dltDescription: "Shuffle Songs"
+                                dltImageIdle: Qt.resolvedUrl("qrc:/SortManager-Music/assets/icons/shuffle_36px.png")
+                                dltImageHover: dltImageIdle
+                                onUserClicked: {}
+                            }
+                        }
+
+                        Item{
+                            id: filtersField
+                            anchors{
+                                right: parent.right
+                                top: parent.top
+                                bottom: parent.bottom
+                            }
+                            width: height
+
+                            ImageButton{
+                                dltDescription: "Filters"
+                                dltImageIdle: Qt.resolvedUrl("qrc:/SortManager-Music/assets/icons/filter_36px.png")
+                                dltImageHover: dltImageIdle
+                                onUserClicked: backend.database.loadFiltersModel()
+                            }
+                        }
                     }
 
                     Item{
+                        id: headerSeparator
                         anchors{
-                            top: parent.top
-                            right: parent.right
-                        }
-                        height: parent.height
-                        width: height
-
-                        Image{
-                            id: img
-                            fillMode: Image.PreserveAspectFit
-                            anchors{
-                                fill: parent
-                                margins: parent.width * 0.30
-                            }
-
-                            source: "qrc:/SortManager-Music/assets/icons/filter-icon-25207.png"
+                            fill: parent
+                            topMargin: parent.height - headerSeparatorSpace
                         }
 
-                        ColorOverlay {
-                            id: colorOverlay
-                            anchors.fill: img
-                            source: img
-                            color: root.dark_theme ? rgb(96,96,96) : rgb(158,158,158)
-                        }
-
-                        MouseArea{
-                            anchors.fill: parent
-                            hoverEnabled: true
-
-                            onEntered: {
-                                // img.source = "qrc:/SortManager-Music/assets/icons/trash_open.png";
-                                colorOverlay.color = root.rgb(128, 128, 128);
-                            }
-                            onExited: {
-                                // img.source = "qrc:/SortManager-Music/assets/icons/trash_close.png";
-                                colorOverlay.color = root.dark_theme ? rgb(96,96,96) : rgb(158,158,158);
-                            }
-                            onPressed: backend.database.loadFiltersModel()
-                        }
+                        ThinSeparator{}
                     }
+
+
+
                 }
 
                 footer: Item{

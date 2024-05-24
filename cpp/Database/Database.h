@@ -163,12 +163,14 @@ signals: // -------------------------------------------------- database actions 
 
 signals: // -------------------------------------------------- playlist actions -------------------------------------------------- //
     /// finished
-    void signalEditedPlaylistSong();    // emited when playlist song was edited correctly
-    // void signalDeletedPlaylistSong();   // emited when playlist song was deleted correctly
+    void signalPlaylistRefreshed();
+    void signalFiltersUpdated();
     /// error occur
-    void signalEditPlaylistSongError(QString desc);     // emited when any error occur while editing playlist song
-    // void signalDeletePlaylistSongError(QString desc);   // emited when any error occur while deleting playlist song
+    void signalPlaylistRefreshError(QString desc);
+    void signalFiltersUpdateError(QString desc);
 
+signals: // signals for Playlist
+    void signalPlaylistListLoaded(TagList *list);
 
 public slots: // database init
     void initializeOnStart();       /// starting aapplication
@@ -207,14 +209,17 @@ public slots: // database actions
     void editTag(int tag_id, QVariantList tag_data);
     void deleteTag(int tag_id);
 
-public slots:
-    // playlist actions
-    void editPlaylistSong(int song_id, QVariantList song_data);
+public slots: // playlist actions
+    void refreshPlaylist();
     void updateFilters(QVariantList filters);
-    // void deletePlaylistSong(int song_id);
+    void loadPlaylistList();
 
 private: // other methods to support
-    void clear_models_memory();             /// clears models from memory, cause something was changed and their need to be loaded again
+    void clearModelsMemory();             /// clears models from memory, cause something was changed and their need to be loaded again
+    void clearPlaylistModelsMemory();
+    void clearFiltersModelsMemory();
+
+    QString fillFiltersWithValidTags();
 
     static QString notNull(const QString &value);
     bool isDatabaseOpen(void (Database::*signal)(QString), const char *caller_name = "");
@@ -238,7 +243,6 @@ private: // other methods to support
     QString _debugPrintModel_TagDetails(TagDetails* const &model) const;    // (argument explanation in method's body)
 
 
-    void loadFilters();
     void queryToFile(QString query, QStringList param_names = {}, QVariantList param_values = {}) const;
 
 

@@ -87,7 +87,7 @@ Item{
         }
 
         ToolTip{
-            visible: msArea.containsMouse && Backend.personalization.showTooltips
+            visible: msArea.containsMouse // && Backend.personalization.showTooltips
             text: dltDescription
             delay: 800
         }

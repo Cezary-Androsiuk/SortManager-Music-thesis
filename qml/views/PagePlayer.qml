@@ -85,8 +85,8 @@ Page {
         Image{
             id: playIcon
             source: isPlaying
-                    ? root.iac_pause
-                    : root.iac_play
+                    ? Qt.resolvedUrl("qrc:/SortManager-Music/assets/icons/player/pause_64px.png")
+                    : Qt.resolvedUrl("qrc:/SortManager-Music/assets/icons/player/play_64px.png")
 
             anchors.centerIn: parent
             width: 30
@@ -106,7 +106,7 @@ Page {
         }
         Image{
             id: prevIcon
-            source: root.iac_previous
+            source: Qt.resolvedUrl("qrc:/SortManager-Music/assets/icons/player/start_64px.png")
 
             anchors{
                 verticalCenter: playIcon.verticalCenter
@@ -133,7 +133,7 @@ Page {
         }
         Image{
             id: nextIcon
-            source: root.iac_next
+            source: Qt.resolvedUrl("qrc:/SortManager-Music/assets/icons/player/end_64px.png")
 
             anchors{
                 verticalCenter: playIcon.verticalCenter

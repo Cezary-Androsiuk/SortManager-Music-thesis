@@ -5,6 +5,7 @@ import QtQuick.Dialogs
 import Qt5Compat.GraphicalEffects
 
 import "qrc:/SortManager-Music/qml/delegates/common" // LeftText
+import "qrc:/SortManager-Music/qml/components" // ImageButton
 
 Item {
     id: pathSelectField
@@ -67,41 +68,49 @@ Item {
             }
 
             // height: folderDialogText.height
-            width: height * 0.7
+            width: height// * 0.7
 
-            Image{
-                id: img
-                fillMode: Image.PreserveAspectFit
-                anchors{
-                    fill: parent
-                    topMargin: 15
-                    margins: parent.width * 0.15
-                }
 
-                source: "qrc:/SortManager-Music/assets/icons/select_file-idle.png"
-            }
+            // ImageButton{
+            //     dltDescription: "Shuffle Songs"
+            //     dltImageIdle: Qt.resolvedUrl("qrc:/SortManager-Music/assets/icons/shuffle_36px.png")
+            //     dltImageHover: dltImageIdle
+            //     onUserClicked: {}
+            // }
 
-            ColorOverlay {
-                anchors.fill: img
-                source: img
-                color: root.dark_theme ? rgb(96,96,96) : rgb(158,158,158)
-                opacity: dltEnabled ? 1.0 : 0.4
-            }
+            // Image{
+            //     id: img
+            //     fillMode: Image.PreserveAspectFit
+            //     anchors{
+            //         fill: parent
+            //         topMargin: 15
+            //         margins: parent.width * 0.15
+            //     }
 
-            MouseArea{
-                anchors.fill: parent
-                hoverEnabled: true
+            //     source: "qrc:/SortManager-Music/assets/icons/select_file-idle.png"
+            // }
 
-                enabled: dltEnabled
+            // ColorOverlay {
+            //     anchors.fill: img
+            //     source: img
+            //     color: root.dark_theme ? rgb(96,96,96) : rgb(158,158,158)
+            //     opacity: dltEnabled ? 1.0 : 0.4
+            // }
 
-                onEntered: {
-                    img.source = "qrc:/SortManager-Music/assets/icons/select_file-hover.png"
-                }
-                onExited: {
-                    img.source = "qrc:/SortManager-Music/assets/icons/select_file-idle.png"
-                }
-                onPressed: folderDialog.open()
-            }
+            // MouseArea{
+            //     anchors.fill: parent
+            //     hoverEnabled: true
+
+            //     enabled: dltEnabled
+
+            //     onEntered: {
+            //         img.source = "qrc:/SortManager-Music/assets/icons/select_file-hover.png"
+            //     }
+            //     onExited: {
+            //         img.source = "qrc:/SortManager-Music/assets/icons/select_file-idle.png"
+            //     }
+            //     onPressed: folderDialog.open()
+            // }
 
             // ToolTip.visible: hovered
             // ToolTip.text: "Select File"

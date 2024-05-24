@@ -84,7 +84,14 @@ DONE ZROZMIEĆ FileSelectField.qml oraz PathSelectField.qml
 - import songs from json
 - export tags to json
 - export songs to json
-- test
+- make own icons
+- clean up icons
+? dodać Backend.personalization.showTooltips w ImageButton:90
+- zmienić Image w FileSelectField na ImageButton
+- sprawdzić czy PathSelectField jest używany
+- dodać opis info do niektórych
+- błąd z add date i update date w dodawaniu nowej piosenki ????
+? dodać do BetterButton ikonki
 
 ==========================
 playlist:

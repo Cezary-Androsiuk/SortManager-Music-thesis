@@ -61,6 +61,7 @@ qt_add_qml_module(appSortManager-Music
     QML_FILES qml/components/BetterButton.qml
     QML_FILES qml/components/ImageButton.qml
     QML_FILES qml/components/InfoToolTip.qml
+    QML_FILES qml/components/ThinSeparator.qml
 
     # delegates
     QML_FILES qml/delegates/FileSelectField.qml
@@ -94,19 +95,29 @@ qt_add_qml_module(appSortManager-Music
 
 
 
-    RESOURCES assets/icons/audioControls/ac-play.png
-    RESOURCES assets/icons/audioControls/ac-pause.png
-    RESOURCES assets/icons/audioControls/ac-next.png
-    RESOURCES assets/icons/audioControls/ac-previous.png
-    RESOURCES assets/icons/audioControls/ac-playlist.png
-    RESOURCES assets/icons/audioControls/ac-replay.png
-    RESOURCES assets/icons/select_file-idle.png
-    RESOURCES assets/icons/select_file-hover.png
-    RESOURCES assets/icons/filter-icon-25207.png
-    RESOURCES assets/icons/trash_close.png assets/icons/trash_open.png
 
-    RESOURCES assets/icons/info.png
+    RESOURCES assets/icons/player/end_64px.png
+    RESOURCES assets/icons/player/pause_64px.png
+    RESOURCES assets/icons/player/play_64px.png
+    RESOURCES assets/icons/player/start_64px.png
 
+    RESOURCES assets/icons/approximately_equal_64px.png
+    RESOURCES assets/icons/approximately_not_equal_64px.png
+    RESOURCES assets/icons/equal_sign_64px.png
+    RESOURCES assets/icons/less_or_equal_64px.png
+    RESOURCES assets/icons/less_than_64px.png
+    RESOURCES assets/icons/more_64px.png
+    RESOURCES assets/icons/more_or_equal_64px.png
+    RESOURCES assets/icons/more_than_64px.png
+    RESOURCES assets/icons/not_equal_64px.png
+
+    RESOURCES assets/icons/folder_open_64px.png
+    RESOURCES assets/icons/filter_36px.png
+    RESOURCES assets/icons/refresh_36px.png
+    RESOURCES assets/icons/shuffle_36px.png
+    RESOURCES assets/icons/info_24px.png
+    RESOURCES assets/icons/trash_close_512px.png
+    RESOURCES assets/icons/trash_open_512px.png
 )
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.

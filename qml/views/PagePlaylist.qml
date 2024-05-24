@@ -8,27 +8,29 @@ import "qrc:/SortManager-Music/qml/popups"
 Page {
     anchors.fill: parent
 
-    function loadPlaylistModel(){
-        // var filters = backend.database.playlist.filter;
-        backend.database.loadPlaylistModel();
-    }
+    // function loadPlaylistModel(){
+    //     // var filters = backend.database.playlist.filter;
+    //     backend.database.loadPlaylistModel();
+    // }
 
     Component.onCompleted: {
-        loadPlaylistModel();
+        // loadPlaylistModel();
+
+        playlistLoader.active = true;
     }
 
     Connections{
         target: backend.database
 
-        function onSignalPlaylistModelLoaded()
-        {
-            playlistLoader.active = true;
-        }
-        function onSignalPlaylistModelLoadError(desc)
-        {
-            pLoadPlaylistError.open();
-            pLoadPlaylistError.dltDesc = desc;
-        }
+        // function onSignalPlaylistModelLoaded()
+        // {
+        //     playlistLoader.active = true;
+        // }
+        // function onSignalPlaylistModelLoadError(desc)
+        // {
+        //     pLoadPlaylistError.open();
+        //     pLoadPlaylistError.dltDesc = desc;
+        // }
     }
 
     Popup2{
