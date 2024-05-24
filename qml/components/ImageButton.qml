@@ -14,10 +14,13 @@ Item{
     property bool dltUsePopupColor: false
 
     // text colors
-    property color dltIdleColor: root.color_element_idle
-    property color dltHoverColor: root.color_element_hover
-    property color dltPressColor: root.color_element_press
+    property color dltTextIdleColor: root.color_element_idle
+    property color dltTextHoverColor: root.color_element_hover
+    property color dltTextPressColor: root.color_element_press
 
+    readonly property color fixedTextIdleColor: dltTextIdleColor
+    readonly property color fixedTextHoverColor: dltBackgroundVisible ? dltTextIdleColor : dltTextHoverColor
+    readonly property color fixedTextPressColor: dltTextPressColor
 
     // background colors
     property color dltBacgroundIdleColor: root.color_background
@@ -34,12 +37,13 @@ Item{
 
 
 
+
     property bool dltDarkThemeRefresh: root.dark_theme
     onDltDarkThemeRefreshChanged: {
         // force to refresh because can't find reason why this isn't
         //    allways refreshing after changing dark_theme state
         // i think that is caused by some interaction with containsMouse
-        colorOverlay.color = dltIdleColor
+        colorOverlay.color = fixedTextIdleColor
     }
 
     Rectangle{
@@ -71,7 +75,7 @@ Item{
         id: colorOverlay
         anchors.fill: img
         source: img
-        color: dltIdleColor
+        color: fixedTextIdleColor
     }
 
 
@@ -89,23 +93,23 @@ Item{
 
             // change color to hover or to press color, if following action happend:
             // button was pressed, left area, and enter area again (constantly being pressed)
-            colorOverlay.color = msArea.containsPress ? dltPressColor : dltHoverColor
+            colorOverlay.color = msArea.containsPress ? fixedTextPressColor : fixedTextHoverColor
         }
         onExited: {
             // change image to idle
             img.source = dltImageIdle;
 
             // change color to idle
-            colorOverlay.color = dltIdleColor
+            colorOverlay.color = fixedTextIdleColor
         }
         onPressed: {
             // change color to press
-            colorOverlay.color = dltPressColor
+            colorOverlay.color = fixedTextPressColor
         }
         onReleased: {
             // change color to hover if mouse was relesed on area or if was relesed
             //     outside area to the idle color
-            colorOverlay.color = msArea.containsMouse ? dltHoverColor : dltIdleColor
+            colorOverlay.color = msArea.containsMouse ? fixedTextHoverColor : fixedTextIdleColor
 
             // if was relesed, still containing the mouse activate click
             if(msArea.containsMouse)
