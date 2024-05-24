@@ -12,6 +12,9 @@ Item{
     required property string dltImageHover
     property bool dltBackgroundVisible: false
     property bool dltUsePopupColor: false
+    onDltImageIdleChanged: {
+        img.source = dltImageIdle // sometimes was not refresh it self
+    }
 
     // text colors
     property color dltTextIdleColor: root.color_element_idle
@@ -113,10 +116,14 @@ Item{
 
             // if was relesed, still containing the mouse activate click
             if(msArea.containsMouse)
+            {
+                tooltip.visible = false // cause sometimes in popup, tooltip doesn't turn off
                 userClicked()
+            }
         }
 
         ToolTip{
+            id: tooltip
             visible: msArea.containsMouse && (dltDescription !== "") // && Backend.personalization.showTooltips
             text: dltDescription
             delay: 800

@@ -25,15 +25,7 @@ Item {
     // right handle for the item
     property var dltAnchorRight: null
 
-    readonly property int popup_case_height: selectedValueField.height * 0.8;
-
-    // describe if texts in button list will be equal size but they receive common pixel
-    //    size that will be the largest possible for the langest text (to fit in given area)
-    //    or all texts in button list will have own pixel size but if one text is short and the
-    //    other is longer pixel sizes can be defferent
-    property bool individualPixelSize: false
-    property int lowestPixelSize: 5
-    property int globalButtonPixelSize: 100 // start pixel size
+    readonly property int popup_case_height: comboBoxHead.height * 0.8;
 
     Component.onCompleted: {
         var popup_height = 0;
@@ -51,50 +43,12 @@ Item {
         listLoader.active = true;
     }
 
-    function computePixelSize(___text, ___field)
-    {
-        if(individualPixelSize)
-        {
-            // will find perfect font size for current delegate text
-            var lw = ___text.width // protector "last width"
-            var lh = ___text.height // protector "last height"
-            while(___text.width <= ___field.width && ___text.height <= ___field.height)
-            {
-                ___text.font.pixelSize += 0.1
-                if(lw === ___text.width && lh === ___text.height)
-                {
-                    // console.log("comparator component pixel size protected!");
-                    break;
-                }
-            }
-            while(___text.width > ___field.width || ___text.height > ___field.height)
-            {
-                ___text.font.pixelSize -= 1
-                if(___text.font.pixelSize < lowestPixelSize) {
-                    console.log("reached lowest pixelSize: " + lowestPixelSize)
-                    break;
-                }
-            }
-        }
-        else
-        {
-            // will decrease size of all texts in list if any text reqiore smaller pixelSize
-            while(___text.width > ___field.width || ___text.height > ___field.height)
-            {
-                globalButtonPixelSize -= 1
-                if(globalButtonPixelSize < lowestPixelSize) {
-                    console.log("reached lowest pixelSize: " + lowestPixelSize)
-                    break;
-                }
-            }
-        }
-    }
     Popup{
         id: modelList
         // height set in parent's onCompleted
-        width: selectedValueField.width
-        x: selectedValueField.x
-        y: selectedValueField.y
+        width: comboBoxHead.width
+        x: comboBoxHead.x
+        y: comboBoxHead.y
 
         padding: 4
         focus: true
@@ -121,94 +75,44 @@ Item {
                     opacity: 0.3
                 }
 
-                delegate: TabButton{
-                    id: _button
-                    height: popup_case_height
+                delegate: Item{
                     width: parent.width
-                    Text{
-                        id: _text
-                        Component.onCompleted: {
-                            computePixelSize(_text, _button)
+                    height: comparatorComponent.popup_case_height
+
+                    ImageButton{
+                        dltDescription: modelData.desc
+                        dltImageIdle: modelData.image
+                        dltImageHover: dltImageIdle
+                        onUserClicked: {
+                            modelList.close()
+                            dltIndex = index
                         }
-
-                        anchors.centerIn: parent
-                        text: dltModel[index].image
-
-                        color: root.color_accent1
-                        font.pixelSize: individualPixelSize ? 10 : globalButtonPixelSize
-                        verticalAlignment: Text.AlignVCenter
+                        dltUsePopupColor: true
+                        dltBackgroundVisible: true
                     }
 
-                    ToolTip{
-                        visible: parent.hovered && modelList.opened
-                        text: dltModel[index].desc
-                        delay: 500
-                    }
-
-
-
-
-                    onClicked: {
-                        modelList.close()
-                        dltIndex = index
-                    }
                 }
             }
         }
     }
-    // Rectangle{
-    //     anchors.fill: selectedValueField
-    //     color: "white"
-    //     opacity: 0.01
-    //     // radius: width*0.1
-    // }
-    TabButton{
-        id: selectedValueField
+
+    Item{
+        id: comboBoxHead
         anchors{
             fill: parent
             margins: 5
         }
-        onClicked: {
-            modelList.open()
-        }
-        opacity: 0.4
-        // visible: false
-    }
 
-    Text{
-        id: _text
+        opacity: (dltIndex === 0) ? 0.1 : 0.4
 
-        anchors.centerIn: selectedValueField
-        text: dltModel[dltIndex].image
-
-        color: root.color_accent1
-        font.pixelSize: individualPixelSize ? 10 : globalButtonPixelSize
-        verticalAlignment: Text.AlignVCenter
-
-        opacity: 0.8
-
-        Component.onCompleted: {
-            computePixelSize(_text, selectedValueField)
-        }
-
-        onTextChanged: {
-            computePixelSize(_text, selectedValueField)
+        ImageButton{
+            id: comboBoxImage
+            dltImageIdle: dltModel[dltIndex].image
+            dltImageHover: dltImageIdle
+            onUserClicked: {
+                modelList.open()
+            }
+            dltBackgroundVisible: true
         }
     }
-
-    // Item{
-    //     id: comboBoxHead
-    //     anchors{
-    //         fill: parent
-    //         margins: 5
-    //     }
-
-    //     opacity: 0.4
-
-    //     ImageButton{
-    //         dltImageIdle: dltModel[0].image
-    //         dltImageHover: dltImageIdle
-    //         onUserClicked: modelList.open()
-    //     }
-    // }
 }

@@ -54,10 +54,8 @@ Page {
             mdl.push({ id: _tag.id, name: _tag.name, type: _tag.type,
                          comparison_way: _tag.comparison_way, comparison_value: _tag.comparison_value })
         }
-        console.log("model saved to variable")
 
         listViewLoader.active = true
-        console.log("loader actived")
     }
 
     Connections{
@@ -118,7 +116,6 @@ Page {
 
                 // decide what style of row listView should choose
                 sourceComponent: {
-                    console.log("selecting source component")
                     if(false);
                     else if(modelData.type === 0) compareIntegerFieldComponent
                     else if(modelData.type === 1) compareStringFieldComponent
