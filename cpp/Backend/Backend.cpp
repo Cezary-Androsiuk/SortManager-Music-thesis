@@ -7,8 +7,9 @@ Backend::Backend(QObject *parent)
     m_player(nullptr),
     m_playlist(nullptr)
 {
-    this->initializeParameters();
+    this->createParameters();
     this->initializeConnections();
+    this->initializeParameters();
     DB << "Backend instance created, waiting for Frontend (QML)...";
 }
 
@@ -17,23 +18,34 @@ Backend::~Backend()
     m_personalization->savePersonalizationToJson();
 }
 
-void Backend::initializeParameters()
+void Backend::createParameters()
 {
-    m_personalization = new Personalization(this);
-    m_personalization->loadPersonalizationFromJson(); /// if an error occur will be handled in checkPersonalization()
-
-    m_database = new Database(this);
-    m_database->initializeOnStart();
-
-    m_player = new Player(this);
-    m_playlist = new Playlist(this);
+    m_personalization =     new Personalization(this);
+    m_database =            new Database(this);
+    m_player =              new Player(this);
+    m_playlist =            new Playlist(this);
 }
 
 void Backend::initializeConnections()
 {
     /// on any change in personalization, change database equivalent value
-    QObject::connect(m_personalization, &Personalization::saveExecQueryNotify, m_database, &Database::setSaveExecQuery);
-    QObject::connect(m_personalization, &Personalization::showConstantTagsNotify, m_database, &Database::setShowConstantTags);
+    QObject::connect(m_personalization, &Personalization::saveExecQueryChanged, this, [&](){
+        DB << "changed 1";
+        m_database->setSaveExecQuery(m_personalization->getSaveExecQuery());
+    });
+    QObject::connect(m_personalization, &Personalization::showConstantTagsChanged, this, [&](){
+        DB << "changed 2";
+        m_database->setShowConstantTags(m_personalization->getShowConstantTags());
+    });
+
+    // QObject::connect(m_database &Database::signalPlaylistListLoaded, m_playlist, &Playlist::loadNewPlaylistList);
+}
+
+void Backend::initializeParameters()
+{
+    m_personalization->setDefaultPersonalizationData(); /// why is called here, is explained in methods body
+    m_personalization->loadPersonalizationFromJson(); /// if an error occur will be handled in checkPersonalization()
+    m_database->initializeOnStart();
 }
 
 void Backend::checkPersonalization()

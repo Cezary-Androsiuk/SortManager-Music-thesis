@@ -38,8 +38,9 @@ public:
     ~Backend();
 
     /// initialize Backend
-    void initializeParameters();
+    void createParameters();
     void initializeConnections();
+    void initializeParameters();
 
     /// destroy Backend
     // none

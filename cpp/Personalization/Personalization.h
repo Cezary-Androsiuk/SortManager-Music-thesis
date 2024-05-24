@@ -88,11 +88,9 @@ public: // getters / setters
 signals:
     void isDarkThemeChanged();
     void saveExecQueryChanged();
-    void saveExecQueryNotify(bool saveExecQuery);
     void darkAccentColorChanged();
     void lightAccentColorChanged();
     void showConstantTagsChanged();
-    void showConstantTagsNotify(bool showConstantTags);
     void defaultAddTagTypeChanged();
     void alwaysKeepListPosChanged();
     void songOpenPathChanged();

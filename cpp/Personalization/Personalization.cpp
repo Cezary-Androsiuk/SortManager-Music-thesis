@@ -1,16 +1,7 @@
 #include "Personalization.h"
 
 Personalization::Personalization(QObject *parent)
-    : QObject{parent},
-    m_isDarkTheme(DEFAULT_IS_DARK_THEME),
-    m_saveExecQuery(DEFAULT_SAVE_EXEC_QUERY),
-    m_darkAccentColor(DEFAULT_DARK_ACCENT),
-    m_lightAccentColor(DEFAULT_LIGHT_ACCENT),
-    m_showConstantTags(DEFAULT_SHOW_CONSTANT_TAGS),
-    m_defaultAddTagType(DEFAULT_DEFAULT_ADD_TAG_TYPE),
-    m_alwaysKeepListPos(DEFAULT_ALWAYS_KEEP_LIST_POS),
-    m_songOpenPath(DEFAULT_SONGS_OPEN_PATH),
-    m_showErrorDesc(DEFAULT_SHOW_ERROR_DESC)
+    : QObject{parent}
 {
 
 }
@@ -39,15 +30,36 @@ void Personalization::setDefaultPersonalizationData()
 {
     DB << "assigning default values";
 
+    /*
+     * this method should be called after creating instance of class (and build all connections), to ensure that all parameters will contains
+     * expected values (the default ones)
+     * parameters are not set in constructor cause this could not emit parameterChanged signal, when DEFAULT value is equal to the new one
+     * for example:
+     * Personalization parameter x is by default true
+     * Backend's equivalent parameter _x is by default false
+     * then x != _x
+     * when personalization is initailized, the new value for parameter x that was readed from personalization.json, could be equal to true
+     * in that case changing old x value (true) to new x value (also true) won't emit any signal and Backend's parameter _x will stay false
+     */
+
     m_isDarkTheme = DEFAULT_IS_DARK_THEME;
+    emit this->isDarkThemeChanged();
     m_saveExecQuery = DEFAULT_SAVE_EXEC_QUERY;
+    emit this->saveExecQueryChanged();
     m_darkAccentColor = DEFAULT_DARK_ACCENT;
+    emit this->darkAccentColorChanged();
     m_lightAccentColor = DEFAULT_LIGHT_ACCENT;
+    emit this->lightAccentColorChanged();
     m_showConstantTags = DEFAULT_SHOW_CONSTANT_TAGS;
+    emit this->showConstantTagsChanged();
     m_defaultAddTagType = DEFAULT_DEFAULT_ADD_TAG_TYPE;
+    emit this->defaultAddTagTypeChanged();
     m_alwaysKeepListPos = DEFAULT_ALWAYS_KEEP_LIST_POS;
+    emit this->alwaysKeepListPosChanged();
     m_songOpenPath = DEFAULT_SONGS_OPEN_PATH;
+    emit this->songOpenPathChanged();
     m_showErrorDesc = DEFAULT_SHOW_ERROR_DESC;
+    emit this->showErrorDescChanged();
 
     m_errorCodeIfOccurWhileLoading = 0;
 }
@@ -230,83 +242,81 @@ bool Personalization::getShowErrorDesc() const
 
 void Personalization::setIsDarkTheme(bool isDarkTheme)
 {
-    if(m_isDarkTheme != isDarkTheme)
-    {
-        m_isDarkTheme = isDarkTheme;
-        emit this->isDarkThemeChanged();
-    }
+    if(m_isDarkTheme == isDarkTheme)
+        return;
+
+    m_isDarkTheme = isDarkTheme;
+    emit this->isDarkThemeChanged();
 }
 
 void Personalization::setSaveExecQuery(bool saveExecQuery)
 {
-    if(m_saveExecQuery != saveExecQuery)
-    {
-        m_saveExecQuery = saveExecQuery;
-        emit this->saveExecQueryChanged();
-    }
-    emit this->saveExecQueryNotify(m_saveExecQuery);
+    if(m_saveExecQuery == saveExecQuery)
+        return;
+
+    m_saveExecQuery = saveExecQuery;
+    emit this->saveExecQueryChanged();
 }
 
 void Personalization::setDarkAccentColor(const QColor &darkAccentColor)
 {
-    if(m_darkAccentColor != darkAccentColor)
-    {
-        m_darkAccentColor = darkAccentColor;
-        emit this->darkAccentColorChanged();
-    }
+    if(m_darkAccentColor == darkAccentColor)
+        return;
+
+    m_darkAccentColor = darkAccentColor;
+    emit this->darkAccentColorChanged();
 }
 
 void Personalization::setLightAccentColor(const QColor &lightAccentColor)
 {
-    if(m_lightAccentColor != lightAccentColor)
-    {
-        m_lightAccentColor = lightAccentColor;
-        emit this->lightAccentColorChanged();
-    }
+    if(m_lightAccentColor == lightAccentColor)
+        return;
+
+    m_lightAccentColor = lightAccentColor;
+    emit this->lightAccentColorChanged();
 }
 
 void Personalization::setShowConstantTags(bool showConstantTags)
 {
-    if(m_showConstantTags != showConstantTags)
-    {
-        m_showConstantTags = showConstantTags;
-        emit this->showConstantTagsChanged();
-    }
-    emit this->showConstantTagsNotify(m_showConstantTags);
+    if(m_showConstantTags == showConstantTags)
+        return;
+
+    m_showConstantTags = showConstantTags;
+    emit this->showConstantTagsChanged();
 }
 
 void Personalization::setDefaultAddTagType(int defaultAddTagType)
 {
-    if(m_defaultAddTagType != defaultAddTagType)
-    {
-        m_defaultAddTagType = defaultAddTagType;
-        emit this->defaultAddTagTypeChanged();
-    }
+    if(m_defaultAddTagType == defaultAddTagType)
+        return;
+
+    m_defaultAddTagType = defaultAddTagType;
+    emit this->defaultAddTagTypeChanged();
 }
 
 void Personalization::setAlwaysKeepListPos(bool alwaysKeepListPos)
 {
-    if(m_alwaysKeepListPos != alwaysKeepListPos)
-    {
-        m_alwaysKeepListPos = alwaysKeepListPos;
-        emit this->alwaysKeepListPosChanged();
-    }
+    if(m_alwaysKeepListPos == alwaysKeepListPos)
+        return;
+
+    m_alwaysKeepListPos = alwaysKeepListPos;
+    emit this->alwaysKeepListPosChanged();
 }
 
 void Personalization::setSongOpenPath(const QString &songOpenPath)
 {
-    if(m_songOpenPath != songOpenPath)
-    {
-        m_songOpenPath = songOpenPath;
-        emit this->songOpenPathChanged();
-    }
+    if(m_songOpenPath == songOpenPath)
+        return;
+
+    m_songOpenPath = songOpenPath;
+    emit this->songOpenPathChanged();
 }
 
 void Personalization::setShowErrorDesc(bool showErrorDesc)
 {
-    if(m_showErrorDesc != showErrorDesc)
-    {
-        m_showErrorDesc = showErrorDesc;
-        emit this->showErrorDescChanged();
-    }
+    if(m_showErrorDesc == showErrorDesc)
+        return;
+
+    m_showErrorDesc = showErrorDesc;
+    emit this->showErrorDescChanged();
 }

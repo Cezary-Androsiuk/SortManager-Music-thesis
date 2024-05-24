@@ -4,8 +4,7 @@
 #include <QObject>
 
 #include "cpp/DebugPrint/DebugPrint.h"
-
-#include "cpp/Filter/Filter.h"
+#include "cpp/Tag/TagList.h"
 
 class Playlist : public QObject
 {
@@ -14,9 +13,11 @@ class Playlist : public QObject
 public:
     explicit Playlist(QObject *parent = nullptr);
 
-
+public slots:
+    void loadNewPlaylistList(TagList *list);
 
 signals:
+    void newPlaylistListLoaded();
 
 private:
 
