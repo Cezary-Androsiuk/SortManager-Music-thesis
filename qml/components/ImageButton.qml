@@ -7,7 +7,7 @@ Item{
     id: imageButton
     anchors.fill: parent
 
-    required property string dltDescription
+    property string dltDescription: ""
     required property string dltImageIdle
     required property string dltImageHover
 
@@ -87,7 +87,7 @@ Item{
         }
 
         ToolTip{
-            visible: msArea.containsMouse // && Backend.personalization.showTooltips
+            visible: msArea.containsMouse && (dltDescription !== "") // && Backend.personalization.showTooltips
             text: dltDescription
             delay: 800
         }
