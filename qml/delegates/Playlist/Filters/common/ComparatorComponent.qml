@@ -3,6 +3,8 @@ import QtQuick.Controls
 import QtQuick.Controls.Material
 import QtQuick.Dialogs
 
+import "qrc:/SortManager-Music/qml/components" // ImageButton
+
 Item {    
     id: comparatorComponent
     anchors{
@@ -13,10 +15,10 @@ Item {
     width: height * 3/2
 
     property var dltModel: [
-        {text: "example", desc: "what you have on your mind"},
-        {text: "data", desc: "anything about data"},
-        {text: "in", desc: "random word"},
-        {text: "list", desc: "use your own data"}
+        {image: "example", desc: "what you have on your mind"},
+        {image: "data", desc: "anything about data"},
+        {image: "in", desc: "random word"},
+        {image: "list", desc: "use your own data"}
     ]
     property int dltIndex: 0
 
@@ -130,7 +132,7 @@ Item {
                         }
 
                         anchors.centerIn: parent
-                        text: dltModel[index].text
+                        text: dltModel[index].image
 
                         color: root.color_accent1
                         font.pixelSize: individualPixelSize ? 10 : globalButtonPixelSize
@@ -170,13 +172,14 @@ Item {
             modelList.open()
         }
         opacity: 0.4
-
+        // visible: false
     }
+
     Text{
         id: _text
 
         anchors.centerIn: selectedValueField
-        text: dltModel[dltIndex].text
+        text: dltModel[dltIndex].image
 
         color: root.color_accent1
         font.pixelSize: individualPixelSize ? 10 : globalButtonPixelSize
@@ -192,4 +195,20 @@ Item {
             computePixelSize(_text, selectedValueField)
         }
     }
+
+    // Item{
+    //     id: comboBoxHead
+    //     anchors{
+    //         fill: parent
+    //         margins: 5
+    //     }
+
+    //     opacity: 0.4
+
+    //     ImageButton{
+    //         dltImageIdle: dltModel[0].image
+    //         dltImageHover: dltImageIdle
+    //         onUserClicked: modelList.open()
+    //     }
+    // }
 }

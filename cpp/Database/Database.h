@@ -48,15 +48,6 @@
 
 class Database : public QObject
 {
-    /*
-     * naming convention:
-     * private variables starts with "m_" and snake_case
-     * getters for private variables are just like their variable but instead "m_" prefix used "get_"
-     * setters for private variables are just like their variable but instead "m_" prefix used "set_"
-     * signals for private variables are just like their variable but without "m_" prefix but with "Changed" postfix
-     *
-     * methods that acctualy do something (app logic) are named using camelCase
-    */
     Q_OBJECT
 
     // frontend songs accessors

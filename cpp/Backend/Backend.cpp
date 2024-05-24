@@ -30,11 +30,9 @@ void Backend::initializeConnections()
 {
     /// on any change in personalization, change database equivalent value
     QObject::connect(m_personalization, &Personalization::saveExecQueryChanged, this, [&](){
-        DB << "changed 1";
         m_database->setSaveExecQuery(m_personalization->getSaveExecQuery());
     });
     QObject::connect(m_personalization, &Personalization::showConstantTagsChanged, this, [&](){
-        DB << "changed 2";
         m_database->setShowConstantTags(m_personalization->getShowConstantTags());
     });
 
