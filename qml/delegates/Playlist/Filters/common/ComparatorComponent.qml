@@ -103,10 +103,11 @@ Item {
             margins: 5
         }
 
-        opacity: (dltIndex === 0) ? 0.1 : 0.4
+        opacity: (dltIndex === 0) ? 0.2 : 0.4
 
         ImageButton{
             id: comboBoxImage
+            dltDescription: dltModel[dltIndex].desc
             dltImageIdle: dltModel[dltIndex].image
             dltImageHover: dltImageIdle
             onUserClicked: {

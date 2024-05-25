@@ -1,7 +1,8 @@
 # added:
 build/*
 assets/_icons/*
-assets/_gui/*
+assets/not_used_icons/*
+assets/old_icons/*
 
 # This file is used to ignore files which are generated
 # ----------------------------------------------------------------------------
