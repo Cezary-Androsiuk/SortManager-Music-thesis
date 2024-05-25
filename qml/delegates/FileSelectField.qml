@@ -68,13 +68,13 @@ Item{
             id: fileDialogButton
             anchors{
                 top: parent.top
+                topMargin: 10 // to align with fileDialogText field
                 bottom: parent.bottom
                 right: parent.right
             }
 
             // height: fileDialogText.height
             width: height * 0.7
-
 
             ImageButton{
                 dltDescription: "Select File"
@@ -83,42 +83,6 @@ Item{
                 onUserClicked: {}
             }
 
-            // Image{
-            //     id: img
-            //     fillMode: Image.PreserveAspectFit
-            //     anchors{
-            //         fill: parent
-            //         topMargin: 15
-            //         margins: parent.width * 0.15
-            //     }
-
-            //     source: "qrc:/SortManager-Music/assets/icons/select_file-idle.png"
-            // }
-
-            // ColorOverlay {
-            //     anchors.fill: img
-            //     source: img
-            //     color: root.dark_theme ? rgb(96,96,96) : rgb(158,158,158)
-            //     opacity: dltEnabled ? 1.0 : 0.4
-            // }
-
-            // MouseArea{
-            //     anchors.fill: parent
-            //     hoverEnabled: true
-
-            //     enabled: dltEnabled
-
-            //     onEntered: {
-            //         img.source = "qrc:/SortManager-Music/assets/icons/select_file-hover.png"
-            //     }
-            //     onExited: {
-            //         img.source = "qrc:/SortManager-Music/assets/icons/select_file-idle.png"
-            //     }
-            //     onPressed: fileDialog.open()
-            // }
-
-            // ToolTip.visible: hovered
-            // ToolTip.text: "Select File"
         }
 
         FileDialog {
