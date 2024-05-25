@@ -228,10 +228,10 @@ private: // other methods to support
     void debugPrintModel_playlist() const;
     void debugPrintModel_filters() const;
 
-    QString _debugPrintModel_SongList(SongList* const &model) const;        // (argument explanation in method's body)
-    QString _debugPrintModel_SongDetails(SongDetails* const &model) const;  // (argument explanation in method's body)
-    QString _debugPrintModel_TagList(TagList* const &model) const;          // (argument explanation in method's body)
-    QString _debugPrintModel_TagDetails(TagDetails* const &model) const;    // (argument explanation in method's body)
+    static QString _debugPrintModel_SongList(const SongList* const model);
+    static QString _debugPrintModel_SongDetails(const SongDetails* const model);
+    static QString _debugPrintModel_TagList(const TagList* const model);
+    static QString _debugPrintModel_TagDetails(const TagDetails* const model);
 
 
     void queryToFile(QString query, QStringList param_names = {}, QVariantList param_values = {}) const;

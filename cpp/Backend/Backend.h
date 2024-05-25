@@ -38,15 +38,16 @@ public:
     ~Backend();
 
     /// initialize Backend
-    void createParameters();
-    void initializeConnections();
-    void initializeParameters();
+    void createParameters();        /// called in constructor
+    void initializeConnections();   /// called in constructor
+    void initializeParameters();    /// called in constructor
+    void initializeBackend();       /// triggered by backendInitialized
 
     /// destroy Backend
     // none
 
 public slots: /// after qml was loaded (to check if steps are correctly initialized or display popup)
-    void checkPersonalization();
+    void checkPersonalization();        /// triggered by QML (immediately after Main.qml compleated)
 
 signals: /// communicate with QML to check if initialized correctly (emited by above slots)
     void personalizationLoaded();                       /// emitted after confirmed that personalization has been initialized correctly
@@ -54,8 +55,8 @@ signals: /// communicate with QML to check if initialized correctly (emited by a
     void backendInitialized();                          /// emitted after confirming that the last(currently personalization) of the steps(these above) has been correctly initialized
 
 public slots: /// initialize actions
-    void reinitializePersonalization();
-    void useDefaultPersonalization();
+    void reinitializePersonalization();     /// triggered by QML (in response to user decision)
+    void useDefaultPersonalization();       /// triggered by QML (in response to user decision)
 
 public: // getters
     Personalization *getPersonalization() const;

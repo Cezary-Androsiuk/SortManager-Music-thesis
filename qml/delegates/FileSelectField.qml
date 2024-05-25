@@ -80,7 +80,7 @@ Item{
                 dltDescription: "Select File"
                 dltImageIdle: Qt.resolvedUrl("qrc:/SortManager-Music/assets/icons/folder_open_64px.png")
                 dltImageHover: dltImageIdle
-                onUserClicked: {}
+                onUserClicked: fileDialog.open()
             }
 
         }

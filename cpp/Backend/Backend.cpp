@@ -28,6 +28,9 @@ void Backend::createParameters()
 
 void Backend::initializeConnections()
 {
+    /// right after successful initialization, trigger Database initialization
+    QObject::connect(this, &Backend::backendInitialized, this, &Backend::initializeBackend);
+
     /// on any change in personalization, change database equivalent value
     QObject::connect(m_personalization, &Personalization::saveExecQueryChanged, this, [&](){
         m_database->setSaveExecQuery(m_personalization->getSaveExecQuery());
@@ -43,7 +46,15 @@ void Backend::initializeParameters()
 {
     m_personalization->setDefaultPersonalizationData(); /// why is called here, is explained in methods body
     m_personalization->loadPersonalizationFromJson(); /// if an error occur will be handled in checkPersonalization()
-    m_database->initializeOnStart();
+}
+
+void Backend::initializeBackend()
+{
+    /// must be outside the constructor, because QML needs time to initialize connections with database,
+    /// and now, right after the Backend emits backendInitialized, the Database initialization begins.
+    /// Well, this initialization is kinda tough :c
+
+    m_database->initializeOnStart(); /// error will be handled by Database class
 }
 
 void Backend::checkPersonalization()
