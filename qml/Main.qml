@@ -65,8 +65,8 @@ ApplicationWindow {
             // console.log("DEBUG ONLY! ----- database example data Main.qml")
             // backend.database.initializeWithTags();
             // backend.database.createExampleData();
-            pInitializeOnStartFailed.open();
-            pInitializeOnStartFailed.dltDesc = desc
+            pDBInitializeOnStartFailed.open();
+            pDBInitializeOnStartFailed.dltDesc = desc
         }
 
         // initialize database with tags
@@ -77,8 +77,8 @@ ApplicationWindow {
         function onSignalInitializeWithTagsFailed(desc)
         {
             console.log("received signal onSignalInitializeWithTagsFailed from Database with arg: " + desc);
-            pInitializeWithTagsFailed.open();
-            pInitializeWithTagsFailed.dltDesc = desc
+            pDBInitializeWithTagsFailed.open();
+            pDBInitializeWithTagsFailed.dltDesc = desc
         }
     }
 
@@ -91,6 +91,7 @@ ApplicationWindow {
         dltTextLB: "Retry"
         dltTextMB: "Default"
         dltTextRB: "Exit"
+        dltJea: false
 
         onDltClickedLB: {
             backend.reinitializePersonalization();
@@ -106,13 +107,14 @@ ApplicationWindow {
     }
 
     Popup3{
-        id: pInitializeOnStartFailed
-        dltText: "Boot initialization failed!"
+        id: pDBInitializeOnStartFailed
+        dltText: "Boot initialization database failed!"
         // text description set in onPersonalizationLoadError
 
         dltTextLB: "Retry"
         dltTextMB: "Recreate"
         dltTextRB: "Exit"
+        dltJea: false
 
         onDltClickedLB: {
             backend.database.initializeOnStart();
@@ -128,12 +130,13 @@ ApplicationWindow {
     }
 
     Popup2{
-        id: pInitializeWithTagsFailed
+        id: pDBInitializeWithTagsFailed
         dltText: "Initialization with tags failed!"
         // text description set in onPersonalizationLoadError
 
         dltTextLB: "Retry"
         dltTextRB: "Exit"
+        dltJea: false
 
         onDltClickedLB: {
             backend.database.initializeWithTags();

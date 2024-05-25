@@ -84,7 +84,7 @@ Page {
         dltText: "Error while loading filters model!"
         // text description will be set in onSignalFilterModelLoadError() function
 
-        dltTextLB: "Back"
+        dltTextLB: "OK"
         dltTextRB: "Retry"
 
         onDltClickedLB: {
@@ -101,7 +101,7 @@ Page {
                       just_used_id + ", title: " + just_used_title + ") model!"
         // text description will be set in onSignalEditPlaylistSongModelLoadError() function
 
-        dltTextLB: "Back"
+        dltTextLB: "OK"
         dltTextRB: "Retry"
 
         onDltClickedLB: {

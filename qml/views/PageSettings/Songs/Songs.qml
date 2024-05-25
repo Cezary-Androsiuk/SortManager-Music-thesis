@@ -83,21 +83,25 @@ Page {
         id: pAddSongModelLoadError
         dltText: "Error while loading add song model!"
         // text description will be set in onSignalAddSongModelLoadError() function
+        dltTextMB: "OK"
     }
     Popup1{
         id: pEditSongModelLoadError
         dltText: "Error while loading edit song(id: " + just_used_id + ", title: " + just_used_title + ") model!"
         // text description will be set in onSignalEditSongModelLoadError() function
+        dltTextMB: "OK"
     }
     Popup1{
         id: pDeleteSongError
         dltText: "Error while deleting song(id: " + just_used_id + ", title: " + just_used_title + ")!"
         // text description will be set in onSignalDeleteSongError() function
+        dltTextMB: "OK"
     }
     Popup1{
         id: pAllSongsReloadError
         dltText: "Error while reloading all songs model!"
         // text description will be set in onSignalAllSongsModelLoadError() function
+        dltTextMB: "OK"
     }
 
     Popup2{

@@ -146,26 +146,28 @@ Page {
         id: pEditTagError
         dltText: "Error while saving the tag!"
         // text description will be set in onSignalEditTagError() function
+        dltTextMB: "OK"
     }
 
     Popup1{
         id: pDeleteTagError
         dltText: "Error while deleting the tag!"
         // text description will be set in onSignalDeleteTagError() function
+        dltTextMB: "OK"
     }
 
     Popup1{
         id: pAllTagsModelLoadError
         dltText: "Error while loading all tags!"
         // text description will be set in onSignalAllTagsModelLoadError() function
+        dltTextMB: "OK"
     }
 
 
     Popup1{
         id: pFormSubmitError
         // text message will be set in openPopupEmptyField() function
-
-        dltTextMB: "Ok"
+        dltTextMB: "OK"
 
         onDltClickedMB: {}
     }

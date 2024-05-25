@@ -114,21 +114,25 @@ Page {
         id: pAddTagModelLoadError
         dltText: "Error while loading add tag model!"
         // text description will be set in onSignalAddTagModelLoadError() function
+        dltTextMB: "OK"
     }
     Popup1{
         id: pEditTagModelLoadError
         dltText: "Error while loading edit tag(id: " + just_used_id + ", name: " + just_used_name + ") model!"
         // text description will be set in onSignalEditTagModelLoadError() function
+        dltTextMB: "OK"
     }
     Popup1{
         id: pDeleteTagError
         dltText: "Error while deleting tag(id: " + just_used_id + ", name: " + just_used_name + ")!"
         // text description will be set in onSignalDeleteTagError() function
+        dltTextMB: "OK"
     }
     Popup1{
         id: pAllTagsReloadError
         dltText: "Error while reloading all tags model!"
         // text description will be set in onSignalAllTagsModelLoadError() function
+        dltTextMB: "OK"
     }
 
     Popup2{

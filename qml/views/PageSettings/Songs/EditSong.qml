@@ -99,26 +99,28 @@ Page {
         id: pEditSongError
         dltText: "Error while saving the song!"
         // text description will be set in onSignalEditSongError() function
+        dltTextMB: "OK"
     }
 
     Popup1{
         id: pDeleteSongError
         dltText: "Error while deleting the song!"
         // text description will be set in onSignalDeleteSongError() function
+        dltTextMB: "OK"
     }
 
     Popup1{
         id: pAllSongsModelLoadError
         dltText: "Error while loading all songs!"
         // text description will be set in onSignalAllSongsModelLoadError() function
+        dltTextMB: "OK"
     }
 
 
     Popup1{
         id: pFormSubmitError
         // text message will be set in openPopupEmptyField() function
-
-        dltTextMB: "Ok"
+        dltTextMB: "OK"
 
         onDltClickedMB: {}
     }

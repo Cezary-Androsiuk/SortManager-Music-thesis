@@ -44,12 +44,14 @@ Page {
         id: pAllSongsModelLoadError
         dltText: "Error while loading all songs model!"
         // text description will be set in onSignalAllSongsModelLoadError() function
+        dltTextMB: "OK"
     }
 
     Popup1{
         id: pAllTagsModelLoadError
         dltText: "Error while loading all songs model!"
         // text description will be set in onSignalAllTagsModelLoadError() function
+        dltTextMB: "OK"
     }
 
     ListView{

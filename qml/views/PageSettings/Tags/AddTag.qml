@@ -111,20 +111,21 @@ Page {
         id: pAddTagError
         dltText: "Error while saving the tag!"
         // text description will be set in onSignalAddTagError() function
+        dltTextMB: "OK"
     }
 
     Popup1{
         id: pAllTagsModelLoadError
         dltText: "Error while loading all tags!"
         // text description will be set in onSignalAllTagsModelLoadError() function
+        dltTextMB: "OK"
     }
 
 
     Popup1{
         id: pFormSubmitError
         // text message will be set in openPopupEmptyField() function
-
-        dltTextMB: "Ok"
+        dltTextMB: "OK"
 
         onDltClickedMB: {}
     }

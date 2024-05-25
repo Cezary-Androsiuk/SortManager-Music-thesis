@@ -123,6 +123,7 @@ Page {
 
     Popup1{
         id: pGlobalOk
+        // test message and description will be set in caller function
         dltTextMB: "OK"
     }
 
