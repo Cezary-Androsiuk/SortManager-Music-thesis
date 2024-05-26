@@ -248,19 +248,10 @@ void Database::createExampleData()
 
 void Database::initializeFilters()
 {
-    DB;
-    IS_DATABASE_OPEN(signalFiltersInitailizeFailed)
-
-    QString errorCode = this->fillFiltersWithValidTags();
-    if(!errorCode.isNull()){
-        WR << errorCode;
-        emit this->signalFiltersUpdateError(errorCode);
-        return;
-    }
+    // somehow load filters from personalization
 
     /// initailize with empty tag comparators (without any limits) for now
-
-    // load filters from personalization
+    this->makeCurrentFiltersValid();
 
     this->debugPrint_filters();
 
@@ -1002,6 +993,7 @@ void Database::loadEditSongModel(int song_id)
     /// after checking if model is loaded because, if it is loaded then we don't care about database
     IS_DATABASE_OPEN(signalEditSongModelLoadError)
 
+    /// query will return list of tags (each record == one tag)
     QSqlQuery query(m_database);
     QString query_text(QString("SELECT tags.id, tags.name, tags.type, tags.is_editable, tags.is_required, songs_tags.value "
                                "FROM songs_tags "
@@ -1324,71 +1316,14 @@ void Database::loadEditTagModel(int tag_id)
     emit this->signalEditTagModelLoaded();
 }
 
-/*
-void Database::loadPlaylistModel()
-{
-    // method will be trigger only by signalFiltersInitailized, signalPlaylistRefreshed and signalFiltersUpdated
-
-    DB << " - staring playlist load";
-    if(m_playlist_model != nullptr){
-        // DB << "playlist model was already loaded - skipped";
-        // emit this->signalPlaylistModelLoaded();
-        // return;
-        delete m_filters_model;
-    }
-    m_filters_model = nullptr;
-
-    /// after checking if model is already loaded because, if it is loaded then we don't care about database
-    IS_DATABASE_OPEN(signalPlaylistModelLoadError)
-
-    // select all song_id and Title tags (btw Title id is 2)
-    // this "AS title" is useless but as a comment to describe what is value
-    QString query_text("SELECT song_id, value AS title FROM songs_tags WHERE tag_id = 2;");
-
-    this->queryToFile(query_text);
-    QSqlQuery query(m_database);
-    if(!query.exec(query_text)){
-        WR << "executing select query " << query.lastError();
-        emit this->signalPlaylistModelLoadError("error while executing query " + query.lastError().text());
-        return;
-    }
-    DB << " - query executed";
-
-    m_playlist_model = new SongList(this);
-
-    // read selected data
-    while(query.next()){
-        DB << " - query iterate start";
-        auto record = query.record();
-
-        int song_id = record.value(0).toInt();
-        QString song_title = record.value(1).toString();
-
-        Song *song = new Song(m_playlist_model);
-        song->set_id(song_id);
-        song->set_title(song_title);
-        // value is not needed
-
-        m_playlist_model->songs().append(song);
-        DB << " - query iterate stop";
-    }
-
-    DB << " - iteration finished";
-
-    this->debugPrintModel_playlist();
-
-    DB << "playlist model loaded correctly!";
-    emit this->signalPlaylistModelLoaded();
-}
-//*/
 void Database::loadFiltersModel()
 {
-    DB;
     if(m_filters_model != nullptr){
         DB << "filters model was already loaded - skipped";
         emit this->signalFiltersModelLoaded();
         return;
     }
+    /// model memory is cleared when something in database changed and after user save filters (updateFilters)
 
     /// use m_filters to create model
     m_filters_model = new TagList(this);
@@ -2428,19 +2363,14 @@ void Database::deleteTag(int tag_id)
 
 void Database::refreshPlaylist()
 {
-    DB;
-    IS_DATABASE_OPEN(signalPlaylistModelLoadError)
     // emit this->signalPlaylistRefreshError("");
-    // error will not be emited, cause there is no place for that ...
+    /// error will not be emited, cause there is no place for that ...
 
-    // this->clearFiltersModelsMemory();
     emit this->signalPlaylistRefreshed(); /// this will trigger loadPlaylistList
 }
 
 void Database::updateFilters(QVariantList filters)
 {
-    DB;
-    IS_DATABASE_OPEN(signalFiltersInitailizeFailed)
     /*
         received structure:
 
@@ -2448,14 +2378,9 @@ void Database::updateFilters(QVariantList filters)
             id - int
             comparison_way - int
             comparison_value - QString
-    */
 
-    // QString errorCode = this->fillFiltersWithValidTags();
-    // if(!errorCode.isNull()){
-    //     WR << errorCode;
-    //     emit this->signalFiltersUpdateError(errorCode);
-    //     return;
-    // }
+        NOTE: received structure contain all fields
+    */
 
     if(m_filters != nullptr)
         delete m_filters;
@@ -2483,13 +2408,29 @@ void Database::updateFilters(QVariantList filters)
 
 void Database::loadPlaylistList()
 {
-    DB;
-    // create list
-    // list will be deleted in signal received
+    IS_DATABASE_OPEN(signalPlaylistListLoadError)
 
-    DB << "prep query:" << this->prepPlaylistSongsQuery();
+    QList<int> songsIDs = this->prepListOfSongsForPlaylist();
 
-    // we are trust each other and playlist will delete old playlistList
+    SongDetailsList *songDetailsList = new SongDetailsList(this);
+
+    for(const int &songID : songsIDs)
+    {
+        /// query will return list of tags (each record == one tag)
+        QSqlQuery query(m_database);
+        QString query_text(QString("SELECT tags.id, tags.name, tags.type, songs_tags.value "
+                                   "FROM songs_tags "
+                                   "JOIN tags ON songs_tags.tag_id = tags.id "
+                                   "WHERE songs_tags.song_id = %1;").arg(songID));
+        this->queryToFile(query_text);
+        if(!query.exec(query_text)){
+            WR << "error while executing query " << query.lastError();
+            DB << "song with id:" << songID << "skipped";
+        }
+    }
+
+    this->_debugPrintModel_SongDetailsList(songDetailsList);
+    /// we are trust each other and playlist class will delete old playlistList
     emit this->signalPlaylistListLoaded(nullptr); /// this will trigger Playlist::loadPlaylist(TagList)
 }
 
@@ -2535,40 +2476,57 @@ void Database::clearFiltersModelsMemory()
 
 void Database::makeCurrentFiltersValid()
 {
-    DB;
     TagList *oldFilters = m_filters; /// save for later cause fillFiltersWithValidTags create own instance
     m_filters = nullptr;
     QString errorCode = this->fillFiltersWithValidTags();
     if(!errorCode.isNull()){
-        WR << errorCode;
         m_filters = oldFilters; /// bring back previous filters
+        WR << errorCode;
         emit this->signalFiltersUpdateError(errorCode);
         return;
     }
 
-    // compare valid filters with the old ones (old ones might contain data)
-    for(auto &filter : m_filters->c_ref_tags())
+    if(m_filters == nullptr) /// just for my own peace
     {
-        for(const auto &oldFilter : oldFilters->c_ref_tags())
-        {
-            if(filter->get_id() == oldFilter->get_id())
-            {
-                TagWithComparator *twc_filter = static_cast<TagWithComparator *>(filter);
-                const TagWithComparator *twc_oldFilter = static_cast<const TagWithComparator *>(oldFilter);
+        m_filters = oldFilters; /// bring back previous filters
+        WR << "fillFiltersWithValidTags screwed up with the one thing, it was created for. Good Job!";
+        emit this->signalFiltersUpdateError(
+            "fillFiltersWithValidTags screwed up with the one thing, it was created for. Good Job!");
+        return;
+    }
 
-                twc_filter->set_comparison_way(twc_oldFilter->get_comparison_way());
-                twc_filter->set_comparison_value(twc_oldFilter->get_comparison_value());
-                break;
+    /// check if method was started with m_filters being nullptr
+    /// if so, there is no need to panic, that only means in our filled (with valid tags) m_filters
+    ///    contains data that don't need to be changed
+    if(oldFilters != nullptr)
+    {
+        /// compare valid filters with the old ones (old ones might contain comparison data)
+        for(auto &filter : m_filters->c_ref_tags()) /// there is no warning cause fillFiltersWithValidTags create TagList
+        {
+            for(const auto &oldFilter : oldFilters->c_ref_tags())
+            {
+                if(filter->get_id() == oldFilter->get_id())
+                {
+                    TagWithComparator *twc_filter = static_cast<TagWithComparator *>(filter);
+                    const TagWithComparator *twc_oldFilter = static_cast<const TagWithComparator *>(oldFilter);
+
+                    twc_filter->set_comparison_way(twc_oldFilter->get_comparison_way());
+                    twc_filter->set_comparison_value(twc_oldFilter->get_comparison_value());
+                    break;
+                }
             }
         }
+
+        if(oldFilters != nullptr)
+            delete oldFilters;   /// I totally forgot about it earlier :c
     }
+
     DB << "filters are now valid!";
     this->debugPrint_filters();
 }
 
 QString Database::fillFiltersWithValidTags()
 {
-    DB;
     QString query_text("SELECT id, name, type FROM tags;");
     this->queryToFile(query_text);
     QSqlQuery query(m_database);
@@ -2599,6 +2557,8 @@ QString Database::fillFiltersWithValidTags()
 
         m_filters->tags().append(tag);
     }
+
+    DB << "filters filled with empty and valid tags";
     return QString(); // QString().isNull() == true
 }
 
@@ -2769,6 +2729,38 @@ QString Database::_debugPrintModel_SongDetails(const SongDetails* const model)
                       "\n}";
 }
 
+QString Database::_debugPrintModel_SongDetailsList(const SongDetailsList * const model)
+{
+    /* const pointer and const variable that he points to, thats why:
+     *     const int *x - can't:  *x = 7; | can  x = &y;
+     *     int const *x - can't:  *x = 7; | can  x = &y;
+     *     int *const x - can:  *x = 7; | can't  x = &y; */
+
+    QString obj_data("\n[");
+    for(const auto &song : model->c_ref_songs()){
+        QString obj_data( QString("\n   {"
+                                 "\n      song_id: '%1', "
+                                 "\n      tags: [")
+                             .arg(song->get_id()) );
+        for(const auto &t : song->get_tags()->c_ref_tags()){
+            obj_data += QString("\n         {id: '%1', name: '%2', value: '%3', type: '%4', "
+                                "is_immutable: '%5', is_editable: '%6', is_required: '%7'}")
+                            .arg(t->get_id())
+                            .arg(t->get_name(),
+                                 t->get_value())
+                            .arg(t->get_type())
+                            .arg(t->get_is_immutable())
+                            .arg(t->get_is_editable()) // bool is a nightmare
+                            .arg(t->get_is_required());
+            obj_data += (t == song->get_tags()->c_ref_tags().last() ? "" : ", ");
+        }
+        obj_data += "\n      ]"
+                    "\n   }";
+        obj_data += (song == model->c_ref_songs().last() ? "" : ", ");
+    }
+    return obj_data + "\n]";
+}
+
 QString Database::_debugPrintModel_TagList(const TagList * const model)
 {
     /* const pointer and const variable that he points to, thats why:
@@ -2836,39 +2828,6 @@ QString Database::_debugPrintModel_TagDetails(const TagDetails* const model)
                       "\n}";
 }
 
-QString Database::_debugPrintModel_TagDetailsList(const TagDetailsList * const model)
-{
-    /* const pointer and const variable that he points to, thats why:
-     *     const int *x - can't:  *x = 7; | can  x = &y;
-     *     int const *x - can't:  *x = 7; | can  x = &y;
-     *     int *const x - can:  *x = 7; | can't  x = &y; */
-
-    QString obj_data("\n[");
-    for(const auto &t : model->c_ref_tags()){
-        obj_data += QString(
-            "\n   id: '%1', "
-            "\n   name: '%2', "
-            "\n   description: '%3', "
-            "\n   add_date: '%4', "
-            "\n   update_date: '%5', "
-            "\n   type: '%6', "
-            "\n   is_immutable: '%7', "
-            "\n   is_editable: '%8', "
-            "\n   is_required: '%9', ")
-                        .arg(t->get_id())
-                        .arg(t->get_name(),
-                             t->get_description(),
-                             t->get_add_date(),
-                             t->get_update_date())
-                        .arg(t->get_type())
-                        .arg(t->get_is_immutable())
-                        .arg(t->get_is_editable()) // bool is a nightmare
-                        .arg(t->get_is_required());
-        obj_data += (t == model->c_ref_tags().last() ? "" : ", ");
-    }
-    return obj_data + "\n]";
-}
-
 
 void Database::queryToFile(QString query, QStringList param_names, QVariantList param_values) const
 {
@@ -2908,14 +2867,12 @@ void Database::queryToFile(QString query, QStringList param_names, QVariantList 
 }
 
 
-QString Database::prepPlaylistSongsQuery() const
+QList<int> Database::prepListOfSongsForPlaylist() const
 {
-    DB;
     /// build list of constraints
     QStringList constraints;
     for(const auto &t : m_filters->c_ref_tags())
     {
-
         const TagWithComparator *twc = static_cast<const TagWithComparator *>(t);
         QString constraint;
 
@@ -2968,9 +2925,10 @@ QString Database::prepPlaylistSongsQuery() const
 
     /// get songs (theirs ID) that belong to all lists
     QList<int> uniqueIDs = Database::margeCommonItemsToOneList(listOfListsOfIDs);
-    DB << "uniqueIDs"<<uniqueIDs;
+    // DB << "uniqueIDs: " << uniqueIDs;
 
-    return QString();//constraints[0];
+    DB << "list of songs for playlist prepared";
+    return uniqueIDs;
 }
 
 QList<int> Database::margeCommonItemsToOneList(QList<QList<int> > list)

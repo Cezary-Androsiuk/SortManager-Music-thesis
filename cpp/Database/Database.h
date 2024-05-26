@@ -24,10 +24,10 @@
 
 #include "cpp/Song/Song.h"
 #include "cpp/Song/SongDetails.h"
+#include "cpp/Song/SongDetailsList.h"
 #include "cpp/Song/SongList.h"
 #include "cpp/Tag/Tag.h"
 #include "cpp/Tag/TagWithComparator.h"
-#include "cpp/Tag/TagDetailsList.h"
 #include "cpp/Tag/TagDetails.h"
 #include "cpp/Tag/TagList.h"
 #include "cpp/Filter/Filter.h"
@@ -154,20 +154,21 @@ signals: // -------------------------------------------------- database actions 
 
 signals: // -------------------------------------------------- playlist actions -------------------------------------------------- //
     /// finished
-    void signalPlaylistRefreshed();
-    void signalFiltersUpdated();
+    void signalPlaylistRefreshed(); /// emited by refreshPlaylist and triggers loadPlaylistList
+    void signalFiltersUpdated();    /// emited by updateFilters and triggers loadPlaylistList
     /// error occur
-    void signalPlaylistRefreshError(QString desc);
-    void signalFiltersUpdateError(QString desc);
+    void signalPlaylistRefreshError(QString desc);  /// emited by refreshPlaylist
+    void signalFiltersUpdateError(QString desc);    /// emited by updateFilters
+    void signalPlaylistListLoadError(QString desc); /// is oposite to signalPlaylistListLoaded, and emtited when loadPlaylistList failed
 
 signals: // signals for Playlist
-    void signalPlaylistListLoaded(TagDetailsList *list);
+    void signalPlaylistListLoaded(SongDetailsList *list);    /// emited by loadPlaylistList with list of Tags for Playlist class (list is limited by constraints that are readed from m_filters)
 
 public slots: // database init
     void initializeOnStart();       /// starting aapplication
     void initializeWithTags();      /// building new database
     void createExampleData();
-    void initializeFilters();
+    void initializeFilters();       /// initialize filters (to avoid m_filters being empty)
 
 public slots: // db management
     void exportDatabase(const QUrl &output_qurl);
@@ -199,16 +200,15 @@ public slots: // database actions
     void deleteTag(int tag_id);
 
 public slots: // playlist actions
-    void refreshPlaylist();
-    void updateFilters(QVariantList filters);
-    void loadPlaylistList();
+    void refreshPlaylist();                     /// is triggered by QML when user press refresh button
+    void updateFilters(QVariantList filters);   /// is triggered by QML when user save changes in filters page
+    void loadPlaylistList();                    /// is triggered by signalFiltersInitialized, signalPlaylistRefreshed and signalFiltersUpdated
 
 private: // other methods to support
-    void clearModelsMemory();             /// clears models from memory, cause something was changed and their need to be loaded again
-    void clearFiltersModelsMemory();
-    void makeCurrentFiltersValid();     /// add or remove filters in m_filters to contain only tags that are in db /// is called after clearModelsMemory (cause that means something changed)
-
-    QString fillFiltersWithValidTags();
+    void clearModelsMemory();           /// clears models from memory, cause something was changed and their need to be loaded again
+    void clearFiltersModelsMemory();    /// is a sepatate method cause when user save playlist (trigger updateFilters) there is no need to clear all models (just a filters)
+    void makeCurrentFiltersValid();     /// add or remove filters in m_filters to contain only tags that are in db /// is called after clearModelsMemory (cause that means something changed) or by initializeFilters
+    QString fillFiltersWithValidTags(); /// used makeCurrentFiltersValid to can compare valid tags with the current ones, returns QString with error (if no error QString will be null)
 
     static QString notNull(const QString &value);
     bool isDatabaseOpen(void (Database::*signal)(QString), const char *caller_name = "");
@@ -227,20 +227,20 @@ private: // other methods to support
 
     static QString _debugPrintModel_SongList(const SongList* const model);
     static QString _debugPrintModel_SongDetails(const SongDetails* const model);
+    static QString _debugPrintModel_SongDetailsList(const SongDetailsList* const model);
     static QString _debugPrintModel_TagList(const TagList* const model);
     static QString _debugPrintModel_TagDetails(const TagDetails* const model);
-    static QString _debugPrintModel_TagDetailsList(const TagDetailsList* const model);
 
 
     void queryToFile(QString query, QStringList param_names = {}, QVariantList param_values = {}) const;
 
 
-    QString prepPlaylistSongsQuery() const;
-    static QList<int> margeCommonItemsToOneList(QList<QList<int>> list);
-    static bool checkIfAllListsContainsValue(QList<QList<int>> list, int value);
-    static QString prepIntegerConstraint(const TagWithComparator *twc);
-    static QString prepTextConstraint(const TagWithComparator *twc);
-    static QString prepBoolConstraint(const TagWithComparator *twc);
+    QList<int> prepListOfSongsForPlaylist() const;                                  /// creates query based on the m_filters
+    static QList<int> margeCommonItemsToOneList(QList<QList<int>> list);            /// extension of prepPlaylistSongsQuery - self-descriptive
+    static bool checkIfAllListsContainsValue(QList<QList<int>> list, int value);    /// extension of margeCommonItemsToOneList - self-descriptive
+    static QString prepIntegerConstraint(const TagWithComparator *twc);             /// extension of prepPlaylistSongsQuery - prepare constraint based on the comparator values (comparison_way and comparison_value)
+    static QString prepTextConstraint(const TagWithComparator *twc);                /// extension of prepPlaylistSongsQuery - prepare constraint based on the comparator values (comparison_way and comparison_value)
+    static QString prepBoolConstraint(const TagWithComparator *twc);                /// extension of prepPlaylistSongsQuery - prepare constraint based on the comparator values (comparison_way and comparison_value)
 
 public:
     // model accessors
