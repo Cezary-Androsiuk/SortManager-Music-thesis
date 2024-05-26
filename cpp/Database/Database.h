@@ -27,6 +27,7 @@
 #include "cpp/Song/SongList.h"
 #include "cpp/Tag/Tag.h"
 #include "cpp/Tag/TagWithComparator.h"
+#include "cpp/Tag/TagDetailsList.h"
 #include "cpp/Tag/TagDetails.h"
 #include "cpp/Tag/TagList.h"
 #include "cpp/Filter/Filter.h"
@@ -61,7 +62,6 @@ class Database : public QObject
     Q_PROPERTY(TagDetails* add_tag_model        READ get_add_tag_model      CONSTANT)
 
     // frontend playlist accessors
-    Q_PROPERTY(SongList* playlist_model         READ get_playlist_model     CONSTANT)
     Q_PROPERTY(TagList* filters_model           READ get_filters_model      CONSTANT)
 
 public:
@@ -161,7 +161,7 @@ signals: // -------------------------------------------------- playlist actions 
     void signalFiltersUpdateError(QString desc);
 
 signals: // signals for Playlist
-    void signalPlaylistListLoaded(TagList *list);
+    void signalPlaylistListLoaded(TagDetailsList *list);
 
 public slots: // database init
     void initializeOnStart();       /// starting aapplication
@@ -186,8 +186,6 @@ public slots: // load models
     void loadAddTagModel();
     void loadEditTagModel(int tag_id);              /// argument is used to tell what tag user want to edit
     // playlist
-    void loadPlaylistModel();
-    void loadEditPlaylistSongModel(int song_id);    /// argument is used to tell what song user want to edit
     void loadFiltersModel();
 
 public slots: // database actions
@@ -207,7 +205,6 @@ public slots: // playlist actions
 
 private: // other methods to support
     void clearModelsMemory();             /// clears models from memory, cause something was changed and their need to be loaded again
-    void clearPlaylistModelsMemory();
     void clearFiltersModelsMemory();
 
     QString fillFiltersWithValidTags();
@@ -225,20 +222,24 @@ private: // other methods to support
     void debugPrintModel_all_tags() const;
     void debugPrintModel_add_tag() const;
     void debugPrintModel_edit_tag() const;
-    void debugPrintModel_playlist() const;
     void debugPrintModel_filters() const;
 
     static QString _debugPrintModel_SongList(const SongList* const model);
     static QString _debugPrintModel_SongDetails(const SongDetails* const model);
     static QString _debugPrintModel_TagList(const TagList* const model);
     static QString _debugPrintModel_TagDetails(const TagDetails* const model);
+    static QString _debugPrintModel_TagDetailsList(const TagDetailsList* const model);
 
 
     void queryToFile(QString query, QStringList param_names = {}, QVariantList param_values = {}) const;
 
 
-    QSqlQuery prepPlaylistSongsQuery();//cQls tc_names, cQls tc_values, cQls tc_comparators, cQls te_names, cQlb te_values, D_EC) const;
-
+    QString prepPlaylistSongsQuery() const;
+    static QList<int> margeCommonItemsToOneList(QList<QList<int>> list);
+    static bool checkIfAllListsContainsValue(QList<QList<int>> list, int value);
+    static QString prepIntegerConstraint(const TagWithComparator *twc);
+    static QString prepTextConstraint(const TagWithComparator *twc);
+    static QString prepBoolConstraint(const TagWithComparator *twc);
 
 public:
     // model accessors
@@ -251,7 +252,6 @@ public:
     TagDetails *get_edit_tag_model() const;
     TagDetails *get_add_tag_model() const;
     /// playlist
-    SongList *get_playlist_model() const;
     TagList *get_filters_model() const;
 
 private:
@@ -274,7 +274,6 @@ private:
     TagDetails* m_add_tag_model;
     TagDetails* m_edit_tag_model;
     /// playlist
-    SongList *m_playlist_model;
     TagList *m_filters_model;
 };
 

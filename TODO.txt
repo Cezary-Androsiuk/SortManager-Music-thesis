@@ -92,9 +92,14 @@ DONE - zmienić Image w FileSelectField na ImageButton
 - dodać opis info do niektórych
 DONE - błąd z add date i update date w dodawaniu nowej piosenki ????
 NONE ? dodać do BetterButton ikonki
-NONE - pozmienić w headerach TabButton na BetterButton
+- pozmienić w headerach TabButton na BetterButton
 - dodać weryfikację czy playlist model jest załadowany poprawnie, jak nie załadować playlist (żeby sprawdzić można wykomentować inicjalizację db w backend)
-
+// tak się teraz zastanawiam co zrobić z filtrami, można je zainicjalizować (domyślnie albo z personalization) oraz zmienić czy zapisać. Jednak co w przypadku gdy użytkownik doda nowe tagi
+// początkowo myślałem, żeby zrobić że załadują się domyślne wartości 'do not compare' w tagach a następnie będziemy podmieniać te które pasują np: 
+// mamy listę A oraz chcemy załadować nową listę
+//	 x belong to A oraz x not belong to B => pomijamy
+//	 x not belong to A oraz x belong to B => ustawiamy na domyślną 'do not compare'
+// ale się tak teraz zastanawiam jak ugryźć (i czy wgl dam radę to zrobić) zarządzanie pamięcią m_filters oraz m_filersModel. Może zamiast pisać to wyjaśnienie powinienem próbować to zaprogramować -.-
 
 ==========================
 playlist:

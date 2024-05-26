@@ -51,6 +51,7 @@ Page {
             // console.log( "id:" +_tag.id+
             //             ", name:" +_tag.name+ ", type:" +_tag.type+
             //             ", comparison_way:" +_tag.comparison_way+ ", comparison_value:" +_tag.comparison_value)
+            console.log()
             mdl.push({ id: _tag.id, name: _tag.name, type: _tag.type,
                          comparison_way: _tag.comparison_way, comparison_value: _tag.comparison_value })
         }
@@ -128,7 +129,13 @@ Page {
                     CompareIntegerField{
                         dltText: modelData.name
                         dltComboboxValue: modelData.comparison_way
+                        onDltComboboxValueChanged: {
+                            pageFilters.mdl[index].comparison_way = dltComboboxValue
+                        }
                         dltValue: modelData.comparison_value
+                        onDltValueChanged: {
+                            pageFilters.mdl[index].comparison_value = dltValue
+                        }
                     }
                 }
                 Component{
@@ -136,7 +143,13 @@ Page {
                     CompareStringField{
                         dltText: modelData.name
                         dltComboboxValue: modelData.comparison_way
+                        onDltComboboxValueChanged: {
+                            pageFilters.mdl[index].comparison_way = dltComboboxValue
+                        }
                         dltValue: modelData.comparison_value
+                        onDltValueChanged: {
+                            pageFilters.mdl[index].comparison_value = dltValue
+                        }
                     }
                 }
                 Component{
@@ -152,19 +165,16 @@ Page {
     }
 
     function submitMethod(){
-        var result_list = []
-        for(var element in pageFilters.mdl)
+        for(var _tag of pageFilters.mdl)
         {
-            result_list.push(
-                        {
-                            id: element.id,
-                            comparison_way: element.comparison_way,
-                            comparison_value: element.comparison_value
-                        })
+            console.log( "id:" +_tag.id+
+                        ", name:" +_tag.name+ ", type:" +_tag.type+
+                        ", comparison_way:" +_tag.comparison_way+ ", comparison_value:" +_tag.comparison_value)
         }
 
-        Backend.database.updateFilters(result_list)
+        Backend.database.updateFilters(pageFilters.mdl);
         // page is closed if filters update was completed succesfully
+        closeFiltersPage();
     }
 
 

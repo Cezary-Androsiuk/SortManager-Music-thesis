@@ -34,6 +34,7 @@ qt_add_qml_module(appSortManager-Music
     SOURCES cpp/Personalization/Personalization.h cpp/Personalization/Personalization.cpp
     SOURCES cpp/Filter/Filter.h cpp/Filter/Filter.cpp
     SOURCES cpp/Tag/TagWithComparator.h cpp/Tag/TagWithComparator.cpp
+    SOURCES cpp/Tag/TagDetailsList.h cpp/Tag/TagDetailsList.cpp
 
     # QML:
     QML_FILES qml/Main.qml

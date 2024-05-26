@@ -13,6 +13,39 @@ class TagWithComparator : public Tag
 public:
     explicit TagWithComparator(QObject *parent = nullptr);
 
+    struct IntegerCompare{
+        enum{
+            DO_NOT_COMPARE,
+            IS_EQUAL_TO,
+            IS_DIFFERENT_THAN,
+            IS_LESS_OR_EQUAL_TO,
+            IS_LESS_THAN,
+            IS_GREATER_OR_EQUAL_TO,
+            IS_GREATER_THAN
+        };
+    };
+
+    struct TextCompare{
+        enum{
+            DO_NOT_COMPARE,
+            IS_EQUAL_TO,
+            IS_DIFFERENT_THAN,
+            IS_APPROXIMATELY_EQUAL_TO,
+            IS_APPROXIMATELY_DIFFERENT_THAN,
+            IS_LIKE,
+            IS_EQUAL_REGEX
+        };
+    };
+
+    struct BoolCompare{
+        enum{
+            NOT_BELONG_TO_TAG,
+            DO_NOT_COMPARE,
+            BELONG_TO_TAG
+        };
+    };
+
+
     const int &get_comparison_way() const;
     const QString get_comparison_value() const;
 
