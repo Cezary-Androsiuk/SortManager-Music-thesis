@@ -15,6 +15,7 @@
 #include <QtMultimedia/QMediaMetaData>
 #include <QEventLoop> // wait for the event
 #include <QMap>
+#include <QSet>
 #include <QHash>
 // #include <algorithm>
 
@@ -36,7 +37,7 @@
 #define DB_TAG_NAME_REG_EX "^[a-z][_a-z0-9]*$"              /// regular expression describes what is naming convension of tag names in database
 #define QUERY_LOG_PATH "./query.log"                        /// query log directory - stores all executed queries
 #define QUERY_ARCHIVE_LOG_PATH "./query_prev.log"           /// previous query log directory (as archive) - stores all executed queries
-#define PRINT_MODELS_LISTS false                            /// if true -> model will be printed to console, before will be sended to QML after load
+#define PRINT_MODELS_LISTS true                             /// if true -> model will be printed to console, before will be sended to QML after load
 
 // ------------------------- shortcuts that make code more readable and consistent ------------------------- //
 /// is database open
@@ -220,6 +221,7 @@ private: // other methods to support
     void debugPrintModel_all_songs() const;
     void debugPrintModel_add_song() const;
     void debugPrintModel_edit_song() const;
+    static void debugPrintModel_playlistList(const SongDetailsList* const model); /// Just because You are unique doesn't mean You are usefull
     void debugPrintModel_all_tags() const;
     void debugPrintModel_add_tag() const;
     void debugPrintModel_edit_tag() const;

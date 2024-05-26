@@ -1,8 +1,16 @@
 #include "Playlist.h"
 
 Playlist::Playlist(QObject *parent)
-    : QObject{parent}
-{}
+    : QObject{parent},
+    m_playlistList(nullptr)
+{
+    QObject::connect(this, &Playlist::newPlaylistListLoaded, this, &Playlist::loadPlaylistModel);
+}
+
+void Playlist::loadPlaylistModel()
+{
+
+}
 /*
 void Database::loadPlaylistModel()
 {
@@ -62,5 +70,9 @@ void Database::loadPlaylistModel()
 //*/
 void Playlist::loadNewPlaylistList(SongDetailsList *list)
 {
-    DB << "in PLAYLIST";
+    if(m_playlistList != nullptr)
+        delete m_playlistList;
+    m_playlistList = list;
+
+    emit this->newPlaylistListLoaded();
 }

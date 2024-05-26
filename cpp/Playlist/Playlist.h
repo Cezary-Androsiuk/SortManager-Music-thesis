@@ -13,6 +13,13 @@ class Playlist : public QObject
 public:
     explicit Playlist(QObject *parent = nullptr);
 
+signals:
+    void playlistModelLoaded();
+    void playlistModelLoadError(QString desc);
+
+public slots:
+    void loadPlaylistModel();
+
 public slots:
     void loadNewPlaylistList(SongDetailsList *list);
 
@@ -20,6 +27,7 @@ signals:
     void newPlaylistListLoaded();
 
 private:
+    SongDetailsList *m_playlistList;
 
 };
 

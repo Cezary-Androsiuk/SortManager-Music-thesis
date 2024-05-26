@@ -2413,7 +2413,6 @@ void Database::loadPlaylistList()
     QList<int> songsIDs = this->prepListOfSongsForPlaylist();
 
     SongDetailsList *songDetailsList = new SongDetailsList(this);
-
     for(const int &songID : songsIDs)
     {
         /// query will return list of tags (each record == one tag)
@@ -2427,11 +2426,58 @@ void Database::loadPlaylistList()
             WR << "error while executing query " << query.lastError();
             DB << "song with id:" << songID << "skipped";
         }
+
+        SongDetails *songDetails = new SongDetails(songDetailsList);
+        songDetails->set_id(songID);
+
+        TagList *tagListForSongDetails = new TagList(songDetails);
+
+        /// read only required minimum for playlist casue I will not add something like playlistSongDetails
+        QSet<int> tagsToRead = {
+            1,  /* ID */
+            2,  /* Title */
+            5,  /* Begin */
+            6,  /* End */
+            // 7,  /* Duration - check if realy used */
+            9,  /* Song Path */
+            // 10, /* Thumbnail Path - check if realy used */
+        };
+
+        while(query.next()){
+            auto record = query.record();
+            int id = record.value(0).toInt();
+            if(!tagsToRead.contains(id))
+                continue;
+
+            auto name = record.value(1).toString();
+            auto type = record.value(2).toInt();
+            auto value = record.value(3).toString();
+
+            Tag* tag = new Tag(tagListForSongDetails);
+            tag->set_id(id);
+            tag->set_name(name);
+            tag->set_type(type);
+            tag->set_value(value);
+
+            tagListForSongDetails->tags().append(tag);
+        }
+
+        /// sort by tag id
+        /// to keep everything nice and in order
+        std::sort(
+            tagListForSongDetails->tags().begin(),
+            tagListForSongDetails->tags().end(),
+            [](Tag *a, Tag *b){return a->get_id() < b->get_id();}
+            );
+
+        // DB << tagListForSongDetails->c_ref_tags();
+        songDetails->set_tags(tagListForSongDetails);
+        songDetailsList->songs().append(songDetails);
     }
 
-    this->_debugPrintModel_SongDetailsList(songDetailsList);
+    Database::debugPrintModel_playlistList(songDetailsList);
     /// we are trust each other and playlist class will delete old playlistList
-    emit this->signalPlaylistListLoaded(nullptr); /// this will trigger Playlist::loadPlaylist(TagList)
+    emit this->signalPlaylistListLoaded(songDetailsList); /// this will trigger Playlist::loadPlaylist(TagList)
 }
 
 
@@ -2522,7 +2568,7 @@ void Database::makeCurrentFiltersValid()
     }
 
     DB << "filters are now valid!";
-    this->debugPrint_filters();
+    // this->debugPrint_filters();
 }
 
 QString Database::fillFiltersWithValidTags()
@@ -2656,6 +2702,13 @@ void Database::debugPrintModel_edit_song() const
 #endif
 }
 
+void Database::debugPrintModel_playlistList(const SongDetailsList * const model)
+{
+#if PRINT_MODELS_LISTS
+    DB << "PLAYLIST LIST:" << Database::_debugPrintModel_SongDetailsList(model).toStdString().c_str();
+#endif
+}
+
 void Database::debugPrintModel_all_tags() const
 {
 #if PRINT_MODELS_LISTS
@@ -2735,13 +2788,12 @@ QString Database::_debugPrintModel_SongDetailsList(const SongDetailsList * const
      *     const int *x - can't:  *x = 7; | can  x = &y;
      *     int const *x - can't:  *x = 7; | can  x = &y;
      *     int *const x - can:  *x = 7; | can't  x = &y; */
-
     QString obj_data("\n[");
     for(const auto &song : model->c_ref_songs()){
-        QString obj_data( QString("\n   {"
-                                 "\n      song_id: '%1', "
-                                 "\n      tags: [")
-                             .arg(song->get_id()) );
+        obj_data += QString("\n   {"
+                            "\n      song_id: '%1', "
+                            "\n      tags: [")
+                        .arg(song->get_id());
         for(const auto &t : song->get_tags()->c_ref_tags()){
             obj_data += QString("\n         {id: '%1', name: '%2', value: '%3', type: '%4', "
                                 "is_immutable: '%5', is_editable: '%6', is_required: '%7'}")
@@ -2895,10 +2947,11 @@ QList<int> Database::prepListOfSongsForPlaylist() const
         if(!constraint.isNull())
             constraints.append(constraint);
     }
-    DB << "constraints" << constraints;
+    // DB << "constraints" << constraints;
 
     /// now in constrainst variable are all restrictions that matters, but playlist requires
     /// list of songs (theirs ID) that are belong to that constraints
+
 
     /// change constraints to songs list (list of ID's)
     /// let's assume that no error will occur :)
@@ -2917,10 +2970,29 @@ QList<int> Database::prepListOfSongsForPlaylist() const
 
         QList<int> listOfIDs;
         while(query.next()){
-            auto record = query.record();
-            listOfIDs.append(record.value(0).toInt());
+            listOfIDs.append(query.record().value(0).toInt());
         }
         listOfListsOfIDs.append(listOfIDs);
+    }
+
+    /// add list that contains all the songs if there is no constraints in our output list
+    /// because in that case all songs will be in playlist
+    if(listOfListsOfIDs.empty())
+    {
+        QString query_text("SELECT id FROM songs;");
+        this->queryToFile(query_text);
+        QSqlQuery query(m_database);
+        if(!query.exec(query_text)){
+            WR << "executing select query error" << query.lastError() << "can't load all songs";
+        }
+        else
+        {
+            QList<int> listOfIDs;
+            while(query.next()){
+                listOfIDs.append(query.record().value(0).toInt());
+            }
+            listOfListsOfIDs.append(listOfIDs);
+        }
     }
 
     /// get songs (theirs ID) that belong to all lists
