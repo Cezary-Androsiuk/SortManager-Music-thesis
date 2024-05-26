@@ -206,6 +206,7 @@ public slots: // playlist actions
 private: // other methods to support
     void clearModelsMemory();             /// clears models from memory, cause something was changed and their need to be loaded again
     void clearFiltersModelsMemory();
+    void makeCurrentFiltersValid();     /// add or remove filters in m_filters to contain only tags that are in db /// is called after clearModelsMemory (cause that means something changed)
 
     QString fillFiltersWithValidTags();
 

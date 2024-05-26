@@ -51,7 +51,6 @@ Page {
             // console.log( "id:" +_tag.id+
             //             ", name:" +_tag.name+ ", type:" +_tag.type+
             //             ", comparison_way:" +_tag.comparison_way+ ", comparison_value:" +_tag.comparison_value)
-            console.log()
             mdl.push({ id: _tag.id, name: _tag.name, type: _tag.type,
                          comparison_way: _tag.comparison_way, comparison_value: _tag.comparison_value })
         }
@@ -165,12 +164,12 @@ Page {
     }
 
     function submitMethod(){
-        for(var _tag of pageFilters.mdl)
-        {
-            console.log( "id:" +_tag.id+
-                        ", name:" +_tag.name+ ", type:" +_tag.type+
-                        ", comparison_way:" +_tag.comparison_way+ ", comparison_value:" +_tag.comparison_value)
-        }
+        // for(var _tag of pageFilters.mdl)
+        // {
+        //     console.log( "id:" +_tag.id+
+        //                 ", name:" +_tag.name+ ", type:" +_tag.type+
+        //                 ", comparison_way:" +_tag.comparison_way+ ", comparison_value:" +_tag.comparison_value)
+        // }
 
         Backend.database.updateFilters(pageFilters.mdl);
         // page is closed if filters update was completed succesfully

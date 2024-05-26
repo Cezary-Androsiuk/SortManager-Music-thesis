@@ -243,6 +243,7 @@ void Database::createExampleData()
     }
 
     this->clearModelsMemory();
+    this->makeCurrentFiltersValid();
 }
 
 void Database::initializeFilters()
@@ -1452,12 +1453,9 @@ void Database::loadFiltersModel()
         DB << "filters model was already loaded - skipped";
         emit this->signalFiltersModelLoaded();
         return;
-        // delete m_filters_model;
     }
-    // m_filters_model = nullptr;
 
-    // use m_filters model
-
+    /// use m_filters to create model
     m_filters_model = new TagList(this);
     for(const auto &filter : m_filters->c_ref_tags())
     {
@@ -2257,6 +2255,7 @@ void Database::addTag(QVariantList new_tag_data)
     // after that, if user enter any model (allSongs, addSong, editTag, ...),
     // data for him need to be loaded again
     this->clearModelsMemory();
+    this->makeCurrentFiltersValid();
 
     DB << "tag ( id:" << tag_id << ") added correctly!";
     emit this->signalAddedTag();
@@ -2432,6 +2431,7 @@ void Database::editTag(int tag_id, QVariantList tag_data)
     // after that, if user enter any model (allSongs, addSong, editTag, ...),
     // data for him need to be loaded again
     this->clearModelsMemory();
+    this->makeCurrentFiltersValid();
 
     DB << "tag ( id:" << tag_id << ") updated correctly!";
     emit this->signalEditedTag();
@@ -2484,6 +2484,7 @@ void Database::deleteTag(int tag_id)
     END_TRANSACTION(signalDeleteTagError)
 
     this->clearModelsMemory(); // after that, if user enter any model (allSongs, addSong, editTag, ...), data for him will be loaded again
+    this->makeCurrentFiltersValid();
 
     DB << "tag with id: " << tag_id << " deleted correctly";
     emit this->signalDeletedTag();
@@ -2595,9 +2596,41 @@ void Database::clearFiltersModelsMemory()
     m_filters_model = nullptr;
 }
 
+void Database::makeCurrentFiltersValid()
+{
+    TagList *oldFilters = m_filters; /// save for later cause fillFiltersWithValidTags create own instance
+    m_filters = nullptr;
+    QString errorCode = this->fillFiltersWithValidTags();
+    if(!errorCode.isNull()){
+        WR << errorCode;
+        m_filters = oldFilters; /// bring back previous filters
+        emit this->signalFiltersUpdateError(errorCode);
+        return;
+    }
+
+    // compare valid filters with the old ones (old ones might contain data)
+    for(auto &filter : m_filters->c_ref_tags())
+    {
+        for(const auto &oldFilter : oldFilters->c_ref_tags())
+        {
+            if(filter->get_id() == oldFilter->get_id())
+            {
+                TagWithComparator *twc_filter = static_cast<TagWithComparator *>(filter);
+                const TagWithComparator *twc_oldFilter = static_cast<const TagWithComparator *>(oldFilter);
+
+                twc_filter->set_comparison_way(twc_oldFilter->get_comparison_way());
+                twc_filter->set_comparison_value(twc_oldFilter->get_comparison_value());
+                break;
+            }
+        }
+    }
+    DB << "filters are now valid!";
+    this->debugPrint_filters();
+}
+
 QString Database::fillFiltersWithValidTags()
 {
-    QString query_text("SELECT id, name, type, is_editable, is_immutable FROM tags;");
+    QString query_text("SELECT id, name, type FROM tags;");
     this->queryToFile(query_text);
     QSqlQuery query(m_database);
     if(!query.exec(query_text)){
@@ -2938,11 +2971,11 @@ void Database::queryToFile(QString query, QStringList param_names, QVariantList 
 
 QString Database::prepPlaylistSongsQuery() const
 {
-    DB << "start";
     /// build list of constraints
     QStringList constraints;
     for(const auto &t : m_filters->c_ref_tags())
     {
+
         const TagWithComparator *twc = static_cast<const TagWithComparator *>(t);
         QString constraint;
 
@@ -2961,7 +2994,7 @@ QString Database::prepPlaylistSongsQuery() const
         default:
             WR << "unknown type of the tag:" << tagType << "skipping adding this constraint";
         }
-        DB <<"constraint" << constraint;
+        // DB <<"constraint" << constraint;
         if(!constraint.isNull())
             constraints.append(constraint);
     }
