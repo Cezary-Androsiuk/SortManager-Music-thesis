@@ -283,6 +283,7 @@ ApplicationWindow {
         focus: true
 
         Keys.onEscapePressed: root.close()
+        Keys.onSpacePressed: console.log("")
         Keys.onDeletePressed: backend.database.createExampleData();
         // Keys.onLeftPressed: {
         //     if(tabBar.currentIndex > 0)

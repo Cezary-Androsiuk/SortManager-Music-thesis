@@ -88,7 +88,7 @@ DONE - make own icons
 DONE - clean up icons
 ? dodać Backend.personalization.showTooltips w ImageButton:90
 DONE - zmienić Image w FileSelectField na ImageButton
-- sprawdzić czy PathSelectField jest używany
+DONE - sprawdzić czy PathSelectField jest używany
 - dodać opis info do niektórych
 DONE - błąd z add date i update date w dodawaniu nowej piosenki ????
 NONE ? dodać do BetterButton ikonki
@@ -100,6 +100,7 @@ NONE ? dodać do BetterButton ikonki
 //	 x belong to A oraz x not belong to B => pomijamy
 //	 x not belong to A oraz x belong to B => ustawiamy na domyślną 'do not compare'
 // ale się tak teraz zastanawiam jak ugryźć (i czy wgl dam radę to zrobić) zarządzanie pamięcią m_filters oraz m_filersModel. Może zamiast pisać to wyjaśnienie powinienem próbować to zaprogramować -.-
+- w initializeFilters dodać personalization
 
 ==========================
 playlist:
