@@ -224,7 +224,8 @@ Page {
                             dltText: modelData.name
                             dltValue: pageAddTag.glob_type
                             onDltValueChanged: {
-                                pageAddTag.glob_type = dltValue
+                                pageAddTag.glob_type = dltValue // to update all songs in list
+                                pageAddTag.mdl[index].value = dltValue
                             }
 
                             dltModel: [
