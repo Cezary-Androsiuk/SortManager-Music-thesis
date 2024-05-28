@@ -226,7 +226,12 @@ Page {
             text: "SAVE"
             font.pixelSize: 15
 
-            onClicked: pConfirmSave.open()
+            onClicked: {
+                if(backend.personalization.showFiltersSave)
+                    pConfirmSave.open()
+                else
+                    submitMethod()
+            }
         }
     }
 }

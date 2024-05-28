@@ -23,6 +23,7 @@ void Personalization::printValues() const
     DB << "\t - alwaysKeepListPos: " << m_alwaysKeepListPos;
     DB << "\t - songOpenPath: " << m_songOpenPath;
     DB << "\t - showErrorDesc: " << m_showErrorDesc;
+    DB << "\t - showFiltersSave: " << m_showFiltersSave;
 #endif
 }
 
@@ -60,6 +61,7 @@ void Personalization::setDefaultPersonalizationData()
     emit this->songOpenPathChanged();
     m_showErrorDesc = DEFAULT_SHOW_ERROR_DESC;
     emit this->showErrorDescChanged();
+    m_showFiltersSave = DEFAULT_SHOW_FILTERS_SAVE;
 
     m_errorCodeIfOccurWhileLoading = 0;
 }
@@ -131,6 +133,9 @@ void Personalization::loadPersonalizationFromJson()
     key = "show error description";
     CHECK_KEY(this->setShowErrorDesc(jp[key].toBool()));
 
+    key = "show filters save confirmation";
+    CHECK_KEY(this->setShowFiltersSave(jp[key].toBool()));
+
 
     DB << "personalization data readed!";
     this->printValues();
@@ -173,6 +178,7 @@ void Personalization::savePersonalizationToJson()
     json_object["always keep list position"] = this->getAlwaysKeepListPos();
     json_object["songs open path"] = this->getSongOpenPath();
     json_object["show error description"] = this->getShowErrorDesc();
+    json_object["show filters save confirmation"] = this->getShowFiltersSave();
 
     QJsonDocument json_data(json_object);
 
@@ -238,6 +244,11 @@ QString Personalization::getSongOpenPath() const
 bool Personalization::getShowErrorDesc() const
 {
     return m_showErrorDesc;
+}
+
+bool Personalization::getShowFiltersSave() const
+{
+    return m_showFiltersSave;
 }
 
 void Personalization::setIsDarkTheme(bool isDarkTheme)
@@ -319,4 +330,13 @@ void Personalization::setShowErrorDesc(bool showErrorDesc)
 
     m_showErrorDesc = showErrorDesc;
     emit this->showErrorDescChanged();
+}
+
+void Personalization::setShowFiltersSave(bool showFiltersSave)
+{
+    if(m_showFiltersSave == showFiltersSave)
+        return;
+
+    m_showFiltersSave = showFiltersSave;
+    emit this->showFiltersSaveChanged();
 }

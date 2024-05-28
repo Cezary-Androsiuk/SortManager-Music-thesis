@@ -28,6 +28,7 @@
 #define DEFAULT_ALWAYS_KEEP_LIST_POS false
 #define DEFAULT_SONGS_OPEN_PATH "C:/"
 #define DEFAULT_SHOW_ERROR_DESC true
+#define DEFAULT_SHOW_FILTERS_SAVE true
 
 #define CHECK_KEY(arg) if(jp.contains(key)) arg;\
 else WR << PERSONALIZATION_JSON_PATH << " file not contains value related with '" << key << "' key";
@@ -45,6 +46,8 @@ class Personalization : public QObject
     Q_PROPERTY(bool alwaysKeepListPos   READ getAlwaysKeepListPos   WRITE setAlwaysKeepListPos  NOTIFY alwaysKeepListPosChanged FINAL)
     Q_PROPERTY(QString songOpenPath     READ getSongOpenPath        WRITE setSongOpenPath       NOTIFY songOpenPathChanged      FINAL)
     Q_PROPERTY(bool showErrorDesc       READ getShowErrorDesc       WRITE setShowErrorDesc      NOTIFY showErrorDescChanged     FINAL)
+    Q_PROPERTY(bool showFiltersSave     READ getShowFiltersSave     WRITE setShowFiltersSave    NOTIFY showFiltersSaveChanged   FINAL)
+
 
 public:
     explicit Personalization(QObject *parent = nullptr);
@@ -74,6 +77,7 @@ public: // getters / setters
     int getAlwaysKeepListPos() const;
     QString getSongOpenPath() const;
     bool getShowErrorDesc() const;
+    bool getShowFiltersSave() const;
 
     void setIsDarkTheme(bool isDarkTheme);
     void setSaveExecQuery(bool saveExecQuery);
@@ -84,6 +88,7 @@ public: // getters / setters
     void setAlwaysKeepListPos(bool alwaysKeepListPos);
     void setSongOpenPath(const QString &songOpenPath);
     void setShowErrorDesc(bool showErrorDesc);
+    void setShowFiltersSave(bool showFiltersSave);
 
 signals:
     void isDarkThemeChanged();
@@ -95,6 +100,7 @@ signals:
     void alwaysKeepListPosChanged();
     void songOpenPathChanged();
     void showErrorDescChanged();
+    void showFiltersSaveChanged();
 
 private:
     int m_errorCodeIfOccurWhileLoading;
@@ -108,6 +114,7 @@ private:
     bool m_alwaysKeepListPos;
     QString m_songOpenPath;
     bool m_showErrorDesc;
+    bool m_showFiltersSave;         /// descirbes if confirmation will be shown while saving Filters
 };
 
 #endif // PERSONALIZATION_H

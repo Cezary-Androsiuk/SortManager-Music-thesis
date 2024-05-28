@@ -22,6 +22,7 @@ Page {
         // mdl.push({id: 600, name: "Songs Open Path"})
         // mdl.push({id: 700, name: "Songs Main Path"})
         mdl.push({id: 800, name: "Show error description"})
+        mdl.push({id: 900, name: "Show save confirmation for Filters"})
 
         listViewLoader.active = true
     }
@@ -81,6 +82,8 @@ Page {
                         // else if(modelData.id === 600) pathSelectDelegate;
                         // else if(modelData.id === 700) pathSelectDelegate;
                         else if(modelData.id === 800) switchFieldDelegate;
+                        else if(modelData.id === 900) switchFieldDelegate;
+                        else console.log("unknown source component: " + modelData.id)
                     }
 
                     Component {
@@ -96,6 +99,8 @@ Page {
                                 else if(modelData.id === 400) backend.personalization.showConstantTags
                                 else if(modelData.id === 550) backend.personalization.alwaysKeepListPos
                                 else if(modelData.id === 800) backend.personalization.showErrorDesc
+                                else if(modelData.id === 900) backend.personalization.showFiltersSave
+                                else {console.log("unknown switch input value: " + modelData.id); false}
                             }
                             onDltValueChanged: {
                                 if(false); // below lines are so beauty when equal <3
@@ -122,6 +127,8 @@ Page {
                                     }
                                 }
                                 else if(modelData.id === 800) backend.personalization.showErrorDesc = dltValue
+                                else if(modelData.id === 900) backend.personalization.showFiltersSave = dltValue
+                                else console.log("unknown switch output value: " + modelData.id)
                             }
                         }
                     }
@@ -133,6 +140,7 @@ Page {
                             dltColor: {
                                 if(modelData.id === 300)
                                     root.color_accent2 // is dynamically changed in Main.qml
+                                else console.log("unknown color select input value: " + modelData.id)
                             }
                             onDltColorChoosed: {
                                 // reacting on dltColor changed wasn't update when user changed theme
@@ -145,6 +153,7 @@ Page {
                                     else
                                         backend.personalization.lightAccentColor = choosed_color
                                 }
+                                else console.log("unknown color select output value: " + modelData.id)
                             }
                         }
                     }
