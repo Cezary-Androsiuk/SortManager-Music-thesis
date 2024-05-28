@@ -259,16 +259,163 @@ void Database::initializeFilters()
     emit this->signalFiltersInitailized(); /// this will trigger loadPlaylistList
 }
 
+void Database::exportSongsFromDatabase(const QUrl &output_qurl)
+{
+    IS_DATABASE_OPEN(signalExportDatabaseError)
+    QString output_file = output_qurl.toLocalFile();
+    if(QFile::exists(output_file))
+    {
+        /// user will confirm overwrite file in select file form
+        /// so in that step user don't might if I delete it
+        QFile(output_file).remove();
+    }
+
+    /// fistly load list of songs
+    QEventLoop loop;
+    QString submethodErrorMsg;
+    auto failConnection = QObject::connect(this, &Database::signalAllSongsModelLoadError, [&](QString desc){
+        submethodErrorMsg = desc;
+        loop.quit();
+    });
+    auto successConnection = QObject::connect(this, &Database::signalAllSongsModelLoaded, [&](){
+        submethodErrorMsg.clear();
+        loop.quit();
+    });
+
+    /// after long conversation with GPT-4o, he remains confident, that function won't end untill
+    ///     the loop starts  (but i added 10ms delay)
+    QTimer::singleShot(10, this, &Database::loadAllSongs);
+    loop.exec();
+
+    QObject::disconnect(failConnection);
+    QObject::disconnect(successConnection);
+
+    if(!submethodErrorMsg.isNull())
+    {
+        WR << "loadAllSongsModel Failed with error:"<< submethodErrorMsg;
+        emit this->signalExportSongsFromDatabaseError("loadAllSongsModel Failed with error:" + submethodErrorMsg);
+        return;
+    }
+
+    /// for each
+    failConnection = QObject::connect(this, &Database::signalEditSongModelLoadError, [&](QString desc){
+        submethodErrorMsg = desc;
+        loop.quit();
+    });
+    successConnection = QObject::connect(this, &Database::signalEditSongModelLoaded, [&](){
+        submethodErrorMsg.clear();
+        loop.quit();
+    });
+
+    QJsonObject jsonMain;  /// json to export
+    QJsonArray jsonSongs;   /// array of songs
+    for(const auto &song : m_all_songs_model->c_ref_songs())
+    {
+        int songID = song->get_id();
+        QTimer::singleShot(10, this, [this, &songID](){
+            this->loadEditSongModel(songID);
+        });
+        loop.exec();
+
+
+        if(!submethodErrorMsg.isNull())
+        {
+            WR << "loadEditSongModel Failed while loading song with id:""with error:"<< submethodErrorMsg;
+            emit this->signalExportSongsFromDatabaseError("loadEditSongModel Failed while loading song with id:""with error:" + submethodErrorMsg);
+            return;
+        }
+
+        if(m_edit_song_model != nullptr)
+        {
+            QJsonObject jsonSong;
+
+            jsonSongs.append(jsonSong);
+        }
+    }
+
+    QObject::disconnect(failConnection);
+    QObject::disconnect(successConnection);
+
+
+    // QSqlQuery query(m_database);
+    // QString query_text = QString("SELECT id FROM songs;");
+    // this->queryToFile(query_text);
+    // if(!query.exec(query_text)){
+    //     WR << "error while executing SELECT query " << query.lastError();
+    //     emit this->signalExportDatabaseError("error while executing SELECT query " + query.lastError().text());
+    //     return;
+    // }
+    
+    // /// secondly for each song load their tags and save it to json
+    // QJsonObject jsonMain;  /// json to export
+    // QJsonArray jsonSongs;   /// array of songs
+    // while(query.next())
+    // {
+    //     int songsID = query.value(0).toInt();
+    //     query_text = QString("SELECT tags.name, tags.type, songs_tags.value "
+    //                          "FROM songs_tags "
+    //                          "JOIN tags ON songs_tags.tag_id = tags.id "
+    //                          "WHERE songs_tags.song_id = %1;").arg(songID);
+    //     this->queryToFile(query_text);
+    //     if(!query.exec(query_text)){
+    //         WR << "error while executing query " << query.lastError();
+    //         emit this->signalExportDatabaseError("error while executing query " + query.lastError().text());
+    //         return;
+    //     }
+        
+    //     QJsonObject jsonSong;   /// song element (as temporary container)
+    //     while(query.next()){
+    //         QString tagName = query.value(0).toString();
+    //         bool textType = query.value(1).toInt() == Database::TagType::TT_TEXT;
+    //         auto tagValue = query.value(2);
+            
+    //         /// if tag type is text type convert to string otherwise
+    //         ///     (tag type is integer or TriState) convert to int
+    //         // jsonSong[tagName] = (textType ? tagValue.toString() : tagValue.toInt());
+    //     }
+        
+    //     jsonSongs.append(jsonSong);
+    // }
+    jsonMain["songs"] = jsonSongs;
+
+    QJsonDocument jsonData(jsonMain);
+
+    QFile file(output_file);
+    if(!file.open(QIODevice::WriteOnly | QIODevice::Text)){
+        WR << "error while saving json file to" << output_file << "with error" << file.errorString();
+        emit this->signalExportDatabaseError(
+            "error while saving json file to " + output_file + " with error " + file.errorString());
+    }
+
+    file.write(jsonData.toJson());
+    file.close();
+
+    DB << "songs exported successfully!";
+    emit this->signalExportedSongsFromDatabase();
+}
+
+void Database::exportTagsFromDatabase(const QUrl &output_qurl)
+{
+    QString output_file = output_qurl.toLocalFile();
+    if(QFile::exists(output_file))
+    {
+        /// user will confirm overwrite file in select file form
+        /// so in that step user don't might if I delete it
+        QFile(output_file).remove();
+    }
+    
+}
 
 void Database::exportDatabase(const QUrl &output_qurl)
 {
     QString output_file = output_qurl.toLocalFile();
     if(QFile::exists(output_file))
     {
-        // user confirm overwrite file in select file form
+        /// user will confirm overwrite file in select file form
+        /// so in that step user don't might if I delete it
         QFile(output_file).remove();
     }
-    QObject ltp; // life time protector
+    QObject ltp; /// life time protector
 
     QSqlQuery query_songs(m_database);
     QSqlQuery query_song(m_database);
@@ -279,48 +426,6 @@ void Database::exportDatabase(const QUrl &output_qurl)
     QJsonArray songs_array_json;
     QJsonArray tags_array_json;
 
-    // this can be done by loadAllSongsModel() and loadSongEditModel() (then get_all_songs_model and get_song_edit_model)
-    // but i thought about that after writing the following code :/
-
-    // ------------------------------ get all songs  -----------------------------
-    // get songs list
-    query_text = QString("SELECT id FROM songs;");
-    this->queryToFile(query_text);
-    if(!query_songs.exec(query_text)){
-        WR << "error while executing SELECT query " << query_songs.lastError();
-        emit this->signalExportDatabaseError("error while executing SELECT query " + query_songs.lastError().text());
-        return;
-    }
-
-    while(query_songs.next())
-    {
-        QJsonObject song;
-        int song_id = query_songs.value(0).toInt();
-        // get tags for song
-        query_text = QString("SELECT tags.name, tags.type, songs_tags.value "
-                             "FROM songs_tags "
-                             "JOIN tags ON songs_tags.tag_id = tags.id "
-                             "WHERE songs_tags.song_id = %1;").arg(song_id);
-        this->queryToFile(query_text);
-        if(!query_song.exec(query_text)){
-            WR << "error while executing query " << query_song.lastError();
-            emit this->signalExportDatabaseError("error while executing query " + query_song.lastError().text());
-            return;
-        }
-
-        // set all tags to QJsonObject
-        while(query_song.next()){
-            int tag_type = query_song.value(1).toInt();
-            if(tag_type == 1) // String type
-                song[query_song.value(0).toString()] = query_song.value(2).toString();
-            else // TriSwich type or Integer type
-                song[query_song.value(0).toString()] = query_song.value(2).toInt();
-        }
-
-        // add QJsonObject
-        songs_array_json.append(song);
-    }
-    main_json["songs"] = songs_array_json;
 
 
     // ------------------------------ get all tags  -----------------------------
@@ -369,14 +474,14 @@ void Database::exportDatabase(const QUrl &output_qurl)
     emit this->signalExportedDatabase();
 }
 
-void Database::importTagsToDatabase(const QUrl &output_qurl)
+void Database::importSongsToDatabase(const QUrl &input_qurl)
 {
-    importDatabase(output_qurl);
+    importDatabase(input_qurl);
 }
 
-void Database::importSongsToDatabase(const QUrl &output_qurl)
+void Database::importTagsToDatabase(const QUrl &input_qurl)
 {
-    importDatabase(output_qurl);
+    importDatabase(input_qurl);
 }
 
 void Database::importDatabase(const QUrl &input_qurl)

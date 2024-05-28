@@ -17,7 +17,8 @@ Page {
     Component.onCompleted: {
         mainLoader.anchors.top = tabBar.top
 
-        mdl.push({id: 100, name: "Export database"})
+        mdl.push({id: 100, name: "Export Songs from database"})
+        mdl.push({id: 150, name: "Export Tags from database"})
         mdl.push({id: 200, name: "Import Songs to database"})
         mdl.push({id: 300, name: "Import Tags to database"})
         mdl.push({id: 400, name: "Reeset database"})
@@ -27,40 +28,84 @@ Page {
 
     Connections{
         target: backend.database
-
-        function onSignalExportedDatabase()
+        
+        // --------------------------------------------- Export Database --------------------------------------------- //
+        // function onSignalExportedDatabase()
+        // {
+        //     pGlobalOk.open();
+        //     pGlobalOk.dltText = "Database exported successfully!"
+        //     pGlobalOk.dltDesc = "" // need to be set because something might left last after error
+        // }
+        // function onSignalExportDatabaseError(desc)
+        // {
+        //     console.log(desc);
+        //     pGlobalOk.open();
+        //     pGlobalOk.dltText = "Error while exporting database!"
+        //     pGlobalOk.dltDesc = desc
+        // }
+        
+        function onSignalExportedSongsFromDatabase()
         {
             pGlobalOk.open();
-            pGlobalOk.dltText = "Database exported successfully!"
+            pGlobalOk.dltText = "Songs exported successfully!"
             pGlobalOk.dltDesc = "" // need to be set because something might left last after error
         }
-        function onSignalExportDatabaseError(desc)
+        function onSignalExportSongsFromDatabaseError(desc)
         {
             console.log(desc);
             pGlobalOk.open();
-            pGlobalOk.dltText = "Error while exporting database!"
+            pGlobalOk.dltText = "Error while exporting Songs from database!"
+            pGlobalOk.dltDesc = desc
+        }
+        
+        function onSignalExportedTagsFromDatabase()
+        {
+            pGlobalOk.open();
+            pGlobalOk.dltText = "Tags exported successfully!"
+            pGlobalOk.dltDesc = "" // need to be set because something might left last after error
+        }
+        function onSignalExportTagsFromDatabaseError(desc)
+        {
+            console.log(desc);
+            pGlobalOk.open();
+            pGlobalOk.dltText = "Error while exporting Tags from database!"
             pGlobalOk.dltDesc = desc
         }
 
 
-        function onSignalImportedDatabase()
+        // --------------------------------------------- import database --------------------------------------------- //
+        // function onSignalImportedDatabase()
+        // {
+        //     // TO DELETE
+        //     pGlobalOk.open();
+        //     pGlobalOk.dltText = "Database imported successfully!"
+        //     pGlobalOk.dltDesc = "" // need to be set because something might left last after error
+        //     // TO DELETE
+        // }
+        // function onSignalImportDatabaseError(desc)
+        // {
+        //     // TO DELETE
+        //     console.log(desc);
+        //     pGlobalOk.open();
+        //     pGlobalOk.dltText = "Error while importing database!"
+        //     pGlobalOk.dltDesc = desc
+        //     // TO DELETE
+        // }
+
+        function onSignalImportedSongsToDatabase()
         {
-            // TO DELETE
             pGlobalOk.open();
-            pGlobalOk.dltText = "Database imported successfully!"
+            pGlobalOk.dltText = "Songs imported successfully!"
             pGlobalOk.dltDesc = "" // need to be set because something might left last after error
-            // TO DELETE
         }
-        function onSignalImportDatabaseError(desc)
+        function onSignalImportSongsToDatabaseError(desc)
         {
-            // TO DELETE
             console.log(desc);
             pGlobalOk.open();
-            pGlobalOk.dltText = "Error while importing database!"
+            pGlobalOk.dltText = "Error while importing Songs to database!"
             pGlobalOk.dltDesc = desc
-            // TO DELETE
         }
-
+        
         function onSignalImportedTagsToDatabase()
         {
             pGlobalOk.open();
@@ -76,21 +121,7 @@ Page {
         }
 
 
-        function onSignalImportedSongsToDatabase()
-        {
-            pGlobalOk.open();
-            pGlobalOk.dltText = "Songs imported successfully!"
-            pGlobalOk.dltDesc = "" // need to be set because something might left last after error
-        }
-        function onSignalImportSongsToDatabaseError(desc)
-        {
-            console.log(desc);
-            pGlobalOk.open();
-            pGlobalOk.dltText = "Error while importing Songs to database!"
-            pGlobalOk.dltDesc = desc
-        }
-
-
+        // --------------------------------------------- Reset Database --------------------------------------------- //
         function onSignalDeletedDatabase()
         {
             backend.database.initializeWithTags();
@@ -102,7 +133,6 @@ Page {
             pGlobalOk.dltText = "Resetting database: Error while deleting database!"
             pGlobalOk.dltDesc = desc
         }
-
 
         function onSignalInitializedWithTags()
         {
@@ -186,6 +216,7 @@ Page {
                 sourceComponent: {
                     if(false);
                     else if(modelData.id === 100) delegateFileSaveButtonField;
+                    else if(modelData.id === 150) delegateFileSaveButtonField;
                     else if(modelData.id === 200) delegateFileSelectButtonField;
                     else if(modelData.id === 300) delegateFileSelectButtonField;
                     else if(modelData.id === 400) delegateDeleteDatabase;
@@ -197,8 +228,10 @@ Page {
                     FileSaveButtonField{
                         delegate_text: modelData.name
                         onOwnSelectedFileChanged: {
-                            if(modelData.id === 100)
-                                backend.database.exportDatabase(ownSelectedFile);
+                            if(modelData.id === 100) // songs
+                                backend.database.exportSongsFromDatabase(ownSelectedFile);
+                            else if(modelData.id === 150) // tags
+                                backend.database.exportTagsFromDatabase(ownSelectedFile);
                         }
                     }
                 }
@@ -209,10 +242,10 @@ Page {
                     FileSelectButtonField{
                         delegate_text: modelData.name
                         onOwnSelectedFileChanged: {
-                            if(modelData.id === 200) // tags
-                                backend.database.importTagsToDatabase(ownSelectedFile);
-                            else if(modelData.id === 300) // songs
+                            if(modelData.id === 200) // songs
                                 backend.database.importSongsToDatabase(ownSelectedFile);
+                            else if(modelData.id === 300) // tags
+                                backend.database.importTagsToDatabase(ownSelectedFile);
                         }
                     }
                 }

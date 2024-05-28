@@ -94,16 +94,20 @@ signals: // -------------------------------------------------- database init ---
 
 signals: // -------------------------------------------------- db management -------------------------------------------------- //
     /// finished
-    void signalExportedDatabase();          /// emited when data was correctly exported from the database to json
-    void signalImportedDatabase();    //TO DELETE emited when data was correctly imported to the database
-    void signalImportedTagsToDatabase();    /// emited when data was correctly imported Tags to the database
+    void signalExportedSongsFromDatabase();          /// emited when data was correctly exported from the database to json
+    void signalExportedTagsFromDatabase();          /// emited when data was correctly exported from the database to json
+    void signalExportedDatabase();    // emited when data was correctly exported from the database to json
     void signalImportedSongsToDatabase();   /// emited when data was correctly imported Songs to the database
+    void signalImportedTagsToDatabase();    /// emited when data was correctly imported Tags to the database
+    void signalImportedDatabase();    //TO DELETE emited when data was correctly imported to the database
     void signalDeletedDatabase();           /// emited when data was correctly deleted from the database
     /// error
-    void signalExportDatabaseError(QString desc);           /// emited when an error occur while exporting data from the database to json
-    void signalImportDatabaseError(QString desc);     //TO DELETE emited when an error occur while importing data to the database
-    void signalImportTagsToDatabaseError(QString desc);     /// emited when an error occur while importing Tags data to the database
+    void signalExportSongsFromDatabaseError(QString desc);           /// emited when an error occur while exporting data from the database to json
+    void signalExportTagsFromDatabaseError(QString desc);           /// emited when an error occur while exporting data from the database to json
+    void signalExportDatabaseError(QString desc);     // emited when an error occur while exporting data from the database to json
     void signalImportSongsToDatabaseError(QString desc);    /// emited when an error occur while importing Songs data to the database
+    void signalImportTagsToDatabaseError(QString desc);     /// emited when an error occur while importing Tags data to the database
+    void signalImportDatabaseError(QString desc);     //TO DELETE emited when an error occur while importing data to the database
     void signalDeleteDatabaseError(QString desc);           /// emited when an error occur while deleting data from the database
 
 signals: // -------------------------------------------------- load models -------------------------------------------------- //
@@ -172,10 +176,12 @@ public slots: // database init
     void initializeFilters();       /// initialize filters (to avoid m_filters being empty)
 
 public slots: // db management
+    void exportSongsFromDatabase(const QUrl &output_qurl);
+    void exportTagsFromDatabase(const QUrl &output_qurl);
     void exportDatabase(const QUrl &output_qurl);
-    void importTagsToDatabase(const QUrl &output_qurl);
-    void importSongsToDatabase(const QUrl &output_qurl);
-    void importDatabase(const QUrl &output_qurl); // TO DELETE
+    void importSongsToDatabase(const QUrl &input_qurl);
+    void importTagsToDatabase(const QUrl &input_qurl);
+    void importDatabase(const QUrl &input_qurl); // TO DELETE
     void deleteDatabase();
 
 public slots: // load models
