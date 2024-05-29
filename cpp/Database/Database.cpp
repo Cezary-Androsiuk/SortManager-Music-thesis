@@ -428,6 +428,16 @@ void Database::importSongsToDatabase(const QUrl &input_qurl)
     }
     CATH(emit this->signalImportSongsToDatabaseError)
 
+    /// i didn't like to import exported songs user need to remove from json
+    /// not editable fields, so to keep all smooth not editable tags will be
+    /// also readed to could be skipped in future parts
+    QStringList notEditableTagNames;
+    try
+    {
+        notEditableTagNames = this->importDatabaseGetNotEditableTagNames();
+    }
+    CATH(emit this->signalImportSongsToDatabaseError)
+
 
     QJsonArray jsonSongs = jsonMain["songs"].toArray();
 
@@ -467,7 +477,12 @@ void Database::importSongsToDatabase(const QUrl &input_qurl)
         /// check if json song contains only existing and editable tags
         for (auto tagIt = jsonSong.begin(); tagIt != jsonSong.end(); ++tagIt)
         {
-            if(avaliableTagNames.contains(tagIt.key()))
+            QString tagName = tagIt.key();
+            if(avaliableTagNames.contains(tagName))
+                continue;
+
+            /// skip not editable, but existing in db tags
+            if(notEditableTagNames.contains(tagName))
                 continue;
 
             HANDLE_ERROR(
@@ -495,6 +510,10 @@ void Database::importSongsToDatabase(const QUrl &input_qurl)
             QString tagName = tagIt.key();
             QVariant tagValue = tagIt.value().toVariant();
             int tagID;
+
+            /// do not add not editable fields to structure (skip them)
+            if(notEditableTagNames.contains(tagName))
+                continue;
 
             /// find tagID of tagName
             try
@@ -764,245 +783,6 @@ void Database::importDatabase(const QUrl &input_qurl)
     //         // this help us later :)
     //         for(const auto &name : added_from_json_tag_names)
     //             used_tag_names.append(name);
-    //     }
-
-
-    //     // skip if json file not contains "songs" object
-    //     /// user might want to add just tags, so error not needed
-    //     if(main_json.contains("songs"))
-    //     {
-    //         // ------------------------------ get data about songs -----------------------------
-    //         QStringList used_tag_names;
-    //         TagList all_tags;
-    //         QString load_error;
-
-    //         auto lambda_model = [&](QString desc){
-    //             /// [&] means get reference from parents variables
-    //             /// desc is value received from signalAllTagsModelLoadError(QString desc)
-    //             load_error = desc; // some warning occur, but i don't see a better way
-    //         };
-
-    //         // Get tags data
-    //         /// load all tags and react for the error result
-    //         auto connection_model = connect(this, &Database::signalAllTagsModelLoadError, lambda_model);
-
-    //         bool prev_show_constant_tags = m_showConstantTags;
-    //         m_showConstantTags = true;
-    //         this->loadAllTags();
-    //         m_showConstantTags = prev_show_constant_tags;
-
-    //         if(load_error != ""){
-    //             WR << "Error while loading all tags model for songs part:" << load_error;
-    //             DB << "cancelling transaction ...";
-    //             m_database.rollback();
-    //             emit this->signalImportDatabaseError("Error while loading all tags model for songs part: " + load_error);
-    //             return;
-    //         }
-
-    //         disconnect(connection_model);
-
-    //         /// store names of used tags
-    //         /// m_all_tags_model will be cleared after any operation like add song
-    //         for(const auto &mdl_tag : m_all_tags_model->c_ref_tags()){
-    //             Tag *tag = new Tag(&all_tags);
-
-    //             tag->set_id(mdl_tag->get_id());
-    //             tag->set_name(mdl_tag->get_name());
-    //             tag->set_type(mdl_tag->get_type());
-    //             tag->set_is_editable(mdl_tag->get_is_editable());
-
-    //             all_tags.tags().append(tag);
-    //         }
-
-    //         // ------------------------------ add songs -----------------------------
-
-    //         QString list_of_add_songs_failed;
-    //         QStringList added_from_json_song_paths;
-    //         QString last_song_add_error;
-
-    //         auto lambda_operation = [&](QString desc){
-    //             // [&] means get reference from parents variables
-    //             // desc is value received from signalAllTagsModelLoadError(QString desc)
-    //             last_song_add_error += desc;
-    //             // some warning occur, but i don't see a better way
-    //         };
-
-    //         auto connection_operation = connect(this, &Database::signalAddSongError, lambda_operation);
-
-    //         QJsonArray songs_array_json = main_json["songs"].toArray();
-    //         for(const auto &_song : songs_array_json)
-    //         {
-    //             QJsonObject song = _song.toObject();
-
-    //             // get song path
-    //             if(!song.contains("Song Path"))
-    //             {
-    //                 list_of_add_songs_failed += "{one of the songs not contains field 'Song Path'} ";
-    //                 // not exit here because later app will display user what songs need an repair
-    //                 continue;
-    //             }
-    //             QString song_path = song["Song Path"].toString();
-
-    //             // check if is not used already
-    //             if(used_tag_names.contains( song_path ))
-    //             {
-    //                 list_of_add_songs_failed += "{song path '"+song_path+"' already in use} ";
-    //                 // not exit here because later app will display user what songs need an repair
-    //                 continue;
-    //             }
-    //             if(added_from_json_song_paths.contains( song_path ))
-    //             {
-    //                 list_of_add_songs_failed += "{song path '"+song_path+"' is a duplicate in json} ";
-    //                 // not exit here because later app will display user what songs need an repair
-    //                 continue;
-    //             }
-
-    //             // prepare structure for addSong
-    //             QVariantList structure;
-
-    //             /// well... thats efficient XD 3th nested for loop
-    //             auto lambda_set_given_in_json_values = [&]() -> bool{
-    //                 // iterate over all "keys": values in current song
-    //                 for (auto it = song.begin(); it != song.end(); ++it) {
-    //                     QString key = it.key();
-    //                     QJsonValue json_value = it.value();
-
-    //                     bool found_related_tag = false;
-    //                     for(const auto &tag : all_tags.c_ref_tags())
-    //                     {
-    //                         if(tag->get_name() == key)
-    //                         {
-    //                             found_related_tag = true;
-
-    //                             if(!tag->get_is_editable())
-    //                             {
-    //                                 // error if json contains value for not editable tag \
-    //                                 (example: tag "ID", "Duration" or "Add Date")
-    //                                 list_of_add_songs_failed += "{found field that can't be set cause is not editable: '"+
-    //                                                             key+"'} ";
-
-    //                                 // lambda return
-    //                                 return false;
-    //                             }
-
-    //                             QVariant qv_value;
-
-    //                             if(tag->get_type() == 0) // state
-    //                             {
-    //                                 int value = json_value.toInt();
-    //                                 if(value > 0)       qv_value = 1;
-    //                                 else if(value < 0)  qv_value = -1;
-    //                                 else                qv_value = 0;
-    //                             }
-    //                             else if(tag->get_type() == 1) // string
-    //                             {
-    //                                 qv_value = json_value.toString();
-    //                             }
-    //                             else if(tag->get_type() == 2) // integer
-    //                             {
-    //                                 qv_value = json_value.toInt();
-    //                             }
-    //                             else
-    //                             {
-    //                                 WR << "Error unknown tag in tags list! tag name:" << tag->get_name() << ",type:" << tag->get_type();
-    //                                 DB << "Using 'string' type ";
-    //                                 qv_value = json_value.toString();
-    //                             }
-
-    //                             structure.append(
-    //                                 QVariantMap{
-    //                                     {"id", tag->get_id()},
-    //                                     {"value", qv_value}
-    //                                 });
-
-    //                             break; // i am ECO :)
-    //                         }
-    //                     }
-
-    //                     if(!found_related_tag)
-    //                     {
-    //                         // error given tag in song does not exist
-    //                         list_of_add_songs_failed +=
-    //                             "{given tag '"+key+"' not exist  '" +
-    //                             song["Song Path"].toString()+"' has tag named'"+
-    //                             json_value.toString()+"'} ";
-
-    //                         // lambda return
-    //                         return false;
-    //                     }
-    //                 }
-    //                 return true;
-    //             };
-    //             if(!lambda_set_given_in_json_values())
-    //             {
-    //                 // if error in song occur then continue from here
-    //                 // list_of_add_tags_failed was set while returning lambda
-    //                 continue;
-    //             }
-
-    //             auto lambda_field_is_in_structure = [&](int id) -> bool{
-    //                 for(const auto &tag : structure)
-    //                 {
-    //                     if(tag.toMap()["id"].toInt() == id)
-    //                         return true;
-    //                 }
-    //                 return false;
-    //             };
-
-    //             for(const auto &tag : all_tags.c_ref_tags())
-    //             {
-    //                 // skip not editable (those will be added in addSong())
-    //                 if(!tag->get_is_editable()){
-    //                     continue;
-    //                 }
-    //                 if(!lambda_field_is_in_structure(tag->get_id()))
-    //                 {
-    //                     QVariant qv_value; // default value
-    //                     if(tag->get_type() == 0) // state
-    //                     {
-    //                         qv_value = 0;
-    //                     }
-    //                     else if(tag->get_type() == 1) // string
-    //                     {
-    //                         qv_value = QString("");
-    //                     }
-    //                     else if(tag->get_type() == 2) // integer
-    //                     {
-    //                         qv_value = 0;
-    //                     }
-
-    //                     structure.append(
-    //                         QVariantMap{
-    //                             {"id", tag->get_id()},
-    //                             {"value", qv_value}
-    //                         });
-    //                 }
-    //             }
-
-    //             this->addSong(structure);
-
-    //             if(!last_song_add_error.isEmpty())
-    //             {
-    //                 list_of_add_songs_failed += "{while adding song with song path '"+song_path+"', an error occur: "+last_song_add_error+"} ";
-    //                 last_song_add_error.clear();
-    //                 // not exit here because later app will display user what songs need an repair
-    //                 continue;
-    //             }
-
-    //             added_from_json_song_paths.append(song_path);
-    //         }
-
-    //         disconnect(connection_operation);
-
-    //         if(!list_of_add_songs_failed.isEmpty())
-    //         {
-    //             DB << "found errors while adding songs:" << list_of_add_songs_failed;
-    //             DB << "cancelling transaction ...";
-    //             m_database.rollback();
-    //             emit this->signalImportDatabaseError(
-    //                 "found errors while adding songs: " + list_of_add_songs_failed);
-    //             return;
-    //         }
     //     }
     // }
     // END_TRANSACTION(signalImportDatabaseError)
@@ -2882,9 +2662,9 @@ QStringList Database::importDatabaseGetUsedSongPaths()
 
 QStringList Database::importDatabaseGetAvaliableTagNames()
 {
-    QStringList usedTagNames;
+    QStringList avaliableTagNames;
 
-    /// Get used tag names
+    /// Get avaliable tag names
     QSqlQuery query(m_database);
     QString queryText("SELECT name FROM tags WHERE is_editable = 1;");
     this->queryToFile(queryText);
@@ -2892,10 +2672,28 @@ QStringList Database::importDatabaseGetAvaliableTagNames()
         THROW_EXCEPTION("error while executing '"+queryText+"' query:" + query.lastError().text());
 
     while(query.next()){
-        usedTagNames.append(query.value(0).toString());
+        avaliableTagNames.append(query.value(0).toString());
     }
 
-    return usedTagNames;
+    return avaliableTagNames;
+}
+
+QStringList Database::importDatabaseGetNotEditableTagNames()
+{
+    QStringList notEditableTagNames;
+
+    /// Get notEditable tag names
+    QSqlQuery query(m_database);
+    QString queryText("SELECT name FROM tags WHERE is_editable = 0;");
+    this->queryToFile(queryText);
+    if(!query.exec(queryText))
+        THROW_EXCEPTION("error while executing '"+queryText+"' query:" + query.lastError().text());
+
+    while(query.next()){
+        notEditableTagNames.append(query.value(0).toString());
+    }
+
+    return notEditableTagNames;
 }
 
 int Database::importDatabaseChangeTagNameToTagID(QString tagName) const

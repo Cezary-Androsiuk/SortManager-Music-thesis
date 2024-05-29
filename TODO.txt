@@ -81,9 +81,9 @@ DONE ZROZMIEĆ FileSelectField.qml oraz PathSelectField.qml
 
 =================================================
 - import tags from json
-- import songs from json
-- export tags to json
-- export songs to json
+DONE - import songs from json
+DONE - export tags to json
+DONE - export songs to json
 DONE - make own icons
 DONE - clean up icons
 ? dodać Backend.personalization.showTooltips w ImageButton:90
@@ -101,6 +101,7 @@ NONE ? dodać do BetterButton ikonki
 //	 x not belong to A oraz x belong to B => ustawiamy na domyślną 'do not compare'
 // ale się tak teraz zastanawiam jak ugryźć (i czy wgl dam radę to zrobić) zarządzanie pamięcią m_filters oraz m_filersModel. Może zamiast pisać to wyjaśnienie powinienem próbować to zaprogramować -.-
 - w initializeFilters dodać personalization
+### przetestować co się stanie gdy przy example data utworzymy tag X i importujemy 2 piosenki ale bez tagu X a następnie wyeksportujemy wszystkie dane (w tych dwóch nowych tagach nie powinno być tagu X) a to znaczyło by że nie tworzy się element który nie zostanie określony w pliku json w trakcie importowania
 
 ==========================
 playlist:

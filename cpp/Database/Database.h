@@ -231,6 +231,7 @@ private: // other methods to support
     QJsonDocument importDatabaseLoadJsonFromFile(QUrl jsonFilePath);
     QStringList importDatabaseGetUsedSongPaths();
     QStringList importDatabaseGetAvaliableTagNames();
+    QStringList importDatabaseGetNotEditableTagNames();
     int importDatabaseChangeTagNameToTagID(QString tagName) const;
 
     /// print methods
