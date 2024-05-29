@@ -179,6 +179,7 @@ void Database::initializeWithTags()
 
 void Database::createExampleData()
 {
+    DB << "creating example data...";
     QSqlQuery query(m_database);
     QList<QString> stl;
 
@@ -241,9 +242,10 @@ void Database::createExampleData()
 
         this->queryToFile(st);
     }
-
+    DB << "finalizing adding an example data...";
     this->clearModelsMemory();
     this->makeCurrentFiltersValid();
+    DB << "example data was added!";
 }
 
 void Database::initializeFilters()
@@ -438,6 +440,7 @@ void Database::importSongsToDatabase(const QUrl &input_qurl)
     }
     CATH(emit this->signalImportSongsToDatabaseError)
 
+    DB << "initial data was loaded";
 
     QJsonArray jsonSongs = jsonMain["songs"].toArray();
 
@@ -493,7 +496,13 @@ void Database::importSongsToDatabase(const QUrl &input_qurl)
         }
     }
 
+    DB << "initial validation was completed";
+
     /// at this point data are mostly valid
+
+    /// addSong() was not implemented good enough (idk by who XD) and need to receive
+    /// all existing editable tags...
+    /// thats why following code iterates through all editable tags (avaliableTagNames)
 
     /// prepare list of structures that can be pass to addSong() method
     /// but firstly to translate tag names, given in json to tag id's
@@ -505,16 +514,15 @@ void Database::importSongsToDatabase(const QUrl &input_qurl)
     {
         QJsonObject jsonSong = jsonSongIt.toObject();
         QVariantList structure;
-        for (auto tagIt = jsonSong.begin(); tagIt != jsonSong.end(); ++tagIt)
+        for(const auto &tagName : avaliableTagNames)
         {
-            QString tagName = tagIt.key();
-            QVariant tagValue = tagIt.value().toVariant();
+            QString tagValue = "";
+
+            /// replace tagValue if value exist in json
+            if(jsonSong.contains(tagName))
+                tagValue = jsonSong.value(tagName).toString();
+
             int tagID;
-
-            /// do not add not editable fields to structure (skip them)
-            if(notEditableTagNames.contains(tagName))
-                continue;
-
             /// find tagID of tagName
             try
             {
@@ -531,10 +539,13 @@ void Database::importSongsToDatabase(const QUrl &input_qurl)
         listOfStructures.append(structure);
     }
 
+    DB << "structure of songs was builded";
+
     /// connect addSong() method error with lambda
     QString addSongErrorInfo;
     auto addSongLambda = [&addSongErrorInfo](QString desc){
         // desc is a value received from signal
+        WR << "error in add song: "<< desc;
         addSongErrorInfo = desc;
     };
     auto addSongErrorConnection =

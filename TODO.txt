@@ -101,7 +101,7 @@ NONE ? dodać do BetterButton ikonki
 //	 x not belong to A oraz x belong to B => ustawiamy na domyślną 'do not compare'
 // ale się tak teraz zastanawiam jak ugryźć (i czy wgl dam radę to zrobić) zarządzanie pamięcią m_filters oraz m_filersModel. Może zamiast pisać to wyjaśnienie powinienem próbować to zaprogramować -.-
 - w initializeFilters dodać personalization
-### przetestować co się stanie gdy przy example data utworzymy tag X i importujemy 2 piosenki ale bez tagu X a następnie wyeksportujemy wszystkie dane (w tych dwóch nowych tagach nie powinno być tagu X) a to znaczyło by że nie tworzy się element który nie zostanie określony w pliku json w trakcie importowania
+DONE ghi### przetestować co się stanie gdy przy example data utworzymy tag X i importujemy 2 piosenki ale bez tagu X a następnie wyeksportujemy wszystkie dane (w tych dwóch nowych tagach nie powinno być tagu X) a to znaczyło by że nie tworzy się element który nie zostanie określony w pliku json w trakcie importowania
 
 ==========================
 playlist:
