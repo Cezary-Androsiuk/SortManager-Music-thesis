@@ -50,9 +50,7 @@
 #define THROW_EXCEPTION(desc) throw std::runtime_error((QString() + desc).toStdString().c_str())
 /// handle error and return // requires emit keyword before signal
 #define HANDLE_ERROR(desc, errorSignal) WR << desc; errorSignal(desc); return;
-/// run code with try and handle catch
-#define RUN_WITH_TRY(code, errorSignal) try{code;} catch(std::runtime_error &e){HANDLE_ERROR(e.what(), errorSignal)}
-
+/// catch common error thrown by called function
 #define CATH(errorSignal) catch(std::runtime_error &e) {WR << e.what(); errorSignal(e.what()); return;}
 
 
@@ -232,6 +230,8 @@ private: // other methods to support
     /// support import database
     QJsonDocument importDatabaseLoadJsonFromFile(QUrl jsonFilePath);
     QStringList importDatabaseGetUsedSongPaths();
+    QStringList importDatabaseGetAvaliableTagNames();
+    int importDatabaseChangeTagNameToTagID(QString tagName) const;
 
     /// print methods
     void debugPrint_filters() const;

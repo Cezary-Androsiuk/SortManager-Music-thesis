@@ -398,21 +398,13 @@ void Database::exportTagsFromDatabase(const QUrl &output_qurl)
 
 void Database::importSongsToDatabase(const QUrl &input_qurl)
 {
-    // desc in PC
+    /*
+     * program while importing songs will look at each tag (in each song) that is writen in json file
+     * and will show an error if any of this tags are unknown, in example: when user
+     * spell something wrong
+     */
 
     QJsonObject jsonMain;
-    // try{
-    //     jsonMain = this->importDatabaseLoadJsonFromFile(input_qurl).object();
-    // } catch(std::runtime_error &e){
-    //     WR << e.what();
-    //     emit this->signalImportSongsToDatabaseError(e.what());
-    //     return;
-    // }
-
-    // RUN_WITH_TRY(
-    //     jsonMain = this->importDatabaseLoadJsonFromFile(input_qurl).object(),
-    //     emit this->signalImportSongsToDatabaseError);
-
     try
     {
         jsonMain = this->importDatabaseLoadJsonFromFile(input_qurl).object();
@@ -421,36 +413,153 @@ void Database::importSongsToDatabase(const QUrl &input_qurl)
 
     /// load all songs once, instead of checking in db if each song path is unique
     QStringList usedSongPaths;
-    try{
+    try
+    {
         usedSongPaths = this->importDatabaseGetUsedSongPaths();
-    } catch(std::runtime_error &e){
-        WR << e.what();
-        emit this->signalImportSongsToDatabaseError(e.what());
-        return;
     }
-    DB << usedSongPaths;
+    CATH(emit this->signalImportSongsToDatabaseError)
+
+    /// load all tags once, instead of checking in db if each tag exist
+    /// variable will contain only tag names that exist in db and are editable
+    QStringList avaliableTagNames;
+    try
+    {
+        avaliableTagNames = this->importDatabaseGetAvaliableTagNames();
+    }
+    CATH(emit this->signalImportSongsToDatabaseError)
+
+
+    QJsonArray jsonSongs = jsonMain["songs"].toArray();
+
+    /// initial json songs validation
+    for(const auto &jsonSongIt : jsonSongs)
+    {
+        QJsonObject jsonSong = jsonSongIt.toObject();
+
+        /// NOTE: handling required fields can also be handled by comparing
+        /// with list of required fields (in database exist column is_required)
+        /// however there will be only one required field and this will be more
+        /// readable in code below
+
+        /// handle when json song not contains 'Song Path' tag
+        if(!jsonSong.contains("Song Path"))
+        {
+            HANDLE_ERROR(
+                "one of the songs not contains required 'Song Path' tag!",
+                emit this->signalImportSongsToDatabaseError)
+        }
+
+        QString songPathValue = jsonSong["Song Path"].toString();
+
+        /// handle when json song 'Song Path' tag is already in use
+        if(usedSongPaths.contains(songPathValue))
+        {
+            HANDLE_ERROR(
+                "one of the songs contains 'Song Path'='"
+                    + songPathValue +
+                    "' that already is (or will be) in use!",
+                emit this->signalImportSongsToDatabaseError)
+        }
+
+        /// add song path to list of used 'Song Path' tags (because it will be in use)
+        usedSongPaths.append(songPathValue);
+
+        /// check if json song contains only existing and editable tags
+        for (auto tagIt = jsonSong.begin(); tagIt != jsonSong.end(); ++tagIt)
+        {
+            if(avaliableTagNames.contains(tagIt.key()))
+                continue;
+
+            HANDLE_ERROR(
+                "one of the songs contains tag '"
+                    + tagIt.key() +
+                    "' that do not exist in database or is not editable!",
+                emit this->signalImportSongsToDatabaseError)
+        }
+    }
+
+    /// at this point data are mostly valid
+
+    /// prepare list of structures that can be pass to addSong() method
+    /// but firstly to translate tag names, given in json to tag id's
+    /// load all tags and while building structure compare names and replace it with id
+    this->loadAllTags(); /// assume that all will be okey with this
+
+    QList<QVariantList> listOfStructures;
+    for(const auto &jsonSongIt : jsonSongs)
+    {
+        QJsonObject jsonSong = jsonSongIt.toObject();
+        QVariantList structure;
+        for (auto tagIt = jsonSong.begin(); tagIt != jsonSong.end(); ++tagIt)
+        {
+            QString tagName = tagIt.key();
+            QVariant tagValue = tagIt.value().toVariant();
+            int tagID;
+
+            /// find tagID of tagName
+            try
+            {
+                /// i don't see any reason why tag name could be not found
+                /// in all tags list
+                tagID = this->importDatabaseChangeTagNameToTagID(tagName);
+            }
+            CATH(emit this->signalImportSongsToDatabaseError)
+
+            structure.append(
+                QVariantMap{ {"id", tagID}, {"value", tagValue} }
+                );
+        }
+        listOfStructures.append(structure);
+    }
+
+    /// connect addSong() method error with lambda
+    QString addSongErrorInfo;
+    auto addSongLambda = [&addSongErrorInfo](QString desc){
+        // desc is a value received from signal
+        addSongErrorInfo = desc;
+    };
+    auto addSongErrorConnection =
+        QObject::connect(this, &Database::signalAddSongError, addSongLambda);
+
+    /// add songs
+    BEGIN_TRANSACTION
+    {
+        for(const auto &structure : listOfStructures)
+        {
+            this->addSong(structure);
+
+            if(!addSongErrorInfo.isNull())
+            {
+                m_database.rollback();
+                WR << "structure that failed: " << structure;
+                HANDLE_ERROR(
+                    "adding song failed: " + addSongErrorInfo,
+                    emit this->signalImportSongsToDatabaseError)
+            }
+        }
+    }
+    END_TRANSACTION(signalImportSongsToDatabaseError)
+
+    QObject::disconnect(addSongErrorConnection);
+
+    DB << "songs are imported correctly!";
+    emit this->signalImportedSongsToDatabase();
 }
 
 void Database::importTagsToDatabase(const QUrl &input_qurl)
 {
-    importDatabase(input_qurl);
+
+    QJsonObject jsonMain;
+    try
+    {
+        jsonMain = this->importDatabaseLoadJsonFromFile(input_qurl).object();
+    }
+    CATH(emit this->signalImportSongsToDatabaseError)
 }
 
 void Database::importDatabase(const QUrl &input_qurl)
 {
-    // /*
-    //  * bellow is no hard comunication methods and user are not guided by the hand what was wrong
-    //  * or interpret what user have on his mind. Just checking data, if user add "Song path" instead of "Song Path"
-    //  * an error will shows up, if user spell wrong "Description" then this field will stay empty.
-    //  *
-    //  * Also everything needs to be fine with json file to commit changes
-    //  *
-    //  * NOTE: going through tags, algorithm don't react on additional fields if there is "name" and "type" fields
-    //  *       then all is fine. Field "description" is also used, but only when exist, if not then will be empty
-    //  *
-    //  * NOTE: going through songs, algorithm will react on any field/key that doesn't exist in database and those
-    //  *       that are specyfied, but tags are not editable like "Duration" or "Add Date", they won't be ignored!
-    // */
+
     // QString input_file = input_qurl.toLocalFile();
     // if(!QFile(input_file).exists()){
     //     WR << "file " << input_file << " not found";
@@ -1521,8 +1630,8 @@ void Database::addSong(QVariantList new_song_data)
     mp.setSource(song_path);
     loop.exec();
     if(mp.mediaStatus() != QMediaPlayer::LoadedMedia){
-        WR << "error while loading song: " << mp.errorString();
-        emit this->signalAddSongError("error while loading song: " + mp.errorString());
+        WR << "error while loading song file: " << mp.errorString();
+        emit this->signalAddSongError("error while loading song file: " + mp.errorString());
         return;
     }
 
@@ -2757,18 +2866,46 @@ QStringList Database::importDatabaseGetUsedSongPaths()
 {
     QStringList usedSongPaths;
 
-    // /// Get used song paths
+    /// Get used song paths
     QSqlQuery query(m_database);
-    QString query_text("SELECT value FROM songs_tags WHERE tag_id = 9;"); // tag_id = 9 is Song Path tag
-    this->queryToFile(query_text);
-    if(!query.exec(query_text))
-        THROW_EXCEPTION("error while executing SELECT query:" + query.lastError().text());
+    QString queryText("SELECT value FROM songs_tags WHERE tag_id = 9;"); /// tag_id = 9 is Song Path tag
+    this->queryToFile(queryText);
+    if(!query.exec(queryText))
+        THROW_EXCEPTION("error while executing '"+queryText+"' query:" + query.lastError().text());
 
     while(query.next()){
         usedSongPaths.append(query.value(0).toString());
     }
 
     return usedSongPaths;
+}
+
+QStringList Database::importDatabaseGetAvaliableTagNames()
+{
+    QStringList usedTagNames;
+
+    /// Get used tag names
+    QSqlQuery query(m_database);
+    QString queryText("SELECT name FROM tags WHERE is_editable = 1;");
+    this->queryToFile(queryText);
+    if(!query.exec(queryText))
+        THROW_EXCEPTION("error while executing '"+queryText+"' query:" + query.lastError().text());
+
+    while(query.next()){
+        usedTagNames.append(query.value(0).toString());
+    }
+
+    return usedTagNames;
+}
+
+int Database::importDatabaseChangeTagNameToTagID(QString tagName) const
+{
+    for(const auto &tag : m_all_tags_model->c_ref_tags())
+    {
+        if(tag->get_name() == tagName)
+            return tag->get_id();
+    }
+    THROW_EXCEPTION("nothing was found while looking for ID of '"+tagName+"' tag name");
 }
 
 
