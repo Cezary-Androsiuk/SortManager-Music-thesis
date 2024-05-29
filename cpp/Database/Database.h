@@ -41,11 +41,19 @@
 
 // ------------------------- shortcuts that make code more readable and consistent ------------------------- //
 /// is database open
-#define IS_DATABASE_OPEN(signal) if(!Database::isDatabaseOpen(&Database::signal, __PRETTY_FUNCTION__)) return;
+#define IS_DATABASE_OPEN(errorSignal) if(!Database::isDatabaseOpen(&Database::errorSignal, __PRETTY_FUNCTION__)) return;
 /// transactions start
 #define BEGIN_TRANSACTION bool is_transaction_started_here = false; if(m_database.transaction()){ is_transaction_started_here = true; }
 /// transactions end
-#define END_TRANSACTION(signal) if(is_transaction_started_here){ if(!Database::endTransaction(&Database::signal, __PRETTY_FUNCTION__)) return; }
+#define END_TRANSACTION(errorSignal) if(is_transaction_started_here){ if(!Database::endTransaction(&Database::errorSignal, __PRETTY_FUNCTION__)) return; }
+/// throw an exception
+#define THROW_EXCEPTION(desc) throw std::runtime_error((QString() + desc).toStdString().c_str())
+/// handle error and return // requires emit keyword before signal
+#define HANDLE_ERROR(desc, errorSignal) WR << desc; errorSignal(desc); return;
+/// run code with try and handle catch
+#define RUN_WITH_TRY(code, errorSignal) try{code;} catch(std::runtime_error &e){HANDLE_ERROR(e.what(), errorSignal)}
+
+#define CATH(errorSignal) catch(std::runtime_error &e) {WR << e.what(); errorSignal(e.what()); return;}
 
 
 class Database : public QObject
@@ -66,10 +74,12 @@ class Database : public QObject
     Q_PROPERTY(TagList* filters_model           READ get_filters_model      CONSTANT)
 
 public:
-    enum TagType{
-        TT_INTEGER,
-        TT_TEXT,
-        TT_BOOL
+    struct TagType{
+        enum{
+            TT_INTEGER,
+            TT_TEXT,
+            TT_BOOL
+        };
     };
 
     explicit Database(QObject *parent = nullptr);
@@ -97,7 +107,7 @@ signals: // -------------------------------------------------- db management ---
     void signalExportedSongsFromDatabase();     /// emited when data was correctly exported from the database to json
     void signalExportedTagsFromDatabase();      /// emited when data was correctly exported from the database to json
     void signalImportedSongsToDatabase();       /// emited when data was correctly imported Songs to the database
-    void signalImportedDatabase();    //TO DELETE emited when data was correctly imported to the database
+    // void signalImportedDatabase();    //TO DELETE emited when data was correctly imported to the database
     void signalImportedTagsToDatabase();        /// emited when data was correctly imported Tags to the database
     void signalDeletedDatabase();               /// emited when data was correctly deleted from the database
     /// error
@@ -105,7 +115,7 @@ signals: // -------------------------------------------------- db management ---
     void signalExportTagsFromDatabaseError(QString desc);           /// emited when an error occur while exporting data from the database to json
     void signalImportSongsToDatabaseError(QString desc);    /// emited when an error occur while importing Songs data to the database
     void signalImportTagsToDatabaseError(QString desc);     /// emited when an error occur while importing Tags data to the database
-    void signalImportDatabaseError(QString desc);     //TO DELETE emited when an error occur while importing data to the database
+    // void signalImportDatabaseError(QString desc);     //TO DELETE emited when an error occur while importing data to the database
     void signalDeleteDatabaseError(QString desc);           /// emited when an error occur while deleting data from the database
 
 signals: // -------------------------------------------------- load models -------------------------------------------------- //
@@ -218,6 +228,10 @@ private: // other methods to support
     bool isDatabaseOpen(void (Database::*signal)(QString), const char *caller_name = "");
     bool beginTransaction(void (Database::*signal)(QString), const char *caller_name = "");
     bool endTransaction(void (Database::*signal)(QString), const char *caller_name = "");
+
+    /// support import database
+    QJsonDocument importDatabaseLoadJsonFromFile(QUrl jsonFilePath);
+    QStringList importDatabaseGetUsedSongPaths();
 
     /// print methods
     void debugPrint_filters() const;

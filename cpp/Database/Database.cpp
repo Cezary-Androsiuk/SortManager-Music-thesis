@@ -195,8 +195,8 @@ void Database::createExampleData()
     TMP_SHORT_1 "(1, 6, 999);");
     TMP_SHORT_1 "(1, 7, 1010);");
     TMP_SHORT_1 "(1, 8, 'tekst piosenki');");
-    TMP_SHORT_1 "(1, 9, 'path//');");
-    TMP_SHORT_1 "(1, 10, 'path//');");
+    TMP_SHORT_1 "(1, 9, 'path1//');");
+    TMP_SHORT_1 "(1, 10, 'path1//');");
     TMP_SHORT_1 "(1, 11, 1711679000);");
     TMP_SHORT_1 "(1, 12, 1711679000);");
 
@@ -210,8 +210,8 @@ void Database::createExampleData()
     TMP_SHORT_1 "(2, 6, 999);");
     TMP_SHORT_1 "(2, 7, 1010);");
     TMP_SHORT_1 "(2, 8, 'tekst piosenki');");
-    TMP_SHORT_1 "(2, 9, 'path//');");
-    TMP_SHORT_1 "(2, 10, 'path//');");
+    TMP_SHORT_1 "(2, 9, 'path2//');");
+    TMP_SHORT_1 "(2, 10, 'path2//');");
     TMP_SHORT_1 "(2, 11, 1711679000);");
     TMP_SHORT_1 "(2, 12, 1711679000);");
 
@@ -398,7 +398,37 @@ void Database::exportTagsFromDatabase(const QUrl &output_qurl)
 
 void Database::importSongsToDatabase(const QUrl &input_qurl)
 {
-    importDatabase(input_qurl);
+    // desc in PC
+
+    QJsonObject jsonMain;
+    // try{
+    //     jsonMain = this->importDatabaseLoadJsonFromFile(input_qurl).object();
+    // } catch(std::runtime_error &e){
+    //     WR << e.what();
+    //     emit this->signalImportSongsToDatabaseError(e.what());
+    //     return;
+    // }
+
+    // RUN_WITH_TRY(
+    //     jsonMain = this->importDatabaseLoadJsonFromFile(input_qurl).object(),
+    //     emit this->signalImportSongsToDatabaseError);
+
+    try
+    {
+        jsonMain = this->importDatabaseLoadJsonFromFile(input_qurl).object();
+    }
+    CATH(emit this->signalImportSongsToDatabaseError)
+
+    /// load all songs once, instead of checking in db if each song path is unique
+    QStringList usedSongPaths;
+    try{
+        usedSongPaths = this->importDatabaseGetUsedSongPaths();
+    } catch(std::runtime_error &e){
+        WR << e.what();
+        emit this->signalImportSongsToDatabaseError(e.what());
+        return;
+    }
+    DB << usedSongPaths;
 }
 
 void Database::importTagsToDatabase(const QUrl &input_qurl)
@@ -408,469 +438,469 @@ void Database::importTagsToDatabase(const QUrl &input_qurl)
 
 void Database::importDatabase(const QUrl &input_qurl)
 {
-    /*
-     * bellow is no hard comunication methods and user are not guided by the hand what was wrong
-     * or interpret what user have on his mind. Just checking data, if user add "Song path" instead of "Song Path"
-     * an error will shows up, if user spell wrong "Description" then this field will stay empty.
-     *
-     * Also everything needs to be fine with json file to commit changes
-     *
-     * NOTE: going through tags, algorithm don't react on additional fields if there is "name" and "type" fields
-     *       then all is fine. Field "description" is also used, but only when exist, if not then will be empty
-     *
-     * NOTE: going through songs, algorithm will react on any field/key that doesn't exist in database and those
-     *       that are specyfied, but tags are not editable like "Duration" or "Add Date", they won't be ignored!
-    */
-    QString input_file = input_qurl.toLocalFile();
-    if(!QFile(input_file).exists()){
-        WR << "file " << input_file << " not found";
-        emit this->signalImportDatabaseError("file " + input_file + " not found");
-    }
-
-    QFile json_file(input_file);
-    if(!json_file.open(QIODevice::ReadOnly | QIODevice::Text)){
-        WR << "error while reading json file from" << input_file << "with error" << json_file.errorString();
-        emit this->signalImportDatabaseError(
-            "error while reading json file from " + input_file + " with error " + json_file.errorString());
-    }
-
-    QJsonParseError json_error;
-    QJsonDocument main_json_doc = QJsonDocument::fromJson(json_file.readAll(), &json_error);
-    json_file.close();
-
-    if(json_error.error != QJsonParseError::NoError) {
-        WR << "json parse error: " << json_error.errorString();
-        emit this->signalImportDatabaseError("json parse error: " + json_error.errorString());
-        return;
-    }
-
-    if(!main_json_doc.isObject()){
-        WR << "json file does not contains json object";
-        emit this->signalImportDatabaseError("json file does not contains json object");
-        return;
-    }
-
-    QJsonObject main_json = main_json_doc.object();
-
-    // ------------------------------ get data from database  -----------------------------
-    QStringList used_song_paths;
-
-    {
-        // Get song paths
-        QSqlQuery query(m_database);
-        QString query_text("SELECT value FROM songs_tags WHERE tag_id = 9;"); // tag_id = 9 is Song Path tag
-        this->queryToFile(query_text);
-        if(!query.exec(query_text))
-        {
-            WR << "error while executing SELECT query:" << query.lastError();
-            emit this->signalImportDatabaseError("error while executing SELECT query: " + query.lastError().text());
-            return;
-        }
-
-        /// store song paths of used songs
-        /// m_all_songs_model will be cleared after any operation like add song
-        if(query.next())
-            used_song_paths.append(query.value(0).toString());
-    }
-
-
-    BEGIN_TRANSACTION
-    {
-        // skip if json file not contains "tags" object
-        /// user might want to add just songs, so error not needed
-        if(main_json.contains("tags"))
-        {
-            // ------------------------------ get data about tags -----------------------------
-            QStringList used_tag_names;
-            QString load_error;
-
-            auto lambda_model = [&](QString desc){
-                /// [&] means get reference from parents variables
-                /// desc is value received from signalAllTagsModelLoadError(QString desc)
-                load_error = desc; // some warning occur, but i don't see a better way
-            };
-
-            // Get tags names
-            /// load all tags and react for the error result
-            auto connection_model = connect(this, &Database::signalAllTagsModelLoadError, lambda_model);
-
-            // get ALL tags
-            bool prev_show_constant_tags = m_showConstantTags;
-            m_showConstantTags = true;
-            this->loadAllTags();
-            m_showConstantTags = prev_show_constant_tags;
-
-            if(load_error != ""){
-                WR << "Error while loading all tags model for tags part:" << load_error;
-                DB << "cancelling transaction ...";
-                m_database.rollback();
-                emit this->signalImportDatabaseError("Error while loading all tags model for tags part: " + load_error);
-                return;
-            }
-            disconnect(connection_model);
-
-            /// store names of used tags
-            /// m_all_tags_model will be cleared after any operation like add tag
-            for(const auto &tag : m_all_tags_model->c_ref_tags())
-                used_tag_names.append(tag->get_name());
-
-            // ------------------------------ add tags -----------------------------
-
-            QString list_of_add_tags_failed;
-            QStringList added_from_json_tag_names;
-            QString last_tag_add_error;
-
-            auto lambda_operation = [&](QString desc){
-                // [&] means get reference from parents variables
-                // desc is value received from signalAllTagsModelLoadError(QString desc)
-                last_tag_add_error += desc;
-                // some warning occur, but i don't see a better way
-            };
-
-            auto connection_operation = connect(this, &Database::signalAddTagError, lambda_operation);
-
-            QJsonArray tags_array_json = main_json["tags"].toArray();
-            // go through all tags in json
-            for(const auto &_tag : tags_array_json)
-            {
-                QJsonObject tag = _tag.toObject();
-
-                // get tag name
-                if(!tag.contains("name"))
-                {
-                    list_of_add_tags_failed += "{one of the tags not contains field 'name'} ";
-                    // not exit here because later app will display user what tags need an repair
-                    continue;
-                }
-                QString tag_name = tag["name"].toString();
-
-                // test if not used already
-                if(used_tag_names.contains( tag_name ))
-                {
-                    list_of_add_tags_failed += "{tag name '"+tag_name+"' already in use} ";
-                    // not exit here because later app will display user what tags need an repair
-                    continue;
-                }
-                if(added_from_json_tag_names.contains( tag_name ))
-                {
-                    list_of_add_tags_failed += "{tag name '"+tag_name+"' is a duplicate in json} ";
-                    // not exit here because later app will display user what tags need an repair
-                    continue;
-                }
-
-                // prepare structure for addTag
-                QString description = "";
-                if(tag.contains("description"))
-                    description = tag["description"].toString();
-
-
-                if(!tag.contains("type")){
-                    list_of_add_tags_failed += "{one of the tags not contains field 'type'} ";
-                    continue;
-                }
-                int type = tag["type"].toInt();
-                if(type<0 || 2<type){
-                    list_of_add_tags_failed += "{tag type need to be 0, 1 or 2. But tag with name '"
-                                               +tag_name+"' has value '"+
-                                               QString::number(tag["type"].toInt())+"'} ";
-                    continue;
-                }
-
-                QVariantList structure = {
-                    QVariantMap{
-                        {"delegate_type", QString("param")},
-                        {"name", QString("Name")},
-                        {"value", tag_name}
-                    },
-                    QVariantMap{
-                        {"delegate_type", QString("param")},
-                        {"name", QString("Description")},
-                        {"value", description}
-                    },
-                    QVariantMap{
-                        {"delegate_type", QString("param")},
-                        {"name", QString("Type")},
-                        {"value", type}
-                    }
-                };
-
-                this->addTag(structure);
-
-                if(!last_tag_add_error.isEmpty())
-                {
-                    list_of_add_tags_failed += "{while adding tag with name '"+tag_name+"', an error occur: "+last_tag_add_error+"} ";
-                    last_tag_add_error.clear();
-                    // not exit here because later app will display user what tags need an repair
-                    continue;
-                }
-
-                added_from_json_tag_names.append( tag_name );
-            }
-
-            disconnect(connection_operation);
-
-            if(!list_of_add_tags_failed.isEmpty())
-            {
-                // exit here, before adding songs, its because not adding one of new tags,
-                //   could quickly escalate as multiple errors while adding songs
-                DB << "found errors while adding tags:" << list_of_add_tags_failed;
-                DB << "cancelling transaction ...";
-                m_database.rollback();
-                emit this->signalImportDatabaseError(
-                    "found errors while adding tags: " + list_of_add_tags_failed);
-                return;
-            }
-
-            // if no error occur then marge lists of tag names and tag types
-            // this help us later :)
-            for(const auto &name : added_from_json_tag_names)
-                used_tag_names.append(name);
-        }
-
-
-        // skip if json file not contains "songs" object
-        /// user might want to add just tags, so error not needed
-        if(main_json.contains("songs"))
-        {
-            // ------------------------------ get data about songs -----------------------------
-            QStringList used_tag_names;
-            TagList all_tags;
-            QString load_error;
-
-            auto lambda_model = [&](QString desc){
-                /// [&] means get reference from parents variables
-                /// desc is value received from signalAllTagsModelLoadError(QString desc)
-                load_error = desc; // some warning occur, but i don't see a better way
-            };
-
-            // Get tags data
-            /// load all tags and react for the error result
-            auto connection_model = connect(this, &Database::signalAllTagsModelLoadError, lambda_model);
-
-            bool prev_show_constant_tags = m_showConstantTags;
-            m_showConstantTags = true;
-            this->loadAllTags();
-            m_showConstantTags = prev_show_constant_tags;
-
-            if(load_error != ""){
-                WR << "Error while loading all tags model for songs part:" << load_error;
-                DB << "cancelling transaction ...";
-                m_database.rollback();
-                emit this->signalImportDatabaseError("Error while loading all tags model for songs part: " + load_error);
-                return;
-            }
-
-            disconnect(connection_model);
-
-            /// store names of used tags
-            /// m_all_tags_model will be cleared after any operation like add song
-            for(const auto &mdl_tag : m_all_tags_model->c_ref_tags()){
-                Tag *tag = new Tag(&all_tags);
-
-                tag->set_id(mdl_tag->get_id());
-                tag->set_name(mdl_tag->get_name());
-                tag->set_type(mdl_tag->get_type());
-                tag->set_is_editable(mdl_tag->get_is_editable());
-
-                all_tags.tags().append(tag);
-            }
-
-            // ------------------------------ add songs -----------------------------
-
-            QString list_of_add_songs_failed;
-            QStringList added_from_json_song_paths;
-            QString last_song_add_error;
-
-            auto lambda_operation = [&](QString desc){
-                // [&] means get reference from parents variables
-                // desc is value received from signalAllTagsModelLoadError(QString desc)
-                last_song_add_error += desc;
-                // some warning occur, but i don't see a better way
-            };
-
-            auto connection_operation = connect(this, &Database::signalAddSongError, lambda_operation);
-
-            QJsonArray songs_array_json = main_json["songs"].toArray();
-            for(const auto &_song : songs_array_json)
-            {
-                QJsonObject song = _song.toObject();
-
-                // get song path
-                if(!song.contains("Song Path"))
-                {
-                    list_of_add_songs_failed += "{one of the songs not contains field 'Song Path'} ";
-                    // not exit here because later app will display user what songs need an repair
-                    continue;
-                }
-                QString song_path = song["Song Path"].toString();
-
-                // check if is not used already
-                if(used_tag_names.contains( song_path ))
-                {
-                    list_of_add_songs_failed += "{song path '"+song_path+"' already in use} ";
-                    // not exit here because later app will display user what songs need an repair
-                    continue;
-                }
-                if(added_from_json_song_paths.contains( song_path ))
-                {
-                    list_of_add_songs_failed += "{song path '"+song_path+"' is a duplicate in json} ";
-                    // not exit here because later app will display user what songs need an repair
-                    continue;
-                }
-
-                // prepare structure for addSong
-                QVariantList structure;
-
-                /// well... thats efficient XD 3th nested for loop
-                auto lambda_set_given_in_json_values = [&]() -> bool{
-                    // iterate over all "keys": values in current song
-                    for (auto it = song.begin(); it != song.end(); ++it) {
-                        QString key = it.key();
-                        QJsonValue json_value = it.value();
-
-                        bool found_related_tag = false;
-                        for(const auto &tag : all_tags.c_ref_tags())
-                        {
-                            if(tag->get_name() == key)
-                            {
-                                found_related_tag = true;
-
-                                if(!tag->get_is_editable())
-                                {
-                                    // error if json contains value for not editable tag \
-                                    (example: tag "ID", "Duration" or "Add Date")
-                                    list_of_add_songs_failed += "{found field that can't be set cause is not editable: '"+
-                                                                key+"'} ";
-
-                                    // lambda return
-                                    return false;
-                                }
-
-                                QVariant qv_value;
-
-                                if(tag->get_type() == 0) // state
-                                {
-                                    int value = json_value.toInt();
-                                    if(value > 0)       qv_value = 1;
-                                    else if(value < 0)  qv_value = -1;
-                                    else                qv_value = 0;
-                                }
-                                else if(tag->get_type() == 1) // string
-                                {
-                                    qv_value = json_value.toString();
-                                }
-                                else if(tag->get_type() == 2) // integer
-                                {
-                                    qv_value = json_value.toInt();
-                                }
-                                else
-                                {
-                                    WR << "Error unknown tag in tags list! tag name:" << tag->get_name() << ",type:" << tag->get_type();
-                                    DB << "Using 'string' type ";
-                                    qv_value = json_value.toString();
-                                }
-
-                                structure.append(
-                                    QVariantMap{
-                                        {"id", tag->get_id()},
-                                        {"value", qv_value}
-                                    });
-
-                                break; // i am ECO :)
-                            }
-                        }
-
-                        if(!found_related_tag)
-                        {
-                            // error given tag in song does not exist
-                            list_of_add_songs_failed +=
-                                "{given tag '"+key+"' not exist  '" +
-                                song["Song Path"].toString()+"' has tag named'"+
-                                json_value.toString()+"'} ";
-
-                            // lambda return
-                            return false;
-                        }
-                    }
-                    return true;
-                };
-                if(!lambda_set_given_in_json_values())
-                {
-                    // if error in song occur then continue from here
-                    // list_of_add_tags_failed was set while returning lambda
-                    continue;
-                }
-
-                auto lambda_field_is_in_structure = [&](int id) -> bool{
-                    for(const auto &tag : structure)
-                    {
-                        if(tag.toMap()["id"].toInt() == id)
-                            return true;
-                    }
-                    return false;
-                };
-
-                for(const auto &tag : all_tags.c_ref_tags())
-                {
-                    // skip not editable (those will be added in addSong())
-                    if(!tag->get_is_editable()){
-                        continue;
-                    }
-                    if(!lambda_field_is_in_structure(tag->get_id()))
-                    {
-                        QVariant qv_value; // default value
-                        if(tag->get_type() == 0) // state
-                        {
-                            qv_value = 0;
-                        }
-                        else if(tag->get_type() == 1) // string
-                        {
-                            qv_value = QString("");
-                        }
-                        else if(tag->get_type() == 2) // integer
-                        {
-                            qv_value = 0;
-                        }
-
-                        structure.append(
-                            QVariantMap{
-                                {"id", tag->get_id()},
-                                {"value", qv_value}
-                            });
-                    }
-                }
-
-                this->addSong(structure);
-
-                if(!last_song_add_error.isEmpty())
-                {
-                    list_of_add_songs_failed += "{while adding song with song path '"+song_path+"', an error occur: "+last_song_add_error+"} ";
-                    last_song_add_error.clear();
-                    // not exit here because later app will display user what songs need an repair
-                    continue;
-                }
-
-                added_from_json_song_paths.append(song_path);
-            }
-
-            disconnect(connection_operation);
-
-            if(!list_of_add_songs_failed.isEmpty())
-            {
-                DB << "found errors while adding songs:" << list_of_add_songs_failed;
-                DB << "cancelling transaction ...";
-                m_database.rollback();
-                emit this->signalImportDatabaseError(
-                    "found errors while adding songs: " + list_of_add_songs_failed);
-                return;
-            }
-        }
-    }
-    END_TRANSACTION(signalImportDatabaseError)
-
-
-    DB << "database imported successfully!";
-    emit this->signalImportedDatabase();
+    // /*
+    //  * bellow is no hard comunication methods and user are not guided by the hand what was wrong
+    //  * or interpret what user have on his mind. Just checking data, if user add "Song path" instead of "Song Path"
+    //  * an error will shows up, if user spell wrong "Description" then this field will stay empty.
+    //  *
+    //  * Also everything needs to be fine with json file to commit changes
+    //  *
+    //  * NOTE: going through tags, algorithm don't react on additional fields if there is "name" and "type" fields
+    //  *       then all is fine. Field "description" is also used, but only when exist, if not then will be empty
+    //  *
+    //  * NOTE: going through songs, algorithm will react on any field/key that doesn't exist in database and those
+    //  *       that are specyfied, but tags are not editable like "Duration" or "Add Date", they won't be ignored!
+    // */
+    // QString input_file = input_qurl.toLocalFile();
+    // if(!QFile(input_file).exists()){
+    //     WR << "file " << input_file << " not found";
+    //     emit this->signalImportDatabaseError("file " + input_file + " not found");
+    // }
+
+    // QFile json_file(input_file);
+    // if(!json_file.open(QIODevice::ReadOnly | QIODevice::Text)){
+    //     WR << "error while reading json file from" << input_file << "with error" << json_file.errorString();
+    //     emit this->signalImportDatabaseError(
+    //         "error while reading json file from " + input_file + " with error " + json_file.errorString());
+    // }
+
+    // QJsonParseError json_error;
+    // QJsonDocument main_json_doc = QJsonDocument::fromJson(json_file.readAll(), &json_error);
+    // json_file.close();
+
+    // if(json_error.error != QJsonParseError::NoError) {
+    //     WR << "json parse error: " << json_error.errorString();
+    //     emit this->signalImportDatabaseError("json parse error: " + json_error.errorString());
+    //     return;
+    // }
+
+    // if(!main_json_doc.isObject()){
+    //     WR << "json file does not contains json object";
+    //     emit this->signalImportDatabaseError("json file does not contains json object");
+    //     return;
+    // }
+
+    // QJsonObject main_json = main_json_doc.object();
+
+    // // ------------------------------ get data from database  -----------------------------
+    // QStringList used_song_paths;
+
+    // {
+    //     // Get song paths
+    //     QSqlQuery query(m_database);
+    //     QString query_text("SELECT value FROM songs_tags WHERE tag_id = 9;"); // tag_id = 9 is Song Path tag
+    //     this->queryToFile(query_text);
+    //     if(!query.exec(query_text))
+    //     {
+    //         WR << "error while executing SELECT query:" << query.lastError();
+    //         emit this->signalImportDatabaseError("error while executing SELECT query: " + query.lastError().text());
+    //         return;
+    //     }
+
+    //     /// store song paths of used songs
+    //     /// m_all_songs_model will be cleared after any operation like add song
+    //     if(query.next())
+    //         used_song_paths.append(query.value(0).toString());
+    // }
+
+
+    // BEGIN_TRANSACTION
+    // {
+    //     // skip if json file not contains "tags" object
+    //     /// user might want to add just songs, so error not needed
+    //     if(main_json.contains("tags"))
+    //     {
+    //         // ------------------------------ get data about tags -----------------------------
+    //         QStringList used_tag_names;
+    //         QString load_error;
+
+    //         auto lambda_model = [&](QString desc){
+    //             /// [&] means get reference from parents variables
+    //             /// desc is value received from signalAllTagsModelLoadError(QString desc)
+    //             load_error = desc; // some warning occur, but i don't see a better way
+    //         };
+
+    //         // Get tags names
+    //         /// load all tags and react for the error result
+    //         auto connection_model = connect(this, &Database::signalAllTagsModelLoadError, lambda_model);
+
+    //         // get ALL tags
+    //         bool prev_show_constant_tags = m_showConstantTags;
+    //         m_showConstantTags = true;
+    //         this->loadAllTags();
+    //         m_showConstantTags = prev_show_constant_tags;
+
+    //         if(load_error != ""){
+    //             WR << "Error while loading all tags model for tags part:" << load_error;
+    //             DB << "cancelling transaction ...";
+    //             m_database.rollback();
+    //             emit this->signalImportDatabaseError("Error while loading all tags model for tags part: " + load_error);
+    //             return;
+    //         }
+    //         disconnect(connection_model);
+
+    //         /// store names of used tags
+    //         /// m_all_tags_model will be cleared after any operation like add tag
+    //         for(const auto &tag : m_all_tags_model->c_ref_tags())
+    //             used_tag_names.append(tag->get_name());
+
+    //         // ------------------------------ add tags -----------------------------
+
+    //         QString list_of_add_tags_failed;
+    //         QStringList added_from_json_tag_names;
+    //         QString last_tag_add_error;
+
+    //         auto lambda_operation = [&](QString desc){
+    //             // [&] means get reference from parents variables
+    //             // desc is value received from signalAllTagsModelLoadError(QString desc)
+    //             last_tag_add_error += desc;
+    //             // some warning occur, but i don't see a better way
+    //         };
+
+    //         auto connection_operation = connect(this, &Database::signalAddTagError, lambda_operation);
+
+    //         QJsonArray tags_array_json = main_json["tags"].toArray();
+    //         // go through all tags in json
+    //         for(const auto &_tag : tags_array_json)
+    //         {
+    //             QJsonObject tag = _tag.toObject();
+
+    //             // get tag name
+    //             if(!tag.contains("name"))
+    //             {
+    //                 list_of_add_tags_failed += "{one of the tags not contains field 'name'} ";
+    //                 // not exit here because later app will display user what tags need an repair
+    //                 continue;
+    //             }
+    //             QString tag_name = tag["name"].toString();
+
+    //             // test if not used already
+    //             if(used_tag_names.contains( tag_name ))
+    //             {
+    //                 list_of_add_tags_failed += "{tag name '"+tag_name+"' already in use} ";
+    //                 // not exit here because later app will display user what tags need an repair
+    //                 continue;
+    //             }
+    //             if(added_from_json_tag_names.contains( tag_name ))
+    //             {
+    //                 list_of_add_tags_failed += "{tag name '"+tag_name+"' is a duplicate in json} ";
+    //                 // not exit here because later app will display user what tags need an repair
+    //                 continue;
+    //             }
+
+    //             // prepare structure for addTag
+    //             QString description = "";
+    //             if(tag.contains("description"))
+    //                 description = tag["description"].toString();
+
+
+    //             if(!tag.contains("type")){
+    //                 list_of_add_tags_failed += "{one of the tags not contains field 'type'} ";
+    //                 continue;
+    //             }
+    //             int type = tag["type"].toInt();
+    //             if(type<0 || 2<type){
+    //                 list_of_add_tags_failed += "{tag type need to be 0, 1 or 2. But tag with name '"
+    //                                            +tag_name+"' has value '"+
+    //                                            QString::number(tag["type"].toInt())+"'} ";
+    //                 continue;
+    //             }
+
+    //             QVariantList structure = {
+    //                 QVariantMap{
+    //                     {"delegate_type", QString("param")},
+    //                     {"name", QString("Name")},
+    //                     {"value", tag_name}
+    //                 },
+    //                 QVariantMap{
+    //                     {"delegate_type", QString("param")},
+    //                     {"name", QString("Description")},
+    //                     {"value", description}
+    //                 },
+    //                 QVariantMap{
+    //                     {"delegate_type", QString("param")},
+    //                     {"name", QString("Type")},
+    //                     {"value", type}
+    //                 }
+    //             };
+
+    //             this->addTag(structure);
+
+    //             if(!last_tag_add_error.isEmpty())
+    //             {
+    //                 list_of_add_tags_failed += "{while adding tag with name '"+tag_name+"', an error occur: "+last_tag_add_error+"} ";
+    //                 last_tag_add_error.clear();
+    //                 // not exit here because later app will display user what tags need an repair
+    //                 continue;
+    //             }
+
+    //             added_from_json_tag_names.append( tag_name );
+    //         }
+
+    //         disconnect(connection_operation);
+
+    //         if(!list_of_add_tags_failed.isEmpty())
+    //         {
+    //             // exit here, before adding songs, its because not adding one of new tags,
+    //             //   could quickly escalate as multiple errors while adding songs
+    //             DB << "found errors while adding tags:" << list_of_add_tags_failed;
+    //             DB << "cancelling transaction ...";
+    //             m_database.rollback();
+    //             emit this->signalImportDatabaseError(
+    //                 "found errors while adding tags: " + list_of_add_tags_failed);
+    //             return;
+    //         }
+
+    //         // if no error occur then marge lists of tag names and tag types
+    //         // this help us later :)
+    //         for(const auto &name : added_from_json_tag_names)
+    //             used_tag_names.append(name);
+    //     }
+
+
+    //     // skip if json file not contains "songs" object
+    //     /// user might want to add just tags, so error not needed
+    //     if(main_json.contains("songs"))
+    //     {
+    //         // ------------------------------ get data about songs -----------------------------
+    //         QStringList used_tag_names;
+    //         TagList all_tags;
+    //         QString load_error;
+
+    //         auto lambda_model = [&](QString desc){
+    //             /// [&] means get reference from parents variables
+    //             /// desc is value received from signalAllTagsModelLoadError(QString desc)
+    //             load_error = desc; // some warning occur, but i don't see a better way
+    //         };
+
+    //         // Get tags data
+    //         /// load all tags and react for the error result
+    //         auto connection_model = connect(this, &Database::signalAllTagsModelLoadError, lambda_model);
+
+    //         bool prev_show_constant_tags = m_showConstantTags;
+    //         m_showConstantTags = true;
+    //         this->loadAllTags();
+    //         m_showConstantTags = prev_show_constant_tags;
+
+    //         if(load_error != ""){
+    //             WR << "Error while loading all tags model for songs part:" << load_error;
+    //             DB << "cancelling transaction ...";
+    //             m_database.rollback();
+    //             emit this->signalImportDatabaseError("Error while loading all tags model for songs part: " + load_error);
+    //             return;
+    //         }
+
+    //         disconnect(connection_model);
+
+    //         /// store names of used tags
+    //         /// m_all_tags_model will be cleared after any operation like add song
+    //         for(const auto &mdl_tag : m_all_tags_model->c_ref_tags()){
+    //             Tag *tag = new Tag(&all_tags);
+
+    //             tag->set_id(mdl_tag->get_id());
+    //             tag->set_name(mdl_tag->get_name());
+    //             tag->set_type(mdl_tag->get_type());
+    //             tag->set_is_editable(mdl_tag->get_is_editable());
+
+    //             all_tags.tags().append(tag);
+    //         }
+
+    //         // ------------------------------ add songs -----------------------------
+
+    //         QString list_of_add_songs_failed;
+    //         QStringList added_from_json_song_paths;
+    //         QString last_song_add_error;
+
+    //         auto lambda_operation = [&](QString desc){
+    //             // [&] means get reference from parents variables
+    //             // desc is value received from signalAllTagsModelLoadError(QString desc)
+    //             last_song_add_error += desc;
+    //             // some warning occur, but i don't see a better way
+    //         };
+
+    //         auto connection_operation = connect(this, &Database::signalAddSongError, lambda_operation);
+
+    //         QJsonArray songs_array_json = main_json["songs"].toArray();
+    //         for(const auto &_song : songs_array_json)
+    //         {
+    //             QJsonObject song = _song.toObject();
+
+    //             // get song path
+    //             if(!song.contains("Song Path"))
+    //             {
+    //                 list_of_add_songs_failed += "{one of the songs not contains field 'Song Path'} ";
+    //                 // not exit here because later app will display user what songs need an repair
+    //                 continue;
+    //             }
+    //             QString song_path = song["Song Path"].toString();
+
+    //             // check if is not used already
+    //             if(used_tag_names.contains( song_path ))
+    //             {
+    //                 list_of_add_songs_failed += "{song path '"+song_path+"' already in use} ";
+    //                 // not exit here because later app will display user what songs need an repair
+    //                 continue;
+    //             }
+    //             if(added_from_json_song_paths.contains( song_path ))
+    //             {
+    //                 list_of_add_songs_failed += "{song path '"+song_path+"' is a duplicate in json} ";
+    //                 // not exit here because later app will display user what songs need an repair
+    //                 continue;
+    //             }
+
+    //             // prepare structure for addSong
+    //             QVariantList structure;
+
+    //             /// well... thats efficient XD 3th nested for loop
+    //             auto lambda_set_given_in_json_values = [&]() -> bool{
+    //                 // iterate over all "keys": values in current song
+    //                 for (auto it = song.begin(); it != song.end(); ++it) {
+    //                     QString key = it.key();
+    //                     QJsonValue json_value = it.value();
+
+    //                     bool found_related_tag = false;
+    //                     for(const auto &tag : all_tags.c_ref_tags())
+    //                     {
+    //                         if(tag->get_name() == key)
+    //                         {
+    //                             found_related_tag = true;
+
+    //                             if(!tag->get_is_editable())
+    //                             {
+    //                                 // error if json contains value for not editable tag \
+    //                                 (example: tag "ID", "Duration" or "Add Date")
+    //                                 list_of_add_songs_failed += "{found field that can't be set cause is not editable: '"+
+    //                                                             key+"'} ";
+
+    //                                 // lambda return
+    //                                 return false;
+    //                             }
+
+    //                             QVariant qv_value;
+
+    //                             if(tag->get_type() == 0) // state
+    //                             {
+    //                                 int value = json_value.toInt();
+    //                                 if(value > 0)       qv_value = 1;
+    //                                 else if(value < 0)  qv_value = -1;
+    //                                 else                qv_value = 0;
+    //                             }
+    //                             else if(tag->get_type() == 1) // string
+    //                             {
+    //                                 qv_value = json_value.toString();
+    //                             }
+    //                             else if(tag->get_type() == 2) // integer
+    //                             {
+    //                                 qv_value = json_value.toInt();
+    //                             }
+    //                             else
+    //                             {
+    //                                 WR << "Error unknown tag in tags list! tag name:" << tag->get_name() << ",type:" << tag->get_type();
+    //                                 DB << "Using 'string' type ";
+    //                                 qv_value = json_value.toString();
+    //                             }
+
+    //                             structure.append(
+    //                                 QVariantMap{
+    //                                     {"id", tag->get_id()},
+    //                                     {"value", qv_value}
+    //                                 });
+
+    //                             break; // i am ECO :)
+    //                         }
+    //                     }
+
+    //                     if(!found_related_tag)
+    //                     {
+    //                         // error given tag in song does not exist
+    //                         list_of_add_songs_failed +=
+    //                             "{given tag '"+key+"' not exist  '" +
+    //                             song["Song Path"].toString()+"' has tag named'"+
+    //                             json_value.toString()+"'} ";
+
+    //                         // lambda return
+    //                         return false;
+    //                     }
+    //                 }
+    //                 return true;
+    //             };
+    //             if(!lambda_set_given_in_json_values())
+    //             {
+    //                 // if error in song occur then continue from here
+    //                 // list_of_add_tags_failed was set while returning lambda
+    //                 continue;
+    //             }
+
+    //             auto lambda_field_is_in_structure = [&](int id) -> bool{
+    //                 for(const auto &tag : structure)
+    //                 {
+    //                     if(tag.toMap()["id"].toInt() == id)
+    //                         return true;
+    //                 }
+    //                 return false;
+    //             };
+
+    //             for(const auto &tag : all_tags.c_ref_tags())
+    //             {
+    //                 // skip not editable (those will be added in addSong())
+    //                 if(!tag->get_is_editable()){
+    //                     continue;
+    //                 }
+    //                 if(!lambda_field_is_in_structure(tag->get_id()))
+    //                 {
+    //                     QVariant qv_value; // default value
+    //                     if(tag->get_type() == 0) // state
+    //                     {
+    //                         qv_value = 0;
+    //                     }
+    //                     else if(tag->get_type() == 1) // string
+    //                     {
+    //                         qv_value = QString("");
+    //                     }
+    //                     else if(tag->get_type() == 2) // integer
+    //                     {
+    //                         qv_value = 0;
+    //                     }
+
+    //                     structure.append(
+    //                         QVariantMap{
+    //                             {"id", tag->get_id()},
+    //                             {"value", qv_value}
+    //                         });
+    //                 }
+    //             }
+
+    //             this->addSong(structure);
+
+    //             if(!last_song_add_error.isEmpty())
+    //             {
+    //                 list_of_add_songs_failed += "{while adding song with song path '"+song_path+"', an error occur: "+last_song_add_error+"} ";
+    //                 last_song_add_error.clear();
+    //                 // not exit here because later app will display user what songs need an repair
+    //                 continue;
+    //             }
+
+    //             added_from_json_song_paths.append(song_path);
+    //         }
+
+    //         disconnect(connection_operation);
+
+    //         if(!list_of_add_songs_failed.isEmpty())
+    //         {
+    //             DB << "found errors while adding songs:" << list_of_add_songs_failed;
+    //             DB << "cancelling transaction ...";
+    //             m_database.rollback();
+    //             emit this->signalImportDatabaseError(
+    //                 "found errors while adding songs: " + list_of_add_songs_failed);
+    //             return;
+    //         }
+    //     }
+    // }
+    // END_TRANSACTION(signalImportDatabaseError)
+
+
+    // DB << "database imported successfully!";
+    // emit this->signalImportedDatabase();
 }
 
 void Database::deleteDatabase()
@@ -2698,6 +2728,47 @@ bool Database::endTransaction(void (Database::*signal)(QString), const char *cal
     }
 
     return true;
+}
+
+QJsonDocument Database::importDatabaseLoadJsonFromFile(QUrl jsonFilePath)
+{
+    QString inputFile = jsonFilePath.toLocalFile();
+    if(!QFile(inputFile).exists())
+        THROW_EXCEPTION("file '" + inputFile + "' not found!");
+
+    QFile jsonFile(inputFile);
+    if(!jsonFile.open(QIODevice::ReadOnly | QIODevice::Text))
+        THROW_EXCEPTION("error while reading json from file '" + inputFile + "' with an error: " + jsonFile.errorString());
+
+    QJsonParseError jsonError;
+    QJsonDocument jsonData = QJsonDocument::fromJson(jsonFile.readAll(), &jsonError);
+    jsonFile.close();
+
+    if(jsonError.error != QJsonParseError::NoError)
+        THROW_EXCEPTION("json parse error: " + jsonError.errorString());
+
+    if(!jsonData.isObject())
+        THROW_EXCEPTION("json file does not contains json object!");
+
+    return jsonData;
+}
+
+QStringList Database::importDatabaseGetUsedSongPaths()
+{
+    QStringList usedSongPaths;
+
+    // /// Get used song paths
+    QSqlQuery query(m_database);
+    QString query_text("SELECT value FROM songs_tags WHERE tag_id = 9;"); // tag_id = 9 is Song Path tag
+    this->queryToFile(query_text);
+    if(!query.exec(query_text))
+        THROW_EXCEPTION("error while executing SELECT query:" + query.lastError().text());
+
+    while(query.next()){
+        usedSongPaths.append(query.value(0).toString());
+    }
+
+    return usedSongPaths;
 }
 
 
