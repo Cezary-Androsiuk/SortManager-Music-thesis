@@ -48,10 +48,11 @@
 #define END_TRANSACTION(errorSignal) if(is_transaction_started_here){ if(!Database::endTransaction(&Database::errorSignal, __PRETTY_FUNCTION__)) return; }
 /// throw an exception
 #define THROW_EXCEPTION(desc) throw std::runtime_error((QString() + desc).toStdString().c_str())
-/// handle error and return // requires emit keyword before signal
-#define HANDLE_ERROR(desc, errorSignal) WR << desc; errorSignal(desc); return;
-/// catch common error thrown by called function
-#define CATH(errorSignal) catch(std::runtime_error &e) {WR << e.what(); errorSignal(e.what()); return;}
+/// handle error and return // requires emit keyword before signal // REQUIRES "ERROR_SIGNAL" definition before calling
+#define HANDLE_ERROR(desc) WR << desc; emit ERROR_SIGNAL(desc); return;
+/// catch common error thrown by called function // REQUIRES "ERROR_SIGNAL" definition before calling
+/// "Missing emit keyword" are also anoying, but there is nothing i can do...
+#define CATCH catch(std::runtime_error &e) {WR << e.what(); emit ERROR_SIGNAL(e.what()); return;}
 
 
 class Database : public QObject
@@ -230,7 +231,8 @@ private: // other methods to support
     /// support import database
     QJsonDocument importDatabaseLoadJsonFromFile(QUrl jsonFilePath);
     QStringList importDatabaseGetUsedSongPaths();
-    QStringList importDatabaseGetAvaliableTagNames();
+    QStringList importDatabaseGetUsedTagNames();
+    QStringList importDatabaseGetEditableTagNames();
     QStringList importDatabaseGetNotEditableTagNames();
     int importDatabaseChangeTagNameToTagID(QString tagName) const;
 

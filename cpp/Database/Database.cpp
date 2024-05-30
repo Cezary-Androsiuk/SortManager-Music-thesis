@@ -400,6 +400,7 @@ void Database::exportTagsFromDatabase(const QUrl &output_qurl)
 
 void Database::importSongsToDatabase(const QUrl &input_qurl)
 {
+#define ERROR_SIGNAL this->signalImportSongsToDatabaseError
     /*
      * program while importing songs will look at each tag (in each song) that is writen in json file
      * and will show an error if any of this tags are unknown, in example: when user
@@ -411,7 +412,7 @@ void Database::importSongsToDatabase(const QUrl &input_qurl)
     {
         jsonMain = this->importDatabaseLoadJsonFromFile(input_qurl).object();
     }
-    CATH(emit this->signalImportSongsToDatabaseError)
+    CATCH
 
     /// load all songs once, instead of checking in db if each song path is unique
     QStringList usedSongPaths;
@@ -419,16 +420,16 @@ void Database::importSongsToDatabase(const QUrl &input_qurl)
     {
         usedSongPaths = this->importDatabaseGetUsedSongPaths();
     }
-    CATH(emit this->signalImportSongsToDatabaseError)
+    CATCH
 
     /// load all tags once, instead of checking in db if each tag exist
     /// variable will contain only tag names that exist in db and are editable
-    QStringList avaliableTagNames;
+    QStringList editableTagNames;
     try
     {
-        avaliableTagNames = this->importDatabaseGetAvaliableTagNames();
+        editableTagNames = this->importDatabaseGetEditableTagNames();
     }
-    CATH(emit this->signalImportSongsToDatabaseError)
+    CATCH
 
     /// i didn't like to import exported songs user need to remove from json
     /// not editable fields, so to keep all smooth not editable tags will be
@@ -438,7 +439,7 @@ void Database::importSongsToDatabase(const QUrl &input_qurl)
     {
         notEditableTagNames = this->importDatabaseGetNotEditableTagNames();
     }
-    CATH(emit this->signalImportSongsToDatabaseError)
+    CATCH
 
     DB << "initial data was loaded";
 
@@ -457,9 +458,7 @@ void Database::importSongsToDatabase(const QUrl &input_qurl)
         /// handle when json song not contains 'Song Path' tag
         if(!jsonSong.contains("Song Path"))
         {
-            HANDLE_ERROR(
-                "one of the songs not contains required 'Song Path' tag!",
-                emit this->signalImportSongsToDatabaseError)
+            HANDLE_ERROR("one of the songs not contains required 'Song Path' tag!")
         }
 
         QString songPathValue = jsonSong["Song Path"].toString();
@@ -470,8 +469,7 @@ void Database::importSongsToDatabase(const QUrl &input_qurl)
             HANDLE_ERROR(
                 "one of the songs contains 'Song Path'='"
                     + songPathValue +
-                    "' that already is (or will be) in use!",
-                emit this->signalImportSongsToDatabaseError)
+                    "' that already is (or will be) in use!")
         }
 
         /// add song path to list of used 'Song Path' tags (because it will be in use)
@@ -481,7 +479,7 @@ void Database::importSongsToDatabase(const QUrl &input_qurl)
         for (auto tagIt = jsonSong.begin(); tagIt != jsonSong.end(); ++tagIt)
         {
             QString tagName = tagIt.key();
-            if(avaliableTagNames.contains(tagName))
+            if(editableTagNames.contains(tagName))
                 continue;
 
             /// skip not editable, but existing in db tags
@@ -491,8 +489,7 @@ void Database::importSongsToDatabase(const QUrl &input_qurl)
             HANDLE_ERROR(
                 "one of the songs contains tag '"
                     + tagIt.key() +
-                    "' that do not exist in database or is not editable!",
-                emit this->signalImportSongsToDatabaseError)
+                    "' that do not exist in database or is not editable!")
         }
     }
 
@@ -502,7 +499,7 @@ void Database::importSongsToDatabase(const QUrl &input_qurl)
 
     /// addSong() was not implemented good enough (idk by who XD) and need to receive
     /// all existing editable tags...
-    /// thats why following code iterates through all editable tags (avaliableTagNames)
+    /// thats why following code iterates through all editable tags (editableTagNames)
 
     /// prepare list of structures that can be pass to addSong() method
     /// but firstly to translate tag names, given in json to tag id's
@@ -514,7 +511,7 @@ void Database::importSongsToDatabase(const QUrl &input_qurl)
     {
         QJsonObject jsonSong = jsonSongIt.toObject();
         QVariantList structure;
-        for(const auto &tagName : avaliableTagNames)
+        for(const auto &tagName : editableTagNames)
         {
             QString tagValue = "";
 
@@ -530,7 +527,7 @@ void Database::importSongsToDatabase(const QUrl &input_qurl)
                 /// in all tags list
                 tagID = this->importDatabaseChangeTagNameToTagID(tagName);
             }
-            CATH(emit this->signalImportSongsToDatabaseError)
+            CATCH
 
             structure.append(
                 QVariantMap{ {"id", tagID}, {"value", tagValue} }
@@ -556,6 +553,9 @@ void Database::importSongsToDatabase(const QUrl &input_qurl)
     {
         for(const auto &structure : listOfStructures)
         {
+            /// btw, i can't imagine how event flow could look like with
+            /// connection and calling following method and how this will allways
+            /// handle the error...
             this->addSong(structure);
 
             if(!addSongErrorInfo.isNull())
@@ -563,8 +563,7 @@ void Database::importSongsToDatabase(const QUrl &input_qurl)
                 m_database.rollback();
                 WR << "structure that failed: " << structure;
                 HANDLE_ERROR(
-                    "adding song failed: " + addSongErrorInfo,
-                    emit this->signalImportSongsToDatabaseError)
+                    "adding song failed: " + addSongErrorInfo)
             }
         }
     }
@@ -574,17 +573,28 @@ void Database::importSongsToDatabase(const QUrl &input_qurl)
 
     DB << "songs are imported correctly!";
     emit this->signalImportedSongsToDatabase();
+#undef ERROR_SIGNAL
 }
 
 void Database::importTagsToDatabase(const QUrl &input_qurl)
 {
+#define ERROR_SIGNAL emit this->signalImportTagsToDatabaseError
 
     QJsonObject jsonMain;
     try
     {
         jsonMain = this->importDatabaseLoadJsonFromFile(input_qurl).object();
     }
-    CATH(emit this->signalImportSongsToDatabaseError)
+    CATCH
+
+    /// load all tag names that already in use
+    QStringList usedTagNames;
+    try
+    {
+        usedTagNames = this->importDatabaseGetUsedTagNames();
+    }
+    CATCH
+#undef ERROR_SIGNAL
 }
 
 void Database::importDatabase(const QUrl &input_qurl)
@@ -2671,11 +2681,29 @@ QStringList Database::importDatabaseGetUsedSongPaths()
     return usedSongPaths;
 }
 
-QStringList Database::importDatabaseGetAvaliableTagNames()
+QStringList Database::importDatabaseGetUsedTagNames()
 {
-    QStringList avaliableTagNames;
+    QStringList usedTagNames;
 
-    /// Get avaliable tag names
+    /// Get used tag names
+    QSqlQuery query(m_database);
+    QString queryText("SELECT name FROM tags;");
+    this->queryToFile(queryText);
+    if(!query.exec(queryText))
+        THROW_EXCEPTION("error while executing '"+queryText+"' query:" + query.lastError().text());
+
+    while(query.next()){
+        usedTagNames.append(query.value(0).toString());
+    }
+
+    return usedTagNames;
+}
+
+QStringList Database::importDatabaseGetEditableTagNames()
+{
+    QStringList editableTagNames;
+
+    /// Get editable tag names
     QSqlQuery query(m_database);
     QString queryText("SELECT name FROM tags WHERE is_editable = 1;");
     this->queryToFile(queryText);
@@ -2683,17 +2711,17 @@ QStringList Database::importDatabaseGetAvaliableTagNames()
         THROW_EXCEPTION("error while executing '"+queryText+"' query:" + query.lastError().text());
 
     while(query.next()){
-        avaliableTagNames.append(query.value(0).toString());
+        editableTagNames.append(query.value(0).toString());
     }
 
-    return avaliableTagNames;
+    return editableTagNames;
 }
 
 QStringList Database::importDatabaseGetNotEditableTagNames()
 {
     QStringList notEditableTagNames;
 
-    /// Get notEditable tag names
+    /// Get not editable tag names
     QSqlQuery query(m_database);
     QString queryText("SELECT name FROM tags WHERE is_editable = 0;");
     this->queryToFile(queryText);
