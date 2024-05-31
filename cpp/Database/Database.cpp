@@ -348,7 +348,8 @@ void Database::exportTagsFromDatabase(const QUrl &output_qurl)
 
     /// fistly load load all tags data
     QSqlQuery songsQuery(m_database);
-    QString queryText = QString("SELECT * FROM tags;");
+    /// immutable tags are allways here UwU, so there is no need to export them
+    QString queryText = QString("SELECT * FROM tags WHERE is_immutable = 0;");
     this->queryToFile(queryText);
     if(!songsQuery.exec(queryText)){
         WR << "error while executing SELECT query " << songsQuery.lastError();
@@ -412,7 +413,7 @@ void Database::importSongsToDatabase(const QUrl &input_qurl)
     {
         jsonMain = this->importDatabaseLoadJsonFromFile(input_qurl).object();
     }
-    CATCH
+    CATCH;
 
     /// load all songs once, instead of checking in db if each song path is unique
     QStringList usedSongPaths;
@@ -420,7 +421,7 @@ void Database::importSongsToDatabase(const QUrl &input_qurl)
     {
         usedSongPaths = this->importDatabaseGetUsedSongPaths();
     }
-    CATCH
+    CATCH;
 
     /// load all tags once, instead of checking in db if each tag exist
     /// variable will contain only tag names that exist in db and are editable
@@ -429,7 +430,7 @@ void Database::importSongsToDatabase(const QUrl &input_qurl)
     {
         editableTagNames = this->importDatabaseGetEditableTagNames();
     }
-    CATCH
+    CATCH;
 
     /// i didn't like to import exported songs user need to remove from json
     /// not editable fields, so to keep all smooth not editable tags will be
@@ -439,7 +440,7 @@ void Database::importSongsToDatabase(const QUrl &input_qurl)
     {
         notEditableTagNames = this->importDatabaseGetNotEditableTagNames();
     }
-    CATCH
+    CATCH;
 
     DB << "initial data was loaded";
 
@@ -484,11 +485,14 @@ void Database::importSongsToDatabase(const QUrl &input_qurl)
 
             /// skip not editable, but existing in db tags
             if(notEditableTagNames.contains(tagName))
+            {
+                DB << ("skipped '" + tagName + "' tag").toStdString().c_str();
                 continue;
+            }
 
             HANDLE_ERROR(
                 "one of the songs contains tag '"
-                    + tagIt.key() +
+                    + tagName +
                     "' that do not exist in database or is not editable!")
         }
     }
@@ -527,7 +531,7 @@ void Database::importSongsToDatabase(const QUrl &input_qurl)
                 /// in all tags list
                 tagID = this->importDatabaseChangeTagNameToTagID(tagName);
             }
-            CATCH
+            CATCH;
 
             structure.append(
                 QVariantMap{ {"id", tagID}, {"value", tagValue} }
@@ -580,12 +584,20 @@ void Database::importTagsToDatabase(const QUrl &input_qurl)
 {
 #define ERROR_SIGNAL emit this->signalImportTagsToDatabaseError
 
+    /*
+     * imporing will fail if exist parametr(field) that not
+     * exist in db (as a column), tags that cannot be set are
+     * ignored (like 'id' or 'add_date')
+     * in summary algorithm will read only fields ['name', 'type',
+     * 'description'], where 'description is optional
+     */
+
     QJsonObject jsonMain;
     try
     {
         jsonMain = this->importDatabaseLoadJsonFromFile(input_qurl).object();
     }
-    CATCH
+    CATCH;
 
     /// load all tag names that already in use
     QStringList usedTagNames;
@@ -593,7 +605,193 @@ void Database::importTagsToDatabase(const QUrl &input_qurl)
     {
         usedTagNames = this->importDatabaseGetUsedTagNames();
     }
-    CATCH
+    CATCH;
+
+    DB << "initial data was loaded";
+
+    QJsonArray jsonTags = jsonMain["tags"].toArray();
+    const QList<QString> editableTagFields({
+        "name",
+        "type",
+        "description"
+    });
+    const QList<QString> ignoredTagsFields({
+        "id",
+        "add_date",
+        "update_date",
+        "is_immutable",
+        "is_editable",
+        "is_required"
+    });
+    int tagType;
+
+    /// initial json tags validation
+    for(const auto &jsonTagIt : jsonTags)
+    {
+        QJsonObject jsonTag = jsonTagIt.toObject();
+
+        /// handle when name not exist
+        if(!jsonTag.contains("name"))
+        {
+            HANDLE_ERROR("one of the tags not contains required 'name' field!")
+        }
+
+        QString tagName = jsonTag["name"].toString();
+
+        /// handle when json tag name is already in use
+        if(usedTagNames.contains(tagName))
+        {
+            HANDLE_ERROR(
+                "one of the tags contains 'name'='"
+                + tagName +
+                "' that already is (or will be) in use!")
+        }
+
+        /// add tag name to list of used tag names (because it will be in use)
+        /// if something fail, content of this list will not matter
+        usedTagNames.append(tagName);
+
+        /// handle when type not exist
+        if(!jsonTag.contains("type"))
+        {
+            HANDLE_ERROR("one of the tags not contains required 'type' field!")
+        }
+
+        /// handle value that is set in a tag type (use global tagType variable)
+        tagType = -1;
+        tagType = jsonTag["type"].toInt(-1);
+        if(
+            /// I want to make it clear what can be used:
+            tagType != Database::TagType::TT_INTEGER &&
+            tagType != Database::TagType::TT_TEXT &&
+            tagType != Database::TagType::TT_TRISWITCH
+            )
+        {
+            HANDLE_ERROR(
+                "one of the tags contains 'type'='"
+                + jsonTag["type"].toString() +
+                "' that is not a valid type value (use 0, 1 or 2)!")
+        }
+
+        /// check if json tag contains only existing fields
+        for (auto fieldIt = jsonTag.begin(); fieldIt != jsonTag.end(); ++fieldIt)
+        {
+            QString fieldName = fieldIt.key();
+
+            if(editableTagFields.contains(fieldName))
+                continue;
+
+            if(ignoredTagsFields.contains(fieldName))
+            {
+                DB << ("skipped '" + fieldName + "' field").toStdString().c_str();
+                continue;
+            }
+
+            HANDLE_ERROR(
+                "one of the tags contains field '"
+                + fieldName +
+                "' that is not a parameter for a tag!")
+        }
+    }
+
+    DB << "initial validation was completed";
+
+    /// at this point data are mostly valid
+
+    /// addTag was also not implemented well enough and requires all fields and
+    /// all songs as argument
+
+    /// load all songs IDs
+    QStringList listOfSongsIDs;
+    try
+    {
+        listOfSongsIDs = this->importDatabaseGetUsedSongIDs();
+    }
+    CATCH;
+
+    /// build structure that can be pass to addTag method
+    QList<QVariantList> listOfStructures;
+    for(const auto &jsonTagIt : jsonTags) /// for each tag
+    {
+        QJsonObject jsonTag = jsonTagIt.toObject();
+        QVariantList structure;
+
+        /// set all editable fields of tag
+        for(auto fieldName : editableTagFields) /// for each editable field
+        {
+            QVariant fieldValue;
+
+            if(jsonTag.contains(fieldName))
+            {
+                if(fieldName == "type")
+                    fieldValue = jsonTag.value(fieldName).toInt();
+                else
+                    fieldValue = jsonTag.value(fieldName).toString();
+            }
+
+
+            /// deam... addTag really sucks... that method requires 'Name', but not 'name'...
+            if (!fieldName.isEmpty()) {
+                fieldName[0] = fieldName[0].toUpper();
+            }
+
+            structure.append(
+                QVariantMap{ {"delegate_type", "param"}, {"name", fieldName}, {"value", fieldValue} }
+                );
+        }
+
+        /// set all songs of tag
+        for(const auto &songID : listOfSongsIDs)
+        {
+            /// set empty value, because adding tags allows for now, only to add tags
+            /// but not to set value of songs for them
+            /// empty value can be represented by nullptr
+
+            structure.append(
+                QVariantMap{ {"delegate_type", "song"}, {"id", songID}, {"value", QVariant::fromValue(nullptr)} }
+                );
+        }
+        listOfStructures.append(structure);
+    }
+
+    DB << "structure of tags was builded";
+
+    /// connect addTag() method error with lambda
+    QString addTagErrorInfo;
+    auto addTagLambda = [&addTagErrorInfo](QString desc){
+        // desc is a value received from signal
+        WR << "error in add tag: "<< desc;
+        addTagErrorInfo = desc;
+    };
+    auto addTagErrorConnection =
+        QObject::connect(this, &Database::signalAddTagError, addTagLambda);
+
+    /// add songs
+    BEGIN_TRANSACTION
+    {
+        for(const auto &structure : listOfStructures)
+        {
+            DB << structure;
+            /// btw, i can't imagine how event flow could look like with
+            /// connection and calling following method and how this will allways
+            /// handle the error...
+            this->addTag(structure);
+
+            if(!addTagErrorInfo.isNull())
+            {
+                m_database.rollback();
+                WR << "structure that failed: " << structure;
+                HANDLE_ERROR(
+                    "adding tag failed: " + addTagErrorInfo)
+            }
+        }
+    }
+    END_TRANSACTION(signalImportTagsToDatabaseError)
+
+    QObject::disconnect(addTagErrorConnection);
+
+    DB << "tags are imported correctly!";
+    emit this->signalImportedTagsToDatabase();
 #undef ERROR_SIGNAL
 }
 
@@ -1715,8 +1913,8 @@ void Database::editSong(int song_id, QVariantList song_data)
         mp.setSource(song_path);
         loop.exec();
         if(mp.mediaStatus() != QMediaPlayer::LoadedMedia){
-            WR << "error while loading song: " << mp.errorString();
-            emit this->signalEditSongError("error while loading song: " + mp.errorString());
+            WR << "error while loading song"<<song_path<<": " << mp.errorString();
+            emit this->signalEditSongError("error while loading song '"+ song_path + "': " + mp.errorString());
             return;
         }
 
@@ -1963,8 +2161,9 @@ void Database::addTag(QVariantList new_tag_data)
 
         NOTE: received structure contains only editable fields
     */
+    // DB << new_tag_data;
 
-    // ------------------------------ test tag name ifis unique -----------------------------
+    // ------------------------------ test tag name if is unique -----------------------------
     QString tag_name = new_tag_data[0/* 0 should be Name*/].toMap()["value"].toString();
 
     QSqlQuery query(m_database);
@@ -2735,6 +2934,24 @@ QStringList Database::importDatabaseGetNotEditableTagNames()
     return notEditableTagNames;
 }
 
+QStringList Database::importDatabaseGetUsedSongIDs()
+{
+    QStringList usedSongIDs;
+
+    /// Get used song IDs
+    QSqlQuery query(m_database);
+    QString queryText("SELECT id FROM songs;");
+    this->queryToFile(queryText);
+    if(!query.exec(queryText))
+        THROW_EXCEPTION("error while executing '"+queryText+"' query:" + query.lastError().text());
+
+    while(query.next()){
+        usedSongIDs.append(query.value(0).toString());
+    }
+
+    return usedSongIDs;
+}
+
 int Database::importDatabaseChangeTagNameToTagID(QString tagName) const
 {
     for(const auto &tag : m_all_tags_model->c_ref_tags())
@@ -3009,7 +3226,7 @@ QList<int> Database::prepListOfSongsForPlaylist() const
         case Database::TagType::TT_TEXT:
             constraint = Database::prepTextConstraint(twc);
             break;
-        case Database::TagType::TT_BOOL:
+        case Database::TagType::TT_TRISWITCH:
             constraint = Database::prepBoolConstraint(twc);
             break;
         default:

@@ -308,6 +308,7 @@ Page {
             return;
         }
 
+        // test if required parameters are filed
         for (_element of pageAddTag.mdl)
         {
             if(_element.delegate_type === "param")

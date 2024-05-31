@@ -49,7 +49,7 @@
 /// throw an exception
 #define THROW_EXCEPTION(desc) throw std::runtime_error((QString() + desc).toStdString().c_str())
 /// handle error and return // requires emit keyword before signal // REQUIRES "ERROR_SIGNAL" definition before calling
-#define HANDLE_ERROR(desc) WR << desc; emit ERROR_SIGNAL(desc); return;
+#define HANDLE_ERROR(desc) {WR << desc; emit ERROR_SIGNAL(desc); return;}
 /// catch common error thrown by called function // REQUIRES "ERROR_SIGNAL" definition before calling
 /// "Missing emit keyword" are also anoying, but there is nothing i can do...
 #define CATCH catch(std::runtime_error &e) {WR << e.what(); emit ERROR_SIGNAL(e.what()); return;}
@@ -77,7 +77,7 @@ public:
         enum{
             TT_INTEGER,
             TT_TEXT,
-            TT_BOOL
+            TT_TRISWITCH
         };
     };
 
@@ -234,6 +234,7 @@ private: // other methods to support
     QStringList importDatabaseGetUsedTagNames();
     QStringList importDatabaseGetEditableTagNames();
     QStringList importDatabaseGetNotEditableTagNames();
+    QStringList importDatabaseGetUsedSongIDs();
     int importDatabaseChangeTagNameToTagID(QString tagName) const;
 
     /// print methods
