@@ -47,7 +47,7 @@
 /// transactions end
 #define END_TRANSACTION(errorSignal) if(is_transaction_started_here){ if(!Database::endTransaction(&Database::errorSignal, __PRETTY_FUNCTION__)) return; }
 /// throw an exception
-#define THROW_EXCEPTION(desc) throw std::runtime_error((QString() + desc).toStdString().c_str())
+#define THROW_EXCEPTION(desc) throw std::runtime_error((QString(__FUNCTION__) + " - " + desc).toStdString().c_str())
 /// handle error and return // requires emit keyword before signal // REQUIRES "ERROR_SIGNAL" definition before calling
 #define HANDLE_ERROR(desc) {WR << desc; emit ERROR_SIGNAL(desc); return;}
 /// catch common error thrown by called function // REQUIRES "ERROR_SIGNAL" definition before calling
@@ -235,7 +235,7 @@ private: // other methods to support
     QStringList importDatabaseGetEditableTagNames();
     QStringList importDatabaseGetNotEditableTagNames();
     QStringList importDatabaseGetUsedSongIDs();
-    int importDatabaseChangeTagNameToTagID(QString tagName) const;
+    QMap<QString, int> importDatabaseGetIDEquivalentForName();
 
     /// print methods
     void debugPrint_filters() const;

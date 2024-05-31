@@ -506,12 +506,15 @@ void Database::importSongsToDatabase(const QUrl &input_qurl)
     /// thats why following code iterates through all editable tags (editableTagNames)
 
     /// prepare list of structures that can be pass to addSong() method
-    /// but firstly to translate tag names, given in json to tag id's
-    /// load all tags and while building structure compare names and replace it with id
-    bool showTagsValue = m_showConstantTags;
-    m_showConstantTags = true;
-    this->loadAllTags(); /// assume that all will be okey with this
-    m_showConstantTags = showTagsValue;
+    /// but firstly build map to translate tag names, given in json to tag id's
+
+    QMap<QString, int> IDEquivalentForName;
+    try
+    {
+        IDEquivalentForName = this->importDatabaseGetIDEquivalentForName();
+    }
+    CATCH;
+
 
     QList<QVariantList> listOfStructures;
     for(const auto &jsonSongIt : jsonSongs)
@@ -526,15 +529,8 @@ void Database::importSongsToDatabase(const QUrl &input_qurl)
             if(jsonSong.contains(tagName))
                 tagValue = jsonSong.value(tagName).toString();
 
-            int tagID;
             /// find tagID of tagName
-            try
-            {
-                /// i don't see any reason why tag name could be not found
-                /// in all tags list
-                tagID = this->importDatabaseChangeTagNameToTagID(tagName);
-            }
-            CATCH;
+            int tagID = IDEquivalentForName[tagName];
 
             structure.append(
                 QVariantMap{ {"id", tagID}, {"value", tagValue} }
@@ -1645,7 +1641,7 @@ void Database::addSong(QVariantList new_song_data)
     QString song_title(mp.metaData().value(QMediaMetaData::Title).toString()); // will be used in setting icon
     if(lambda_get_value_by_id(2 /*Title field id*/).toString() == ""){
         if(song_title == ""){
-            WR << "song file doesn't contains Title metadata, setting file name as the Title";
+            DB << "song file doesn't contains Title metadata, setting file name as the Title";
             song_title = QFileInfo(song_path).baseName();
         }
         DB << "setting own title to" << song_title;
@@ -2955,14 +2951,22 @@ QStringList Database::importDatabaseGetUsedSongIDs()
     return usedSongIDs;
 }
 
-int Database::importDatabaseChangeTagNameToTagID(QString tagName) const
+QMap<QString, int> Database::importDatabaseGetIDEquivalentForName()
 {
-    for(const auto &tag : m_all_tags_model->c_ref_tags())
-    {
-        if(tag->get_name() == tagName)
-            return tag->get_id();
+    QMap<QString, int> IDEquivalentForName;
+
+    /// Get not editable tag names
+    QSqlQuery query(m_database);
+    QString queryText("SELECT id, name FROM tags;");
+    this->queryToFile(queryText);
+    if(!query.exec(queryText))
+        THROW_EXCEPTION("error while executing '"+queryText+"' query:" + query.lastError().text());
+
+    while(query.next()){
+        IDEquivalentForName.insert(query.value(1).toString(), query.value(0).toInt());
     }
-    THROW_EXCEPTION("nothing was found while looking for ID of '"+tagName+"' tag name");
+
+    return IDEquivalentForName;
 }
 
 
