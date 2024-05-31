@@ -508,7 +508,10 @@ void Database::importSongsToDatabase(const QUrl &input_qurl)
     /// prepare list of structures that can be pass to addSong() method
     /// but firstly to translate tag names, given in json to tag id's
     /// load all tags and while building structure compare names and replace it with id
+    bool showTagsValue = m_showConstantTags;
+    m_showConstantTags = true;
     this->loadAllTags(); /// assume that all will be okey with this
+    m_showConstantTags = showTagsValue;
 
     QList<QVariantList> listOfStructures;
     for(const auto &jsonSongIt : jsonSongs)
@@ -1629,8 +1632,8 @@ void Database::addSong(QVariantList new_song_data)
     mp.setSource(song_path);
     loop.exec();
     if(mp.mediaStatus() != QMediaPlayer::LoadedMedia){
-        WR << "error while loading song file: " << mp.errorString();
-        emit this->signalAddSongError("error while loading song file: " + mp.errorString());
+        WR << "error while loading song file"<<song_path<<": " << mp.errorString();
+        emit this->signalAddSongError("error while loading song file'"+ song_path + "': " + mp.errorString());
         return;
     }
 

@@ -103,6 +103,7 @@ NONE ? dodać do BetterButton ikonki
 - w initializeFilters dodać personalization
 DONE ### przetestować co się stanie gdy przy example data utworzymy tag X i importujemy 2 piosenki ale bez tagu X a następnie wyeksportujemy wszystkie dane (w tych dwóch nowych tagach nie powinno być tagu X) a to znaczyło by że nie tworzy się element który nie zostanie określony w pliku json w trakcie importowania
 ... kiepskie jest to, że importując tagi nie można dodać jakie piosenki będą miały jaką wartość dla niego, ale wychodzi, że to jest najprostrze rozwiązanie i cóż
+- dodać ładowanie w moemncie importowania i exportowania danych
 
 ==========================
 playlist:
