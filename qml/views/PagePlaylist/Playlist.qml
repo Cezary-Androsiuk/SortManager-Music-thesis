@@ -6,6 +6,7 @@ import Qt5Compat.GraphicalEffects
 import "qrc:/SortManager-Music/qml/popups"
 import "qrc:/SortManager-Music/qml/components" // ImageButton
 import "qrc:/SortManager-Music/qml/delegates/Playlist"
+import "components" // PlaylistHeader
 
 Page {
     id: pagePlaylist
@@ -17,6 +18,7 @@ Page {
     property int delegateWidth: width
 
     property var mdl: []
+    property int mdlLength: 0
 
     property double startListPosition: root.last_pos_playlist - headerHeight
     property bool saveListPosition: false
@@ -38,7 +40,10 @@ Page {
         console.log("Playlist.qml")
 
         // for(var _song of backend.database.playlist_model.songs)
+        // {
         //     mdl.push(_song);
+        //     mdlLength += 1
+        // }
         console.log("looped over songs and pushed to array")
 
         listViewLoader.active = true
@@ -126,166 +131,79 @@ Page {
 
     Component{
         id: listViewComponent
-        ScrollView{
-            id: scrollView
+        Item{
             anchors.fill: parent
+            EmptyListInfo{
+                id: emptyListInfo
+                visible: (mdlLength === 0)
+                text: "No Songs to Display"
+            }
 
-            ListView{
-                id: playlistListView
-                model: mdl
+            ScrollView{
+                id: scrollView
+                anchors.fill: parent
 
-                clip: true
+                ListView{
+                    id: playlistListView
+                    model: mdl
 
-                boundsBehavior: Flickable.StopAtBounds
+                    clip: true
 
-                header: Item{
-                    width: parent.width - 15 /*scrollbar offset*/
-                    height: headerHeight
+                    boundsBehavior: Flickable.StopAtBounds
 
-                    Item{
-                        id: headerContent
-                        anchors{
-                            fill: parent
-                            bottomMargin: headerSeparatorSpace
-                        }
+                    header: PlaylistHeader{}
 
-                        Item{
-                            id: refreshField
-                            anchors{
-                                top: parent.top
-                                left: parent.left
-                                bottom: parent.bottom
-                            }
-                            width: height
-
-                            ImageButton{
-                                dltDescription: "Refresh List"
-                                dltImageIdle: Qt.resolvedUrl("qrc:/SortManager-Music/assets/icons/refresh_36px.png")
-                                dltImageHover: dltImageIdle
-                                onUserClicked: backend.database.refreshPlaylist()
-                            }
-                        }
-
-                        Item{
-                            id: searchField
-                            anchors{
-                                left: refreshField.right
-                                right: shuffleField.left
-                                top: parent.top
-                                bottom: parent.bottom
-                            }
-                            Rectangle{
-                                anchors{
-                                    fill: parent
-                                    leftMargin: 5
-                                    rightMargin: 5
-                                    topMargin: 8
-                                    bottomMargin: 8
-                                }
-                                color: root.color_accent1
-                                opacity: 0.1
-                            }
-
-                        }
-
-                        Item{
-                            id: shuffleField
-                            anchors{
-                                top: parent.top
-                                bottom: parent.bottom
-                                right: filtersField.left
-                            }
-                            width: height
-
-                            ImageButton{
-                                dltDescription: "Shuffle Songs"
-                                dltImageIdle: Qt.resolvedUrl("qrc:/SortManager-Music/assets/icons/shuffle_36px.png")
-                                dltImageHover: dltImageIdle
-                                onUserClicked: {}
-                            }
-                        }
-
-                        Item{
-                            id: filtersField
-                            anchors{
-                                right: parent.right
-                                top: parent.top
-                                bottom: parent.bottom
-                            }
-                            width: height
-
-                            ImageButton{
-                                dltDescription: "Filters"
-                                dltImageIdle: Qt.resolvedUrl("qrc:/SortManager-Music/assets/icons/filter_36px.png")
-                                dltImageHover: dltImageIdle
-                                onUserClicked: backend.database.loadFiltersModel()
-                            }
-                        }
-                    }
-
-                    Item{
-                        id: headerSeparator
-                        anchors{
-                            fill: parent
-                            topMargin: parent.height - headerSeparatorSpace
-                        }
-
-                        ThinSeparator{}
+                    footer: Item{
+                        width: parent.width - 15 /*scrollbar offset*/
+                        height: delegateHeight/2
                     }
 
 
-
-                }
-
-                footer: Item{
-                    width: parent.width - 15 /*scrollbar offset*/
-                    height: delegateHeight/2
-                }
-
-
-                Component.onCompleted: {
-                    console.log("completed listview")
-                    contentY = startListPosition
-                }
-                Component.onDestruction: {
-                    console.log("destroing listview")
-                    // test if action wants to save position
-                    if(saveListPosition)
-                    {
-                        root.last_pos_playlist = contentY + headerHeight;
+                    Component.onCompleted: {
+                        console.log("completed listview")
+                        contentY = startListPosition
                     }
-                    else
-                    {
-                        // test if app is forced to keep list position
-                        if(alwaysSaveListPosition)
+                    Component.onDestruction: {
+                        console.log("destroing listview")
+                        // test if action wants to save position
+                        if(saveListPosition)
+                        {
                             root.last_pos_playlist = contentY + headerHeight;
+                        }
                         else
-                            root.last_pos_playlist = 0;
+                        {
+                            // test if app is forced to keep list position
+                            if(alwaysSaveListPosition)
+                                root.last_pos_playlist = contentY + headerHeight;
+                            else
+                                root.last_pos_playlist = 0;
+                        }
+
                     }
 
-                }
+                    delegate: Loader{
+                        width: delegateWidth - 15 /*scrollbar offset*/
+                        height: delegateHeight
 
-                delegate: Loader{
-                    width: delegateWidth - 15 /*scrollbar offset*/
-                    height: delegateHeight
+                        sourceComponent: Item{
+                            id: buttonFieldDelegate
+                            ButtonField{
+                                dltText: modelData.title
+                                onDltClickedElement: {
+                                    just_used_id = + modelData.id;
+                                    just_used_title = modelData.title;
 
-                    sourceComponent: Item{
-                        id: buttonFieldDelegate
-                        ButtonField{
-                            dltText: modelData.title
-                            onDltClickedElement: {
-                                just_used_id = + modelData.id;
-                                just_used_title = modelData.title;
-
-                                backend.database.loadEditPlaylistSongModel(+modelData.id)
-                            }
-                            onDltClickedPlay: {
-                                console.log("play: " + modelData.title)
+                                    backend.database.loadEditPlaylistSongModel(+modelData.id)
+                                }
+                                onDltClickedPlay: {
+                                    console.log("play: " + modelData.title)
+                                }
                             }
                         }
                     }
                 }
             }
         }
+
     }
 }

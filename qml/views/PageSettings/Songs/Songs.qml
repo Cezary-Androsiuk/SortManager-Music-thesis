@@ -3,6 +3,7 @@ import QtQuick.Controls
 import QtQuick.Controls.Material
 
 import "qrc:/SortManager-Music/qml/popups"
+import "qrc:/SortManager-Music/qml/components" // EmptyListInfo
 import "qrc:/SortManager-Music/qml/delegates"
 
 Page {
@@ -13,6 +14,7 @@ Page {
     property int delegateWidth: width
 
     property var mdl: backend.database.all_songs_model.songs
+    property int mdlLength: backend.database.all_songs_model.songsCount
 
     /*
         received structure:
@@ -115,6 +117,12 @@ Page {
         onDltClickedRB: {
             backend.database.deleteSong(just_used_id);
         }
+    }
+
+    EmptyListInfo{
+        id: emptyListInfo
+        visible: (mdlLength === 0)
+        text: "No Songs to Display"
     }
 
     ScrollView{

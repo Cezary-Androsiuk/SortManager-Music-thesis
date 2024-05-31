@@ -144,14 +144,14 @@ Page {
                             }
                             onDltColorChoosed: {
                                 // reacting on dltColor changed wasn't update when user changed theme
-                                //      so I changes local vairalble "choosed_color" and emit signal colorChoosed
+                                //      so I changes local vairalble "dltChoosedColor" and emit signal colorChoosed
                                 //      and thats wokrs and when app_theme (that responds for a color_accent2)
                                 //      is changed accent2 color is also changed
                                 if(modelData.id === 300){
                                     if(root.dark_theme)
-                                        backend.personalization.darkAccentColor = choosed_color
+                                        backend.personalization.darkAccentColor = dltChoosedColor
                                     else
-                                        backend.personalization.lightAccentColor = choosed_color
+                                        backend.personalization.lightAccentColor = dltChoosedColor
                                 }
                                 else console.log("unknown color select output value: " + modelData.id)
                             }

@@ -19,3 +19,8 @@ QList<Tag *> TagList::const_tags() const
 {
     return m_tags;
 }
+
+qsizetype TagList::tags_count() const
+{
+    return m_tags.count();
+}

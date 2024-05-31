@@ -19,3 +19,8 @@ QList<Song *> SongList::const_songs() const
 {
     return m_songs;
 }
+
+qsizetype SongList::songs_count() const
+{
+    return this->m_songs.count();
+}

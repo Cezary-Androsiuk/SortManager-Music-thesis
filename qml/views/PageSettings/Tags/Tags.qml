@@ -3,6 +3,7 @@ import QtQuick.Controls
 import QtQuick.Controls.Material
 
 import "qrc:/SortManager-Music/qml/popups"
+import "qrc:/SortManager-Music/qml/components" // EmptyListInfo
 import "qrc:/SortManager-Music/qml/delegates"
 
 Page {
@@ -37,6 +38,7 @@ Page {
 
     // original shortcut from model
     property var mdl: backend.database.all_tags_model.tags
+    property int mdlLength: backend.database.all_tags_model.tagsCount
 
     /*
         received structure:
@@ -148,6 +150,11 @@ Page {
         }
     }
 
+    EmptyListInfo{
+        id: emptyListInfo
+        visible: (mdlLength === 0)
+        text: "No Editable Tags to Display"
+    }
 
     ScrollView{
         id: scrollView
@@ -157,6 +164,7 @@ Page {
             right: parent.right
             bottom: parent.bottom
         }
+
         ListView{
             id: tagsListView
             model: mdl
