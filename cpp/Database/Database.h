@@ -49,7 +49,7 @@
 /// throw an exception
 #define THROW_EXCEPTION(desc) throw std::runtime_error((QString(__FUNCTION__) + " - " + desc).toStdString().c_str())
 /// handle error and return // requires emit keyword before signal // REQUIRES "ERROR_SIGNAL" definition before calling
-#define HANDLE_ERROR(desc) {WR << desc; emit ERROR_SIGNAL(desc); return;}
+#define HANDLE_ERROR(desc) {WR << (QString() + desc).toStdString().c_str(); emit ERROR_SIGNAL(QString() + desc); return;}
 /// catch common error thrown by called function // REQUIRES "ERROR_SIGNAL" definition before calling
 /// "Missing emit keyword" are also anoying, but there is nothing i can do...
 #define CATCH catch(std::runtime_error &e) {WR << e.what(); emit ERROR_SIGNAL(e.what()); return;}
@@ -106,16 +106,14 @@ signals: // -------------------------------------------------- db management ---
     void signalExportedSongsFromDatabase();     /// emited when data was correctly exported from the database to json
     void signalExportedTagsFromDatabase();      /// emited when data was correctly exported from the database to json
     void signalImportedSongsToDatabase();       /// emited when data was correctly imported Songs to the database
-    // void signalImportedDatabase();    //TO DELETE emited when data was correctly imported to the database
     void signalImportedTagsToDatabase();        /// emited when data was correctly imported Tags to the database
     void signalDeletedDatabase();               /// emited when data was correctly deleted from the database
     /// error
-    void signalExportSongsFromDatabaseError(QString desc);           /// emited when an error occur while exporting data from the database to json
-    void signalExportTagsFromDatabaseError(QString desc);           /// emited when an error occur while exporting data from the database to json
-    void signalImportSongsToDatabaseError(QString desc);    /// emited when an error occur while importing Songs data to the database
-    void signalImportTagsToDatabaseError(QString desc);     /// emited when an error occur while importing Tags data to the database
-    // void signalImportDatabaseError(QString desc);     //TO DELETE emited when an error occur while importing data to the database
-    void signalDeleteDatabaseError(QString desc);           /// emited when an error occur while deleting data from the database
+    void signalExportSongsFromDatabaseError(QString desc);      /// emited when an error occur while exporting data from the database to json
+    void signalExportTagsFromDatabaseError(QString desc);       /// emited when an error occur while exporting data from the database to json
+    void signalImportSongsToDatabaseError(QString desc);        /// emited when an error occur while importing Songs data to the database
+    void signalImportTagsToDatabaseError(QString desc);         /// emited when an error occur while importing Tags data to the database
+    void signalDeleteDatabaseError(QString desc);               /// emited when an error occur while deleting data from the database
 
 signals: // -------------------------------------------------- load models -------------------------------------------------- //
     // songs
@@ -176,6 +174,17 @@ signals: // -------------------------------------------------- playlist actions 
 signals: // signals for Playlist
     void signalPlaylistListLoaded(SongDetailsList *list);    /// emited by loadPlaylistList with list of Tags for Playlist class (list is limited by constraints that are readed from m_filters)
 
+signals: // loading state signals
+    void signalLoadingStarted(QString whatStarted);         /// emited at the begining of method that will show loading informations
+    void signalLoadingProgress(QVariantList infoList);      /// can be emited while executing method that want to show loading informations
+    void signalLoadingFinished();                           /// emited after any finish (good or bad finish) of method that show loading informations
+
+// ############################################################ SLOTS ############################################################
+public slots:
+    void cancelLoading();       /// triggered by QML when user press cancel button while loading
+private slots:
+    void finishedLoading();     /// triggered by signalLoadingFinished
+
 public slots: // database init
     void initializeOnStart();       /// starting aapplication
     void initializeWithTags();      /// building new database
@@ -187,7 +196,6 @@ public slots: // db management
     void exportTagsFromDatabase(const QUrl &output_qurl);
     void importSongsToDatabase(const QUrl &input_qurl);
     void importTagsToDatabase(const QUrl &input_qurl);
-    void importDatabase(const QUrl &input_qurl); // TO DELETE
     void deleteDatabase();
 
 public slots: // load models
@@ -280,6 +288,7 @@ public:
     TagList *get_filters_model() const;
 
 private:
+    bool m_cancelLoading;
     bool m_databaseInitialized;
     bool m_saveExecQuery;
     bool m_showConstantTags;

@@ -88,15 +88,15 @@ qt_add_qml_module(appSortManager-Music
     QML_FILES qml/delegates/Playlist/Filters/common/ComparatorComponent.qml
 
     # popup
-    QML_FILES qml/popups/XPDeleteConfirm.qml
+    QML_FILES
     QML_FILES qml/popups/Popup1.qml
     QML_FILES qml/popups/Popup2.qml
     QML_FILES qml/popups/Popup3.qml
+    QML_FILES qml/popups/PopupLoading.qml
     QML_FILES qml/popups/common/TextsArea.qml
 
 
-
-
+    # resources
     RESOURCES assets/icons/player/end_64px.png
     RESOURCES assets/icons/player/pause_64px.png
     RESOURCES assets/icons/player/play_64px.png

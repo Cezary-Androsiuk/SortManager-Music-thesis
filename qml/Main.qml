@@ -80,8 +80,37 @@ ApplicationWindow {
             pDBInitializeWithTagsFailed.open();
             pDBInitializeWithTagsFailed.dltDesc = desc
         }
+
+        // --------------------------------------------- Loading Info --------------------------------------------- //
+        function onSignalLoadingStarted(whatStarted)
+        {
+            pLoading.open()
+            pLoading.dltText = whatStarted
+        }
+        function onSignalLoadingProgress(infoList)
+        {
+            var callerID = infoList[0]
+            if(callerID === "importSongsToDatabase")
+            {
+                // for example: Loading Songs 123/456
+                pLoading.dltText = infoList[1] + " " + infoList[2] + "/" + infoList[3]
+            }
+            else
+                console.log("unknown caller with ID: " + callerID + "!")
+        }
+        function onSignalLoadingFinished()
+        {
+            // this signal is emited by all things like finished, loaded or error
+            pLoading.close()
+        }
     }
 
+
+    PopupLoading{
+        id: pLoading // can be global (in Main.qml)
+        // text message will be set in caller function
+        onDltClickedMB: Backend.database.cancelLoading()
+    }
 
     Popup3{
         id: pPersonalizationLoadError

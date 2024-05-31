@@ -30,20 +30,6 @@ Page {
         target: backend.database
         
         // --------------------------------------------- Export Database --------------------------------------------- //
-        // function onSignalExportedDatabase()
-        // {
-        //     pGlobalOk.open();
-        //     pGlobalOk.dltText = "Database exported successfully!"
-        //     pGlobalOk.dltDesc = "" // need to be set because something might left last after error
-        // }
-        // function onSignalExportDatabaseError(desc)
-        // {
-        //     console.log(desc);
-        //     pGlobalOk.open();
-        //     pGlobalOk.dltText = "Error while exporting database!"
-        //     pGlobalOk.dltDesc = desc
-        // }
-        
         function onSignalExportedSongsFromDatabase()
         {
             pGlobalOk.open();
@@ -74,24 +60,6 @@ Page {
 
 
         // --------------------------------------------- import database --------------------------------------------- //
-        // function onSignalImportedDatabase()
-        // {
-        //     // TO DELETE
-        //     pGlobalOk.open();
-        //     pGlobalOk.dltText = "Database imported successfully!"
-        //     pGlobalOk.dltDesc = "" // need to be set because something might left last after error
-        //     // TO DELETE
-        // }
-        // function onSignalImportDatabaseError(desc)
-        // {
-        //     // TO DELETE
-        //     console.log(desc);
-        //     pGlobalOk.open();
-        //     pGlobalOk.dltText = "Error while importing database!"
-        //     pGlobalOk.dltDesc = desc
-        //     // TO DELETE
-        // }
-
         function onSignalImportedSongsToDatabase()
         {
             pGlobalOk.open();
@@ -147,8 +115,6 @@ Page {
             pGlobalOk.dltText = "Resetting database: Error while initializing database with tags!"
             pGlobalOk.dltDesc = desc
         }
-
-
     }
 
     Popup1{

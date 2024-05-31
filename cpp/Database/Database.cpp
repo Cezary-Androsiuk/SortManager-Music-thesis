@@ -2,6 +2,7 @@
 
 Database::Database(QObject *parent)
     : QObject{parent},
+    m_cancelLoading(false),
     m_databaseInitialized(false),
     m_saveExecQuery(false),
     m_showConstantTags(true),
@@ -25,6 +26,23 @@ Database::Database(QObject *parent)
     QObject::connect(this, &Database::signalPlaylistRefreshed, this, &Database::loadPlaylistList);
     ///
     QObject::connect(this, &Database::signalFiltersUpdated, this, &Database::loadPlaylistList);
+
+    /// connecting finish signals with loadingFinished signal
+    QObject::connect(this, &Database::signalExportedSongsFromDatabase,      this, &Database::signalLoadingFinished);
+    QObject::connect(this, &Database::signalExportSongsFromDatabaseError,   this, &Database::signalLoadingFinished);
+    QObject::connect(this, &Database::signalExportedTagsFromDatabase,       this, &Database::signalLoadingFinished);
+    QObject::connect(this, &Database::signalExportTagsFromDatabaseError,    this, &Database::signalLoadingFinished);
+    QObject::connect(this, &Database::signalImportedSongsToDatabase,        this, &Database::signalLoadingFinished);
+    QObject::connect(this, &Database::signalImportSongsToDatabaseError,     this, &Database::signalLoadingFinished);
+    QObject::connect(this, &Database::signalImportedTagsToDatabase,         this, &Database::signalLoadingFinished);
+    QObject::connect(this, &Database::signalImportTagsToDatabaseError,      this, &Database::signalLoadingFinished);
+    QObject::connect(this, &Database::signalDeletedDatabase,                this, &Database::signalLoadingFinished);
+    QObject::connect(this, &Database::signalDeleteDatabaseError,            this, &Database::signalLoadingFinished);
+
+    /// after loading finished just for safety turn off m_cancelLoading
+    /// especially in some methods that not uses signalLoadingProgress user might fast press the "cancel" button
+    /// but nothing is there to cancel (methods are to fast)
+    QObject::connect(this, &Database::signalLoadingFinished, this, &Database::finishedLoading);
 }
 
 Database::~Database()
@@ -43,6 +61,22 @@ void Database::setShowConstantTags(bool showConstantTags)
     m_showConstantTags = showConstantTags;
     // to remove all_tags_model (if was loaded)
     this->clearModelsMemory();
+}
+
+void Database::cancelLoading()
+{
+    /// variable is checked each iteration and if is true
+    /// then loading can be cancelled (but after that
+    /// m_cancelLoading should be set to false)
+    m_cancelLoading = true;
+}
+
+void Database::finishedLoading()
+{
+    /// after loading finished just for safety turn off m_cancelLoading
+    /// especially in some methods that not uses signalLoadingProgress user might fast press the "cancel" button
+    /// but nothing is there to cancel (methods are to fast)
+    m_cancelLoading = false;
 }
 
 
@@ -263,6 +297,10 @@ void Database::initializeFilters()
 
 void Database::exportSongsFromDatabase(const QUrl &output_qurl)
 {
+    emit this->signalLoadingStarted("Exporting songs");
+    /// in this method loading status will not show progess because
+    /// is enough fast, but freeze while loading could be usefull
+
     IS_DATABASE_OPEN(signalExportSongsFromDatabaseError)
     QString output_file = output_qurl.toLocalFile();
     if(QFile::exists(output_file))
@@ -337,6 +375,10 @@ void Database::exportSongsFromDatabase(const QUrl &output_qurl)
 
 void Database::exportTagsFromDatabase(const QUrl &output_qurl)
 {
+    emit this->signalLoadingStarted("Exporting Tags");
+    /// in this method loading status will not show progess because
+    /// is enough fast, but freeze while loading could be usefull
+
     IS_DATABASE_OPEN(signalExportTagsFromDatabaseError)
     QString output_file = output_qurl.toLocalFile();
     if(QFile::exists(output_file))
@@ -408,12 +450,22 @@ void Database::importSongsToDatabase(const QUrl &input_qurl)
      * spell something wrong
      */
 
+    emit this->signalLoadingStarted("Importing Songs");
+
     QJsonObject jsonMain;
     try
     {
         jsonMain = this->importDatabaseLoadJsonFromFile(input_qurl).object();
     }
     CATCH;
+
+    /// test if json file contains songs aray
+    if(!jsonMain.contains("songs"))
+    {
+        HANDLE_ERROR(
+            "file '" + input_qurl.toLocalFile() +
+            "' does not contains 'songs' array")
+    }
 
     /// load all songs once, instead of checking in db if each song path is unique
     QStringList usedSongPaths;
@@ -551,6 +603,13 @@ void Database::importSongsToDatabase(const QUrl &input_qurl)
     auto addSongErrorConnection =
         QObject::connect(this, &Database::signalAddSongError, addSongLambda);
 
+    /// loading status variables
+    qsizetype songsTotal = jsonSongs.size();
+    qsizetype songsLoaded = 0;
+    qsizetype loadSongsToRefresh = 0;
+    // double refreshProgressPercentage = 0.01;
+    int refreshAfterSongsLoaded = 1;
+
     /// add songs
     BEGIN_TRANSACTION
     {
@@ -568,13 +627,32 @@ void Database::importSongsToDatabase(const QUrl &input_qurl)
                 HANDLE_ERROR(
                     "adding song failed: " + addSongErrorInfo)
             }
+
+            /// check if cancel loading
+            if(m_cancelLoading)
+            {
+                DB << "loading canceled";
+                m_cancelLoading = false;
+                m_database.rollback();
+                return; /// without signal (is not required, trust me)
+            }
+
+            /// send load status
+            if(songsLoaded >= loadSongsToRefresh)
+            {
+                // loadSongsToRefresh += songsTotal * refreshProgressPercentage;
+                loadSongsToRefresh += refreshAfterSongsLoaded;
+                emit this->signalLoadingProgress({__func__, "Importing Songs", songsLoaded, songsTotal});
+                QCoreApplication::processEvents();
+            }
+            ++songsLoaded;
         }
     }
     END_TRANSACTION(signalImportSongsToDatabaseError)
 
     QObject::disconnect(addSongErrorConnection);
 
-    DB << "songs are imported correctly!";
+    DB << "importing songs finished!";
     emit this->signalImportedSongsToDatabase();
 #undef ERROR_SIGNAL
 }
@@ -590,6 +668,9 @@ void Database::importTagsToDatabase(const QUrl &input_qurl)
      * in summary algorithm will read only fields ['name', 'type',
      * 'description'], where 'description is optional
      */
+    emit this->signalLoadingStarted("Importing Tags");
+    /// in this method loading status will not show progess because
+    /// is enough fast, but freeze while loading could be usefull
 
     QJsonObject jsonMain;
     try
@@ -597,6 +678,14 @@ void Database::importTagsToDatabase(const QUrl &input_qurl)
         jsonMain = this->importDatabaseLoadJsonFromFile(input_qurl).object();
     }
     CATCH;
+
+    /// test if json file contains tags aray
+    if(!jsonMain.contains("tags"))
+    {
+        HANDLE_ERROR(
+            "file '" + input_qurl.toLocalFile() +
+            "' does not contains 'tags' array")
+    }
 
     /// load all tag names that already in use
     QStringList usedTagNames;
@@ -794,224 +883,12 @@ void Database::importTagsToDatabase(const QUrl &input_qurl)
 #undef ERROR_SIGNAL
 }
 
-void Database::importDatabase(const QUrl &input_qurl)
-{
-
-    // QString input_file = input_qurl.toLocalFile();
-    // if(!QFile(input_file).exists()){
-    //     WR << "file " << input_file << " not found";
-    //     emit this->signalImportDatabaseError("file " + input_file + " not found");
-    // }
-
-    // QFile json_file(input_file);
-    // if(!json_file.open(QIODevice::ReadOnly | QIODevice::Text)){
-    //     WR << "error while reading json file from" << input_file << "with error" << json_file.errorString();
-    //     emit this->signalImportDatabaseError(
-    //         "error while reading json file from " + input_file + " with error " + json_file.errorString());
-    // }
-
-    // QJsonParseError json_error;
-    // QJsonDocument main_json_doc = QJsonDocument::fromJson(json_file.readAll(), &json_error);
-    // json_file.close();
-
-    // if(json_error.error != QJsonParseError::NoError) {
-    //     WR << "json parse error: " << json_error.errorString();
-    //     emit this->signalImportDatabaseError("json parse error: " + json_error.errorString());
-    //     return;
-    // }
-
-    // if(!main_json_doc.isObject()){
-    //     WR << "json file does not contains json object";
-    //     emit this->signalImportDatabaseError("json file does not contains json object");
-    //     return;
-    // }
-
-    // QJsonObject main_json = main_json_doc.object();
-
-    // // ------------------------------ get data from database  -----------------------------
-    // QStringList used_song_paths;
-
-    // {
-    //     // Get song paths
-    //     QSqlQuery query(m_database);
-    //     QString query_text("SELECT value FROM songs_tags WHERE tag_id = 9;"); // tag_id = 9 is Song Path tag
-    //     this->queryToFile(query_text);
-    //     if(!query.exec(query_text))
-    //     {
-    //         WR << "error while executing SELECT query:" << query.lastError();
-    //         emit this->signalImportDatabaseError("error while executing SELECT query: " + query.lastError().text());
-    //         return;
-    //     }
-
-    //     /// store song paths of used songs
-    //     /// m_all_songs_model will be cleared after any operation like add song
-    //     if(query.next())
-    //         used_song_paths.append(query.value(0).toString());
-    // }
-
-
-    // BEGIN_TRANSACTION
-    // {
-    //     // skip if json file not contains "tags" object
-    //     /// user might want to add just songs, so error not needed
-    //     if(main_json.contains("tags"))
-    //     {
-    //         // ------------------------------ get data about tags -----------------------------
-    //         QStringList used_tag_names;
-    //         QString load_error;
-
-    //         auto lambda_model = [&](QString desc){
-    //             /// [&] means get reference from parents variables
-    //             /// desc is value received from signalAllTagsModelLoadError(QString desc)
-    //             load_error = desc; // some warning occur, but i don't see a better way
-    //         };
-
-    //         // Get tags names
-    //         /// load all tags and react for the error result
-    //         auto connection_model = connect(this, &Database::signalAllTagsModelLoadError, lambda_model);
-
-    //         // get ALL tags
-    //         bool prev_show_constant_tags = m_showConstantTags;
-    //         m_showConstantTags = true;
-    //         this->loadAllTags();
-    //         m_showConstantTags = prev_show_constant_tags;
-
-    //         if(load_error != ""){
-    //             WR << "Error while loading all tags model for tags part:" << load_error;
-    //             DB << "cancelling transaction ...";
-    //             m_database.rollback();
-    //             emit this->signalImportDatabaseError("Error while loading all tags model for tags part: " + load_error);
-    //             return;
-    //         }
-    //         disconnect(connection_model);
-
-    //         /// store names of used tags
-    //         /// m_all_tags_model will be cleared after any operation like add tag
-    //         for(const auto &tag : m_all_tags_model->c_ref_tags())
-    //             used_tag_names.append(tag->get_name());
-
-    //         // ------------------------------ add tags -----------------------------
-
-    //         QString list_of_add_tags_failed;
-    //         QStringList added_from_json_tag_names;
-    //         QString last_tag_add_error;
-
-    //         auto lambda_operation = [&](QString desc){
-    //             // [&] means get reference from parents variables
-    //             // desc is value received from signalAllTagsModelLoadError(QString desc)
-    //             last_tag_add_error += desc;
-    //             // some warning occur, but i don't see a better way
-    //         };
-
-    //         auto connection_operation = connect(this, &Database::signalAddTagError, lambda_operation);
-
-    //         QJsonArray tags_array_json = main_json["tags"].toArray();
-    //         // go through all tags in json
-    //         for(const auto &_tag : tags_array_json)
-    //         {
-    //             QJsonObject tag = _tag.toObject();
-
-    //             // get tag name
-    //             if(!tag.contains("name"))
-    //             {
-    //                 list_of_add_tags_failed += "{one of the tags not contains field 'name'} ";
-    //                 // not exit here because later app will display user what tags need an repair
-    //                 continue;
-    //             }
-    //             QString tag_name = tag["name"].toString();
-
-    //             // test if not used already
-    //             if(used_tag_names.contains( tag_name ))
-    //             {
-    //                 list_of_add_tags_failed += "{tag name '"+tag_name+"' already in use} ";
-    //                 // not exit here because later app will display user what tags need an repair
-    //                 continue;
-    //             }
-    //             if(added_from_json_tag_names.contains( tag_name ))
-    //             {
-    //                 list_of_add_tags_failed += "{tag name '"+tag_name+"' is a duplicate in json} ";
-    //                 // not exit here because later app will display user what tags need an repair
-    //                 continue;
-    //             }
-
-    //             // prepare structure for addTag
-    //             QString description = "";
-    //             if(tag.contains("description"))
-    //                 description = tag["description"].toString();
-
-
-    //             if(!tag.contains("type")){
-    //                 list_of_add_tags_failed += "{one of the tags not contains field 'type'} ";
-    //                 continue;
-    //             }
-    //             int type = tag["type"].toInt();
-    //             if(type<0 || 2<type){
-    //                 list_of_add_tags_failed += "{tag type need to be 0, 1 or 2. But tag with name '"
-    //                                            +tag_name+"' has value '"+
-    //                                            QString::number(tag["type"].toInt())+"'} ";
-    //                 continue;
-    //             }
-
-    //             QVariantList structure = {
-    //                 QVariantMap{
-    //                     {"delegate_type", QString("param")},
-    //                     {"name", QString("Name")},
-    //                     {"value", tag_name}
-    //                 },
-    //                 QVariantMap{
-    //                     {"delegate_type", QString("param")},
-    //                     {"name", QString("Description")},
-    //                     {"value", description}
-    //                 },
-    //                 QVariantMap{
-    //                     {"delegate_type", QString("param")},
-    //                     {"name", QString("Type")},
-    //                     {"value", type}
-    //                 }
-    //             };
-
-    //             this->addTag(structure);
-
-    //             if(!last_tag_add_error.isEmpty())
-    //             {
-    //                 list_of_add_tags_failed += "{while adding tag with name '"+tag_name+"', an error occur: "+last_tag_add_error+"} ";
-    //                 last_tag_add_error.clear();
-    //                 // not exit here because later app will display user what tags need an repair
-    //                 continue;
-    //             }
-
-    //             added_from_json_tag_names.append( tag_name );
-    //         }
-
-    //         disconnect(connection_operation);
-
-    //         if(!list_of_add_tags_failed.isEmpty())
-    //         {
-    //             // exit here, before adding songs, its because not adding one of new tags,
-    //             //   could quickly escalate as multiple errors while adding songs
-    //             DB << "found errors while adding tags:" << list_of_add_tags_failed;
-    //             DB << "cancelling transaction ...";
-    //             m_database.rollback();
-    //             emit this->signalImportDatabaseError(
-    //                 "found errors while adding tags: " + list_of_add_tags_failed);
-    //             return;
-    //         }
-
-    //         // if no error occur then marge lists of tag names and tag types
-    //         // this help us later :)
-    //         for(const auto &name : added_from_json_tag_names)
-    //             used_tag_names.append(name);
-    //     }
-    // }
-    // END_TRANSACTION(signalImportDatabaseError)
-
-
-    // DB << "database imported successfully!";
-    // emit this->signalImportedDatabase();
-}
-
 void Database::deleteDatabase()
 {
+    emit this->signalLoadingStarted("Deleting Database");
+    /// in this method loading status will not show progess because
+    /// is enough fast, but freeze while loading could be usefull
+
     IS_DATABASE_OPEN(signalDeleteDatabaseError)
     m_database.close();
     QSqlDatabase::removeDatabase(QSqlDatabase::defaultConnection);
