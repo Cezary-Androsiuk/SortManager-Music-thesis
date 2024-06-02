@@ -3,7 +3,8 @@
 Playlist::Playlist(QObject *parent)
     : QObject{parent},
     m_playlistModel(nullptr),
-    m_playlist(nullptr)
+    m_playlist(nullptr),
+    m_songState({-1, -1, -1})
 {
     /// after new playlist was loaded, shuffle it
     QObject::connect(this, &Playlist::playlistLoaded, this, &Playlist::shufflePlaylist);
@@ -12,6 +13,9 @@ Playlist::Playlist(QObject *parent)
     /// playlistLoad triggers shufflePlaylist)
     // QObject::connect(this, &Playlist::playlistLoaded, this, &Playlist::loadPlaylistModel);
     QObject::connect(this, &Playlist::playlistShuffled, this, &Playlist::loadPlaylistModel);
+
+    /// after any playlist change update song state
+    QObject::connect(this, &Playlist::playlistShuffled, this, &Playlist::updateSongState);
 }
 
 void Playlist::loadPlaylistModel()
@@ -54,63 +58,6 @@ SongList* Playlist::getPlaylistModel() const
     return m_playlistModel;
 }
 
-/*
-void Database::loadPlaylistModel()
-{
-    // method will be trigger only by signalFiltersInitailized, signalPlaylistRefreshed and signalFiltersUpdated
-
-    DB << " - staring playlist load";
-    if(m_playlist_model != nullptr){
-        // DB << "playlist model was already loaded - skipped";
-        // emit this->signalPlaylistModelLoaded();
-        // return;
-        delete m_filters_model;
-    }
-    m_filters_model = nullptr;
-
-    /// after checking if model is already loaded because, if it is loaded then we don't care about database
-    IS_DATABASE_OPEN(signalPlaylistModelLoadError)
-
-    // select all song_id and Title tags (btw Title id is 2)
-    // this "AS title" is useless but as a comment to describe what is value
-    QString query_text("SELECT song_id, value AS title FROM songs_tags WHERE tag_id = 2;");
-
-    this->queryToFile(query_text);
-    QSqlQuery query(m_database);
-    if(!query.exec(query_text)){
-        WR << "executing select query " << query.lastError();
-        emit this->signalPlaylistModelLoadError("error while executing query " + query.lastError().text());
-        return;
-    }
-    DB << " - query executed";
-
-    m_playlist_model = new SongList(this);
-
-    // read selected data
-    while(query.next()){
-        DB << " - query iterate start";
-        auto record = query.record();
-
-        int song_id = record.value(0).toInt();
-        QString song_title = record.value(1).toString();
-
-        Song *song = new Song(m_playlist_model);
-        song->set_id(song_id);
-        song->set_title(song_title);
-        // value is not needed
-
-        m_playlist_model->songs().append(song);
-        DB << " - query iterate stop";
-    }
-
-    DB << " - iteration finished";
-
-    this->debugPrintModel_playlist();
-
-    DB << "playlist model loaded correctly!";
-    emit this->signalPlaylistModelLoaded();
-}
-//*/
 void Playlist::loadPlaylist(SongDetailsList *list)
 {
     DB << "loading playlist list";
@@ -118,6 +65,9 @@ void Playlist::loadPlaylist(SongDetailsList *list)
     if(m_playlist != nullptr)
         delete m_playlist;
     m_playlist = list;
+
+    /// reset values (player will be reseted simultaneously)
+    m_songState = {-1, -1, -1};
 
     DB << "playlist loaded";
     emit this->playlistLoaded();
@@ -153,6 +103,56 @@ void Playlist::shufflePlaylist()
     emit this->playlistShuffled();
 }
 
+void Playlist::updateSongState()
+{
+    /// if playlist is empty set values to -1
+    if(m_playlist->c_ref_songs().empty())
+    {
+        DB << "set values to -1 due to empty playlist";
+        m_songState = {-1, -1, -1};
+        return;
+    }
+
+    qsizetype &cpos = m_songState.m_currentPos;   // current position
+    qsizetype &cid = m_songState.m_currentID;     // current id
+    qsizetype &npos = m_songState.m_nextPos;      // next position
+
+
+    if(cpos == -1 || cid == -1 || npos == -1)
+    {
+        /// print debug info to check if all values are really -1
+        if(cpos != -1 || cid != -1 || npos != -1)
+        {
+            DB << "not all values are -1 ->"
+               << QString("{cpos: %1, cid: %2, npos: %3}")
+                      .arg(cpos, cid, npos).toStdString().c_str();
+            exit(1);
+        }
+
+        /// at this point playlist is not empty all song states are -1
+
+        cpos = 0;
+        cid = this->getIDKnowingPos(cpos);
+        npos = this->getComputedNextSongPos(); /// cpos was already set, and can be used
+    }
+    else
+    {
+        /// if all of the song states are not -1, that means are values was
+        /// set ealier (I know, I am smart af XD). If it is not first methods call, we
+        /// can assume that player press shuffle (reload set values to -1)
+        cpos = npos;
+        cid = this-> getIDKnowingPos(cpos);
+        npos = this->getComputedNextSongPos(); /// cpos was already set, and can be used
+    }
+
+}
+
+void Playlist::songPlaylingEnded()
+{
+    // qsizetype lastSongIndex = m_playlist->c_ref_songs().size() - 1;
+    // if()
+}
+
 std::vector<int> Playlist::getUniqueRandomNumbers(int count)
 {
     // create variables
@@ -177,22 +177,87 @@ std::vector<int> Playlist::getUniqueRandomNumbers(int count)
     return result;
 }
 
-// SongList Playlist::shuffleList(const SongList &songs)
-// {
-//     int songsCount = songs.size();
+qsizetype Playlist::getPosKnowingID(const qsizetype &id) const
+{
+    /// iterate over all song until id matches
+    qsizetype pos = 0;
+    for(SongDetails *song : m_playlist->c_ref_songs())
+    {
+        if(song->get_id() == id)
+        {
+            return pos;
+        }
+        ++pos;
+    }
 
-//     auto shuffleOrderList = Playlist::getUniqueRandomNumbers(songsCount);
+    /// if id was not found in list
+    WR << "song with id" << id << "NOT FOUND!";
+    return -1;
+}
 
-//     SongList songsNewOrder;
-//     int songListIndex = 0;
+qsizetype Playlist::getIDKnowingPos(const qsizetype &pos) const
+{
+    /// if pos larger than list
+    if(pos >= m_playlist->c_ref_songs().size())
+    {
+        WR << "song with pos" << pos << "NOT FOUND!";
+        return -1;
+    }
 
-//     // read random number from songs and append to the songNewOrder list
-//     for(const int &randomNumber : shuffleOrderList)
-//     {
-//         Song *song = songs[randomNumber];
-//         song->setListIndex(songListIndex++);
-//         songsNewOrder.append(song);
-//     }
+    /// get id from list by position
+    return m_playlist->c_ref_songs().at(pos)->get_id();
+}
 
-//     return songsNewOrder;
-// }
+qsizetype Playlist::getComputedNextSongPos() const
+{
+    qsizetype listSize = m_playlist->c_ref_songs().size();
+    const qsizetype &cpos = m_songState.m_currentPos;
+
+    /// test if values are expected
+    if(listSize == 0)
+    {
+        WR << "playlist cannot be empty when computing nextPos";
+        exit(1);
+    }
+    if(cpos == -1)
+    {
+        WR << "currentPos value cannot be -1 when computing nextPos";
+        exit(1);
+    }
+
+    /// for list length cases return nextPos
+    if(cpos >= listSize-1)  /// case when currentPos is at the end of the list
+        return 0;
+    else                    /// case when currentPos is not at the end of the list
+        return cpos+1;
+}
+
+qsizetype Playlist::getCurrentPos() const
+{
+    return m_songState.m_currentPos;
+}
+
+qsizetype Playlist::getCurrentID() const
+{
+    return m_songState.m_currentID;
+}
+
+qsizetype Playlist::getNextPos() const
+{
+    return m_songState.m_nextPos;
+}
+
+void Playlist::setCurrentPos(const qsizetype &pos)
+{
+    m_songState.m_currentPos = pos;
+}
+
+void Playlist::setCurrentID(const qsizetype &id)
+{
+    m_songState.m_currentID = id;
+}
+
+void Playlist::setNextPos(const qsizetype &pos)
+{
+    m_songState.m_nextPos = pos;
+}

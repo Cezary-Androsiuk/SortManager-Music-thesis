@@ -170,9 +170,26 @@ Page {
                         width: delegateWidth - 15 /*scrollbar offset*/
                         height: delegateHeight
 
-                        sourceComponent: Item{
-                            id: buttonFieldDelegate
-                            ButtonField{
+                        sourceComponent: {
+                            if(index === backend.playlist.currentPos)
+                            {
+                                songCurrentDelegate;
+                            }
+                            else if(index === backend.playlist.currentPos)
+                            {
+                                songNextDelegate;
+                            }
+                            else
+                            {
+                                songDelegate;
+                            }
+
+                        }
+
+
+                        Component{
+                            id: songDelegate
+                            SongField{
                                 dltText: modelData.title
                                 onDltClickedElement: {
                                     just_used_id = + modelData.id;
@@ -185,6 +202,57 @@ Page {
                                 }
                             }
                         }
+                        Component{
+                            id: songCurrentDelegate
+                            Item{
+                                anchors.fill: parent
+                                Rectangle{
+                                    anchors.fill: parent
+                                    color: "red"
+                                    opacity: 0.6
+                                }
+
+                                SongField{
+                                    dltText: modelData.title
+                                    onDltClickedElement: {
+                                        just_used_id = + modelData.id;
+                                        just_used_title = modelData.title;
+
+                                        backend.database.loadEditPlaylistSongModel(+modelData.id)
+                                    }
+                                    onDltClickedPlay: {
+                                        console.log("play: " + modelData.title)
+                                    }
+                                }
+                            }
+
+                        }
+                        Component{
+                            id: songNextDelegate
+                            Item{
+                                anchors.fill: parent
+                                Rectangle{
+                                    anchors.fill: parent
+                                    color: "red"
+                                    opacity: 0.3
+                                }
+
+                                SongField{
+                                    dltText: modelData.title
+                                    onDltClickedElement: {
+                                        just_used_id = + modelData.id;
+                                        just_used_title = modelData.title;
+
+                                        backend.database.loadEditPlaylistSongModel(+modelData.id)
+                                    }
+                                    onDltClickedPlay: {
+                                        console.log("play: " + modelData.title)
+                                    }
+                                }
+                            }
+                        }
+
+
                     }
                 }
             }

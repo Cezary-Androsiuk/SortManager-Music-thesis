@@ -93,17 +93,65 @@ DONE - sprawdzić czy PathSelectField jest używany
 DONE - błąd z add date i update date w dodawaniu nowej piosenki ????
 NONE ? dodać do BetterButton ikonki
 - pozmienić w headerach TabButton na BetterButton
-- dodać weryfikację czy playlist model jest załadowany poprawnie, jak nie załadować playlist (żeby sprawdzić można wykomentować inicjalizację db w backend)
+DONE - dodać weryfikację czy playlist model jest załadowany poprawnie, jak nie załadować playlist (żeby sprawdzić można wykomentować inicjalizację db w backend)
+- w initializeFilters dodać personalization
+DONE ### przetestować co się stanie gdy przy example data utworzymy tag X i importujemy 2 piosenki ale bez tagu X a następnie wyeksportujemy wszystkie dane (w tych dwóch nowych tagach nie powinno być tagu X) a to znaczyło by że nie tworzy się element który nie zostanie określony w pliku json w trakcie importowania
+DONE - dodać ładowanie w moemncie importowania i exportowania danych
+
+==========================
 // tak się teraz zastanawiam co zrobić z filtrami, można je zainicjalizować (domyślnie albo z personalization) oraz zmienić czy zapisać. Jednak co w przypadku gdy użytkownik doda nowe tagi
 // początkowo myślałem, żeby zrobić że załadują się domyślne wartości 'do not compare' w tagach a następnie będziemy podmieniać te które pasują np: 
 // mamy listę A oraz chcemy załadować nową listę
 //	 x belong to A oraz x not belong to B => pomijamy
 //	 x not belong to A oraz x belong to B => ustawiamy na domyślną 'do not compare'
 // ale się tak teraz zastanawiam jak ugryźć (i czy wgl dam radę to zrobić) zarządzanie pamięcią m_filters oraz m_filersModel. Może zamiast pisać to wyjaśnienie powinienem próbować to zaprogramować -.-
-- w initializeFilters dodać personalization
-DONE ### przetestować co się stanie gdy przy example data utworzymy tag X i importujemy 2 piosenki ale bez tagu X a następnie wyeksportujemy wszystkie dane (w tych dwóch nowych tagach nie powinno być tagu X) a to znaczyło by że nie tworzy się element który nie zostanie określony w pliku json w trakcie importowania
 ... kiepskie jest to, że importując tagi nie można dodać jakie piosenki będą miały jaką wartość dla niego, ale wychodzi, że to jest najprostrze rozwiązanie i cóż
-- dodać ładowanie w moemncie importowania i exportowania danych
+
+
+Zdarzenia playlist:
+reaload() -> zatrzymanie playera, załadowanie piosenek, changePlayingSongsData
+reload -> wciśnięcie przycisku reload
+shuffle -> wciśnięcie przyckisku shuffle
+ended -> zakończenie odtwarzania piosenki przez Player
+case:
+	odtwarza się pierwsza piosenka
+		piosenek jest 1 -> currentSongPos = 0, nextSongPos = 0
+			reload -> reload()
+			shuffle -> currentSongPos = 0, nextSongPos = 0
+			ended -> currentSongPos = 0, nextSongPos = 0
+
+		piosenek jest 2 -> currentSongPos = 0, nextSongPos = 1
+			reload -> reload()
+			shuffle -> currentSongPos = getSongPosByID(currentSongID), nextSongPos = 0
+			ended -> currentSongPos = 1, nextSongPos = 0
+
+		piosenek jest n -> currentSongPos = 0, nextSongPos = 1, n>2
+			reload -> reload()
+			shuffle -> currentSongPos = getSongPosByID(currentSongID), nextSongPos = 0
+			ended -> currentSongPos = 1, nextSongPos = 2
+
+	odtwarza się druga piosenka
+		piosenek jest 2 -> currentSongPos = 1, nextSongPos = 0
+			reload -> reload()
+			shuffle -> currentSongPos = getSongPosByID(currentSongID), nextSongPos = 0
+			ended -> currentSongPos = 0, nextSongPos = 1
+
+		piosenek jest n -> currentSongPos = 1, nextSongPos = 2, n>2
+			reload -> reload()
+			shuffle -> currentSongPos = getSongPosByID(currentSongID), nextSongPos = 0
+			ended -> currentSongPos = 2, nextSongPos = 3
+
+	odtwarza się k-ta piosenka, k>2 i n>k
+		piosenek jest n -> currentSongPos = k, nextSongPos = k+1, n>2
+			reload -> reload()
+			shuffle ->  currentSongPos = getSongPosByID(currentSongID), nextSongPos = 0
+			ended -> currentSongPos = k+1, nextSongPos = k+2
+
+	odtwarza się ostatnia piosenka
+		piosenek jest n -> currentSongPos = n-1, nextSongPos = 0, n>2
+			reload -> reload()
+			shuffle ->  currentSongPos = getSongPosByID(currentSongID), nextSongPos = 0
+			ended -> currentSongPos = 0, nextSongPos = 1
 
 ==========================
 playlist:

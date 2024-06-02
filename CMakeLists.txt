@@ -82,7 +82,7 @@ qt_add_qml_module(appSortManager-Music
     QML_FILES qml/delegates/DBManagement/FileSaveButtonField.qml
     QML_FILES qml/delegates/DBManagement/FileSelectButtonField.qml
     QML_FILES qml/delegates/DBManagement/JustButtonField.qml
-    QML_FILES qml/delegates/Playlist/ButtonField.qml
+    QML_FILES qml/delegates/Playlist/SongField.qml
     QML_FILES qml/delegates/Playlist/Filters/CompareIntegerField.qml
     QML_FILES qml/delegates/Playlist/Filters/CompareStringField.qml
     QML_FILES qml/delegates/Playlist/Filters/CompareStateField.qml
