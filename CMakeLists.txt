@@ -54,7 +54,6 @@ qt_add_qml_module(appSortManager-Music
     QML_FILES qml/views/PageSettings/Tags/EditTag.qml
     QML_FILES qml/views/PageSettings/Tags/AddTag.qml
     QML_FILES qml/views/PagePlaylist/Filters.qml
-    QML_FILES qml/views/PagePlaylist/EditPlaylistSong.qml
 
     # components
     QML_FILES qml/components/BottomPlayer.qml
@@ -113,6 +112,8 @@ qt_add_qml_module(appSortManager-Music
     RESOURCES assets/icons/more_or_equal_64px.png
     RESOURCES assets/icons/more_than_64px.png
     RESOURCES assets/icons/not_equal_64px.png
+    RESOURCES assets/icons/is_like_64px.png
+    RESOURCES assets/icons/regex_64px.png
 
     RESOURCES assets/icons/folder_open_64px.png
     RESOURCES assets/icons/filter_36px.png

@@ -29,8 +29,8 @@ Item{
             {image: Qt.resolvedUrl("qrc:/SortManager-Music/assets/icons/not_equal_64px.png"), desc: "is different than"},
             {image: Qt.resolvedUrl("qrc:/SortManager-Music/assets/icons/approximately_equal_64px.png"), desc: "is approximately equal to"},
             {image: Qt.resolvedUrl("qrc:/SortManager-Music/assets/icons/approximately_not_equal_64px.png"), desc: "is approximately different than"},
-            {image: Qt.resolvedUrl("qrc:/SortManager-Music/assets/icons/not_compare_64px.png"), desc: "is like"},
-            {image: Qt.resolvedUrl("qrc:/SortManager-Music/assets/icons/not_compare_64px.png"), desc: "is equal regex"}
+            {image: Qt.resolvedUrl("qrc:/SortManager-Music/assets/icons/is_like_64px.png"), desc: "is like"},
+            {image: Qt.resolvedUrl("qrc:/SortManager-Music/assets/icons/regex_64px.png"), desc: "is equal regex"}
         ]
         width: height
         dltIndex: dltComboboxValue

@@ -77,7 +77,7 @@ Item {
 
                 delegate: Item{
                     width: parent.width
-                    height: comparatorComponent.popup_case_height
+                    height: comparatorComponent.popup_case_height+1 // +1 because "LIKE" icon looks better
 
                     ImageButton{
                         dltDescription: modelData.desc
