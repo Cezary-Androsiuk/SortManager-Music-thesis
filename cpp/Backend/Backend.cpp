@@ -39,8 +39,14 @@ void Backend::initializeConnections()
         m_database->setShowConstantTags(m_personalization->getShowConstantTags());
     });
 
+    /// when playlist was loaded by Database send it to Player
     QObject::connect(m_database, &Database::signalPlaylistLoaded, m_playlist, &Playlist::loadPlaylist);
 
+    /// when Player finish playing current song, notify Playlist about it
+    QObject::connect(m_player, &Player::songEnded, m_playlist, &Playlist::playerSongEnded);
+
+    /// when Playlist changed current song, notify Player about it
+    QObject::connect(m_playlist, &Playlist::tellPlayerSongToPlay, m_player, &Player::changeSongToNext);
 }
 
 void Backend::initializeParameters()

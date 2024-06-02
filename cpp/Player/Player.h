@@ -8,6 +8,7 @@
 #include <QEventLoop>
 
 #include "cpp/DebugPrint/DebugPrint.h"
+#include "cpp/Song/SongDetails.h"
 
 class Player : public QObject
 {
@@ -21,7 +22,10 @@ public slots:
     void play2();
     void pause2();
 
+    void changeSongToNext(const SongDetails *song);
+
 signals:
+    void songEnded();
 
 private:
     QMediaPlayer *m_player;

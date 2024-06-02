@@ -115,11 +115,11 @@ void Playlist::updateSongState()
     qsizetype &cpos = m_songState.m_currentPos;   // current position
     qsizetype &cid = m_songState.m_currentID;     // current id
     qsizetype &npos = m_songState.m_nextPos;      // next position
-    qsizetype listSize = m_playlist->c_ref_songs().size();
 
     DB << " - start ->"
        << (QString("{cpos: %1, cid: %2, npos: %3}")
                .arg(cpos).arg(cid).arg(npos)).toStdString().c_str();
+
     if(cpos == -1 || cid == -1 || npos == -1)
     {
         /// print debug info to check if all values are really -1
@@ -149,10 +149,10 @@ void Playlist::updateSongState()
         /// in case cpos was set as a first one set npos as second
         if(cpos == 0)
         {
-            if(listSize > 1)
+            if(m_playlist->c_ref_songs().size() > 1)
                 npos = 1;
             else
-                npos = 0;
+                npos = 0; /// in case when list contains only one sone set it as a next one
         }
         else
             npos = 0;
@@ -166,7 +166,7 @@ void Playlist::updateSongState()
     emit this->songStateChanged();
 }
 
-void Playlist::songPlaylingEnded()
+void Playlist::playerSongEnded()
 {
     // qsizetype lastSongIndex = m_playlist->c_ref_songs().size() - 1;
     // if()

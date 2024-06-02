@@ -97,6 +97,7 @@ DONE - dodać weryfikację czy playlist model jest załadowany poprawnie, jak ni
 - w initializeFilters dodać personalization
 DONE ### przetestować co się stanie gdy przy example data utworzymy tag X i importujemy 2 piosenki ale bez tagu X a następnie wyeksportujemy wszystkie dane (w tych dwóch nowych tagach nie powinno być tagu X) a to znaczyło by że nie tworzy się element który nie zostanie określony w pliku json w trakcie importowania
 DONE - dodać ładowanie w moemncie importowania i exportowania danych
+- usunąć niepotrzebne get/set dla m_songState w Playlist
 
 ==========================
 // tak się teraz zastanawiam co zrobić z filtrami, można je zainicjalizować (domyślnie albo z personalization) oraz zmienić czy zapisać. Jednak co w przypadku gdy użytkownik doda nowe tagi

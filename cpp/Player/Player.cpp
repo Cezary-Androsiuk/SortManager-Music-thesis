@@ -35,3 +35,8 @@ void Player::pause2()
 {
     m_player_2->pause();
 }
+
+void Player::changeSongToNext(const SongDetails *song)
+{
+
+}

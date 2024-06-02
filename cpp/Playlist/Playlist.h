@@ -19,9 +19,10 @@ class Playlist : public QObject
 public:
     explicit Playlist(QObject *parent = nullptr);
 
+
 signals: // models signals
-    void playlistModelLoaded();                 /// emited when playlist model was loaded
-    void playlistModelLoadError(QString desc);  /// emited when loading playlist model failed
+    void playlistModelLoaded();                 /// is emited when playlist model was loaded
+    void playlistModelLoadError(QString desc);  /// is emited when loading playlist model failed
 
 public slots: // build models
     void loadPlaylistModel();
@@ -31,15 +32,18 @@ public: // get models
 
 
 public slots: // methods
-    void loadPlaylist(SongDetailsList *list);
-    void shufflePlaylist();
-    void updateSongState();                     /// is called when player finishes the song
-    void songPlaylingEnded();                   /// is triggered by Player, when song finish
+    void loadPlaylist(SongDetailsList *list);   /// is triggered only by Database::signalPlaylistLoaded
+    void shufflePlaylist();                     /// is triggered by loadPlaylist and by button in QML
+    void updateSongState();                     /// is triggered when player finishes the song
+    void playerSongEnded();                     /// is triggered by Player, when song finish
 
 signals: // methods signals
-    void playlistLoaded();      /// emited when loadPlaylist finished
-    void playlistShuffled();    /// emited when shufflePlaylist finished
-    void songStateChanged();    /// emited in updateSongState when it is changed or ...
+    void playlistLoaded();          /// is emited when loadPlaylist finished
+    void playlistShuffled();        /// is emited when shufflePlaylist finished
+    void songStateChanged();        /// is emited by updateSongState when state changed
+
+    void tellPlayerSongToPlay(const SongDetails *song);    ///
+
 
 public: // support methods
     static std::vector<int> getUniqueRandomNumbers(int count);
