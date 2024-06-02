@@ -175,7 +175,7 @@ Page {
                             {
                                 songCurrentDelegate;
                             }
-                            else if(index === backend.playlist.currentPos)
+                            else if(index === backend.playlist.nextPos)
                             {
                                 songNextDelegate;
                             }

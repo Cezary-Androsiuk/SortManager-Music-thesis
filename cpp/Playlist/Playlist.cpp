@@ -9,18 +9,18 @@ Playlist::Playlist(QObject *parent)
     /// after new playlist was loaded, shuffle it
     QObject::connect(this, &Playlist::playlistLoaded, this, &Playlist::shufflePlaylist);
 
-    /// load playlist model after playlist was shuffled (but not after playlistLoad, because
-    /// playlistLoad triggers shufflePlaylist)
-    // QObject::connect(this, &Playlist::playlistLoaded, this, &Playlist::loadPlaylistModel);
-    QObject::connect(this, &Playlist::playlistShuffled, this, &Playlist::loadPlaylistModel);
+    // /// load playlist model after playlist was shuffled (but not after playlistLoad, because
+    // /// playlistLoad triggers shufflePlaylist)
+    // // QObject::connect(this, &Playlist::playlistLoaded, this, &Playlist::loadPlaylistModel);
+    // QObject::connect(this, &Playlist::playlistShuffled, this, &Playlist::loadPlaylistModel);
 
     /// after any playlist change update song state
     QObject::connect(this, &Playlist::playlistShuffled, this, &Playlist::updateSongState);
+    QObject::connect(this, &Playlist::songStateChanged, this, &Playlist::loadPlaylistModel);
 }
 
 void Playlist::loadPlaylistModel()
 {
-    DB << " - staring playlist load";
     /// clear models memory because loadPlaylistModel is called only when
     /// something changed
     if(m_playlistModel != nullptr)
@@ -32,7 +32,6 @@ void Playlist::loadPlaylistModel()
 
     for(const SongDetails *songDetails : m_playlist->c_ref_songs())
     {
-        DB << " - song";
         Song *song = new Song(m_playlistModel);
         song->set_id(songDetails->get_id());
 
@@ -60,7 +59,6 @@ SongList* Playlist::getPlaylistModel() const
 
 void Playlist::loadPlaylist(SongDetailsList *list)
 {
-    DB << "loading playlist list";
 
     if(m_playlist != nullptr)
         delete m_playlist;
@@ -117,19 +115,18 @@ void Playlist::updateSongState()
     qsizetype &cid = m_songState.m_currentID;     // current id
     qsizetype &npos = m_songState.m_nextPos;      // next position
 
-
     if(cpos == -1 || cid == -1 || npos == -1)
     {
         /// print debug info to check if all values are really -1
         if(cpos != -1 || cid != -1 || npos != -1)
         {
             DB << "not all values are -1 ->"
-               << QString("{cpos: %1, cid: %2, npos: %3}")
-                      .arg(cpos, cid, npos).toStdString().c_str();
+               << (QString("{cpos: %1, cid: %2, npos: %3}")
+                       .arg(cpos).arg(cid).arg(npos)).toStdString().c_str();
             exit(1);
         }
 
-        /// at this point playlist is not empty all song states are -1
+        /// at this point playlist is not empty and all song states are -1
 
         cpos = 0;
         cid = this->getIDKnowingPos(cpos);
@@ -138,13 +135,21 @@ void Playlist::updateSongState()
     else
     {
         /// if all of the song states are not -1, that means are values was
-        /// set ealier (I know, I am smart af XD). If it is not first methods call, we
-        /// can assume that player press shuffle (reload set values to -1)
-        cpos = npos;
-        cid = this-> getIDKnowingPos(cpos);
-        npos = this->getComputedNextSongPos(); /// cpos was already set, and can be used
+        ///   set ealier (I know, I am smart af XD). If it is not first call of method,
+        ///   we can assume that player press shuffle (reload set values to -1)
+        /// shuffle pressed action:
+
+        /// cpos need to be set again (this time using ID of song)
+        cpos = this->getPosKnowingID(cid);
+        /// in case cpos was set as a first one set npos as second
+        if(cpos == 0)
+            npos = 1;
+        else
+            npos = 0;
     }
 
+    DB << "song state changed";
+    emit this->songStateChanged();
 }
 
 void Playlist::songPlaylingEnded()
