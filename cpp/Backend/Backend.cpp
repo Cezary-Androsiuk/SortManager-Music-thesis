@@ -39,7 +39,7 @@ void Backend::initializeConnections()
         m_database->setShowConstantTags(m_personalization->getShowConstantTags());
     });
 
-    QObject::connect(m_database, &Database::signalPlaylistListLoaded, m_playlist, &Playlist::loadNewPlaylistList);
+    QObject::connect(m_database, &Database::signalPlaylistLoaded, m_playlist, &Playlist::loadPlaylist);
 
 }
 

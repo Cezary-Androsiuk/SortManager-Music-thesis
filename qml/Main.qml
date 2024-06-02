@@ -267,7 +267,10 @@ ApplicationWindow {
             currentIndex: 1
 
 
-
+            // onFocusChanged: {
+            //     if(focus)
+            //         rootContainer.focus = true
+            // }
 
             TabButton {
                 text: qsTr("Settings")
@@ -310,6 +313,10 @@ ApplicationWindow {
         }
 
         focus: true
+        // onFocusChanged: {
+        //     // keep focus at any cost
+        //     rootContainer.focus = true
+        // }
 
         Keys.onEscapePressed: root.close()
         Keys.onSpacePressed: console.log("")

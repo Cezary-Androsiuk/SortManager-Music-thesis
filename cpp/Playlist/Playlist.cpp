@@ -2,15 +2,58 @@
 
 Playlist::Playlist(QObject *parent)
     : QObject{parent},
-    m_playlistList(nullptr)
+    m_playlistModel(nullptr),
+    m_playlist(nullptr)
 {
-    QObject::connect(this, &Playlist::newPlaylistListLoaded, this, &Playlist::loadPlaylistModel);
+    /// after new playlist was loaded, shuffle it
+    QObject::connect(this, &Playlist::playlistLoaded, this, &Playlist::shufflePlaylist);
+
+    /// load playlist model after playlist was shuffled (but not after playlistLoad, because
+    /// playlistLoad triggers shufflePlaylist)
+    // QObject::connect(this, &Playlist::playlistLoaded, this, &Playlist::loadPlaylistModel);
+    QObject::connect(this, &Playlist::playlistShuffled, this, &Playlist::loadPlaylistModel);
 }
 
 void Playlist::loadPlaylistModel()
 {
+    DB << " - staring playlist load";
+    /// clear models memory because loadPlaylistModel is called only when
+    /// something changed
+    if(m_playlistModel != nullptr)
+        delete m_playlistModel;
+    m_playlistModel = nullptr;
 
+
+    m_playlistModel = new SongList(this);
+
+    for(const SongDetails *songDetails : m_playlist->c_ref_songs())
+    {
+        DB << " - song";
+        Song *song = new Song(m_playlistModel);
+        song->set_id(songDetails->get_id());
+
+        /// get title form songDetails
+        QString title = "no title set";
+        for(const Tag *tag : songDetails->get_tags()->c_ref_tags())
+        {
+            if(tag->get_name() == "Title")
+                title = tag->get_value();
+        }
+        song->set_title(title);
+        // value is not needed
+
+        m_playlistModel->songs().append(song);
+    }
+
+    DB << "playlist model loaded";
+    emit this->playlistModelLoaded();
 }
+
+SongList* Playlist::getPlaylistModel() const
+{
+    return m_playlistModel;
+}
+
 /*
 void Database::loadPlaylistModel()
 {
@@ -68,11 +111,88 @@ void Database::loadPlaylistModel()
     emit this->signalPlaylistModelLoaded();
 }
 //*/
-void Playlist::loadNewPlaylistList(SongDetailsList *list)
+void Playlist::loadPlaylist(SongDetailsList *list)
 {
-    if(m_playlistList != nullptr)
-        delete m_playlistList;
-    m_playlistList = list;
+    DB << "loading playlist list";
 
-    emit this->newPlaylistListLoaded();
+    if(m_playlist != nullptr)
+        delete m_playlist;
+    m_playlist = list;
+
+    DB << "playlist loaded";
+    emit this->playlistLoaded();
 }
+
+void Playlist::shufflePlaylist()
+{
+    /// code allows to shuffle (with control about order (by getUniqueRandomNumbers
+    /// method) of songs) playlist without realocating memory
+
+    int songsCount = m_playlist->c_ref_songs().size();
+    auto shuffleOrderList = Playlist::getUniqueRandomNumbers(songsCount);
+
+    /// temporary store songs to add them to original list again
+    QList<SongDetails *> tmpList;
+    tmpList.reserve(songsCount);
+    for(SongDetails *song : m_playlist->c_ref_songs())
+    {
+        tmpList.append(song);
+    }
+
+    /// clear original container and prepare it
+    m_playlist->songs().clear();
+    m_playlist->songs().reserve(songsCount);
+
+    /// add songs to original list, but with specyfic order
+    for(const int &index : shuffleOrderList)
+    {
+        m_playlist->songs().append(tmpList[index]);
+    }
+
+    DB << "playlist shuffled";
+    emit this->playlistShuffled();
+}
+
+std::vector<int> Playlist::getUniqueRandomNumbers(int count)
+{
+    // create variables
+    std::vector<int> source;
+    source.reserve(count);
+
+    std::vector<int> result;
+    result.reserve(count);
+
+    // prepare ordered source list [0, count)
+    for(int i=0; i<count; ++i)
+        source.push_back(i);
+
+    // take random number from source list and add to result (removing number from set)
+    for(int i=count; i>0; --i) // from count to 1 (inclusive)
+    {
+        int random = QRandomGenerator::global()->bounded(i); // range: [0, i)
+        result.push_back(source[random]);
+        source.erase(source.begin() + random); // remove taken item, range (i variable) will be decremented also
+    }
+
+    return result;
+}
+
+// SongList Playlist::shuffleList(const SongList &songs)
+// {
+//     int songsCount = songs.size();
+
+//     auto shuffleOrderList = Playlist::getUniqueRandomNumbers(songsCount);
+
+//     SongList songsNewOrder;
+//     int songListIndex = 0;
+
+//     // read random number from songs and append to the songNewOrder list
+//     for(const int &randomNumber : shuffleOrderList)
+//     {
+//         Song *song = songs[randomNumber];
+//         song->setListIndex(songListIndex++);
+//         songsNewOrder.append(song);
+//     }
+
+//     return songsNewOrder;
+// }

@@ -138,12 +138,8 @@ signals: // -------------------------------------------------- load models -----
 
     // playlist
     /// finished
-    void signalPlaylistModelLoaded();           /// emited when playlist model was loaded correctly                         // SongList* listofsongs
-    void signalEditPlaylistSongModelLoaded();   /// emited when edit playlist song model was loaded correctly
     void signalFiltersModelLoaded();            /// emited when filters model was loaded correctly to playlist
     /// error occur
-    void signalPlaylistModelLoadError(QString desc);            /// emited when any error occur while loading playlist model
-    void signalEditPlaylistSongModelLoadError(QString desc);    /// emited when any error occur while loading edit playlist song model
     void signalFiltersModelLoadError(QString desc);             /// emited when any error occur while loading filters model
 
 signals: // -------------------------------------------------- database actions -------------------------------------------------- //
@@ -164,20 +160,20 @@ signals: // -------------------------------------------------- database actions 
 
 signals: // -------------------------------------------------- playlist actions -------------------------------------------------- //
     /// finished
-    void signalPlaylistRefreshed(); /// emited by refreshPlaylist and triggers loadPlaylistList
-    void signalFiltersUpdated();    /// emited by updateFilters and triggers loadPlaylistList
+    void signalPlaylistRefreshed();                     /// emited by refreshPlaylist and triggers loadPlaylist
+    void signalFiltersUpdated();                        /// emited by updateFilters and triggers loadPlaylist
     /// error occur
-    void signalPlaylistRefreshError(QString desc);  /// emited by refreshPlaylist
-    void signalFiltersUpdateError(QString desc);    /// emited by updateFilters
-    void signalPlaylistListLoadError(QString desc); /// is oposite to signalPlaylistListLoaded, and emtited when loadPlaylistList failed
+    void signalPlaylistRefreshError(QString desc);      /// emited by refreshPlaylist
+    void signalFiltersUpdateError(QString desc);        /// emited by updateFilters
+    void signalPlaylistLoadError(QString desc);         /// is oposite to signalPlaylistLoaded, and emtited when loadPlaylist failed
 
 signals: // signals for Playlist
-    void signalPlaylistListLoaded(SongDetailsList *list);    /// emited by loadPlaylistList with list of Tags for Playlist class (list is limited by constraints that are readed from m_filters)
+    void signalPlaylistLoaded(SongDetailsList *list);   /// emited by loadPlaylist with list of Tags for Playlist class (list is limited by constraints that are readed from m_filters)
 
 signals: // loading state signals
-    void signalLoadingStarted(QString whatStarted);         /// emited at the begining of method that will show loading informations
-    void signalLoadingProgress(QVariantList infoList);      /// can be emited while executing method that want to show loading informations
-    void signalLoadingFinished();                           /// emited after any finish (good or bad finish) of method that show loading informations
+    void signalLoadingStarted(QString whatStarted);     /// emited at the begining of method that will show loading informations
+    void signalLoadingProgress(QVariantList infoList);  /// can be emited while executing method that want to show loading informations
+    void signalLoadingFinished();                       /// emited after any finish (good or bad finish) of method that show loading informations
 
 // ############################################################ SLOTS ############################################################
 public slots:
@@ -223,7 +219,7 @@ public slots: // database actions
 public slots: // playlist actions
     void refreshPlaylist();                     /// is triggered by QML when user press refresh button
     void updateFilters(QVariantList filters);   /// is triggered by QML when user save changes in filters page
-    void loadPlaylistList();                    /// is triggered by signalFiltersInitialized, signalPlaylistRefreshed and signalFiltersUpdated
+    void loadPlaylist();                    /// is triggered by signalFiltersInitialized, signalPlaylistRefreshed and signalFiltersUpdated
 
 private: // other methods to support
     void clearModelsMemory();           /// clears models from memory, cause something was changed and their need to be loaded again
@@ -250,7 +246,7 @@ private: // other methods to support
     void debugPrintModel_all_songs() const;
     void debugPrintModel_add_song() const;
     void debugPrintModel_edit_song() const;
-    static void debugPrintModel_playlistList(const SongDetailsList* const model); /// Just because You are unique doesn't mean You are usefull
+    static void debugPrintModel_Playlist(const SongDetailsList* const model); /// Just because You are unique doesn't mean You are usefull
     void debugPrintModel_all_tags() const;
     void debugPrintModel_add_tag() const;
     void debugPrintModel_edit_tag() const;

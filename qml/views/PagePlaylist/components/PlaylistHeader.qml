@@ -66,7 +66,7 @@ Item {
                 dltDescription: "Shuffle Songs"
                 dltImageIdle: Qt.resolvedUrl("qrc:/SortManager-Music/assets/icons/shuffle_36px.png")
                 dltImageHover: dltImageIdle
-                onUserClicked: {}
+                onUserClicked: backend.playlist.shufflePlaylist()
             }
         }
 

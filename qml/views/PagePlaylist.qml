@@ -8,46 +8,36 @@ import "qrc:/SortManager-Music/qml/popups"
 Page {
     anchors.fill: parent
 
-    // function loadPlaylistModel(){
-    //     // var filters = backend.database.playlist.filter;
-    //     backend.database.loadPlaylistModel();
-    // }
-
     Component.onCompleted: {
-        // loadPlaylistModel();
+        console.log("PlaylistPage.qml")
 
         playlistLoader.active = true;
     }
 
-    Connections{
-        target: backend.database
+    // Connections{
+    //     target: backend.playlist
 
-        // function onSignalPlaylistModelLoaded()
-        // {
-        //     playlistLoader.active = true;
-        // }
-        // function onSignalPlaylistModelLoadError(desc)
-        // {
-        //     pLoadPlaylistError.open();
-        //     pLoadPlaylistError.dltDesc = desc;
-        // }
-    }
+    //     function onPlaylistModelLoaded()
+    //     {
+    //         playlistLoader.active = true;
+    //     }
+    //     function onPlaylistModelLoadError(desc)
+    //     {
+    //         pLoadPlaylistError.open();
+    //         pLoadPlaylistError.dltDesc = desc;
+    //         playlistLoader.visible = false;
+    //     }
+    // }
 
-    Popup2{
-        id: pLoadPlaylistError
-        dltText: "Playlist model load error!"
-        // text description will be set in onSignalPlaylistModelLoadError() function
+    // Popup1{
+    //     id: pLoadPlaylistError
+    //     dltText: "Playlist model load error!"
+    //     // text description will be set in onSignalPlaylistModelLoadError() function
 
-        dltTextLB: "Back"
-        dltTextRB: "Retry"
+    //     dltTextMB: "OK"
 
-        onDltClickedLB: {
-            root.current_main_loader_page = path_page_player;
-        }
-        onDltClickedRB: {
-            loadPlaylistModel();
-        }
-    }
+    //     onDltClickedMB: {}
+    // }
 
     Loader{
         id: playlistLoader

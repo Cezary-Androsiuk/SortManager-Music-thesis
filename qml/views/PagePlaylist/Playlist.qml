@@ -17,8 +17,8 @@ Page {
     property int headerSeparatorSpace: 1
     property int delegateWidth: width
 
-    property var mdl: []
-    property int mdlLength: 0
+    property var mdl: backend.playlist.playlistModel.songs
+    property int mdlLength: backend.playlist.playlistModel.songsCount
 
     property double startListPosition: root.last_pos_playlist - headerHeight
     property bool saveListPosition: false
@@ -44,29 +44,14 @@ Page {
         //     mdl.push(_song);
         //     mdlLength += 1
         // }
-        console.log("looped over songs and pushed to array")
 
+        // playlist model will be constantly loaded
         listViewLoader.active = true
-        console.log("actived loader")
     }
 
 
     Connections{
         target: backend.database
-
-        // edit playlist song
-        function onSignalEditPlaylistSongModelLoaded()
-        {
-            saveListPosition = true;
-            // change page to EditPlaylistSong
-            playlistLoader.source = root.pppp_editplaylistsong
-        }
-        function onSignalEditPlaylistSongModelLoadError(desc)
-        {
-            pLoadEditPlaylistSongError.open()
-            pLoadEditPlaylistSongError.dltDesc = desc
-        }
-
         // filters
         function onSignalFiltersModelLoaded()
         {
@@ -160,11 +145,11 @@ Page {
 
 
                     Component.onCompleted: {
-                        console.log("completed listview")
+                        // console.log("completed listview")
                         contentY = startListPosition
                     }
                     Component.onDestruction: {
-                        console.log("destroing listview")
+                        // console.log("destroing listview")
                         // test if action wants to save position
                         if(saveListPosition)
                         {

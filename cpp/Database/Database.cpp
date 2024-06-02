@@ -21,11 +21,11 @@ Database::Database(QObject *parent)
     QObject::connect(this, &Database::signalInitializedWithTags, this, &Database::initializeFilters);
     ///
     ///
-    QObject::connect(this, &Database::signalFiltersInitailized, this, &Database::loadPlaylistList);
+    QObject::connect(this, &Database::signalFiltersInitailized, this, &Database::loadPlaylist);
     ///
-    QObject::connect(this, &Database::signalPlaylistRefreshed, this, &Database::loadPlaylistList);
+    QObject::connect(this, &Database::signalPlaylistRefreshed, this, &Database::loadPlaylist);
     ///
-    QObject::connect(this, &Database::signalFiltersUpdated, this, &Database::loadPlaylistList);
+    QObject::connect(this, &Database::signalFiltersUpdated, this, &Database::loadPlaylist);
 
     /// connecting finish signals with loadingFinished signal
     QObject::connect(this, &Database::signalExportedSongsFromDatabase,      this, &Database::signalLoadingFinished);
@@ -292,7 +292,7 @@ void Database::initializeFilters()
     this->debugPrint_filters();
 
     DB << "filters initialized correctly";
-    emit this->signalFiltersInitailized(); /// this will trigger loadPlaylistList
+    emit this->signalFiltersInitailized(); /// this will trigger loadPlaylist
 }
 
 void Database::exportSongsFromDatabase(const QUrl &output_qurl)
@@ -2408,7 +2408,7 @@ void Database::refreshPlaylist()
     // emit this->signalPlaylistRefreshError("");
     /// error will not be emited, cause there is no place for that ...
 
-    emit this->signalPlaylistRefreshed(); /// this will trigger loadPlaylistList
+    emit this->signalPlaylistRefreshed(); /// this will trigger loadPlaylist
 }
 
 void Database::updateFilters(QVariantList filters)
@@ -2445,12 +2445,12 @@ void Database::updateFilters(QVariantList filters)
 
     this->clearFiltersModelsMemory();
     this->debugPrint_filters();
-    emit this->signalFiltersUpdated(); /// this will trigger loadPlaylistList
+    emit this->signalFiltersUpdated(); /// this will trigger loadPlaylist
 }
 
-void Database::loadPlaylistList()
+void Database::loadPlaylist()
 {
-    IS_DATABASE_OPEN(signalPlaylistListLoadError)
+    IS_DATABASE_OPEN(signalPlaylistLoadError)
 
     QList<int> songsIDs = this->prepListOfSongsForPlaylist();
 
@@ -2517,9 +2517,9 @@ void Database::loadPlaylistList()
         songDetailsList->songs().append(songDetails);
     }
 
-    Database::debugPrintModel_playlistList(songDetailsList);
-    /// we are trust each other and playlist class will delete old playlistList
-    emit this->signalPlaylistListLoaded(songDetailsList); /// this will trigger Playlist::loadPlaylist(TagList)
+    Database::debugPrintModel_Playlist(songDetailsList);
+    /// we are trust each other and playlist class will delete old Playlist
+    emit this->signalPlaylistLoaded(songDetailsList); /// this will trigger Playlist::loadPlaylist(TagList)
 }
 
 
@@ -2875,7 +2875,7 @@ void Database::debugPrintModel_edit_song() const
 #endif
 }
 
-void Database::debugPrintModel_playlistList(const SongDetailsList * const model)
+void Database::debugPrintModel_Playlist(const SongDetailsList * const model)
 {
 #if PRINT_MODELS_LISTS
     DB << "PLAYLIST LIST:" << Database::_debugPrintModel_SongDetailsList(model).toStdString().c_str();
