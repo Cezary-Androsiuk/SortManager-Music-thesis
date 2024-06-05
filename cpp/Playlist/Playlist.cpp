@@ -7,7 +7,7 @@ Playlist::Playlist(QObject *parent)
     m_songState({-1, -1, -1})
 {
     /// after new playlist was loaded, shuffle it
-    QObject::connect(this, &Playlist::playlistLoaded, this, &Playlist::shufflePlaylist);
+    // QObject::connect(this, &Playlist::playlistLoaded, this, &Playlist::shufflePlaylist);
 
     // /// load playlist model after playlist was shuffled (but not after playlistLoad, because
     // /// playlistLoad triggers shufflePlaylist)
@@ -67,36 +67,15 @@ void Playlist::loadPlaylist(SongDetailsList *list)
     /// reset values (player will be reseted simultaneously)
     m_songState = {-1, -1, -1};
 
+    this->shufflePlaylistMethod();
+
     DB << "playlist loaded";
     emit this->playlistLoaded();
 }
 
 void Playlist::shufflePlaylist()
 {
-    /// code allows to shuffle (with control about order (by getUniqueRandomNumbers
-    /// method) of songs) playlist without realocating memory
-
-    int songsCount = m_playlist->c_ref_songs().size();
-    auto shuffleOrderList = Playlist::getUniqueRandomNumbers(songsCount);
-
-    /// temporary store songs to add them to original list again
-    QList<SongDetails *> tmpList;
-    tmpList.reserve(songsCount);
-    for(SongDetails *song : m_playlist->c_ref_songs())
-    {
-        tmpList.append(song);
-    }
-
-    /// clear original container and prepare it
-    m_playlist->songs().clear();
-    m_playlist->songs().reserve(songsCount);
-
-    /// add songs to original list, but with specyfic order
-    for(const int &index : shuffleOrderList)
-    {
-        m_playlist->songs().append(tmpList[index]);
-    }
-
+    this->shufflePlaylist();
     DB << "playlist shuffled";
     emit this->playlistShuffled();
 }
@@ -194,6 +173,33 @@ std::vector<int> Playlist::getUniqueRandomNumbers(int count)
     }
 
     return result;
+}
+
+void Playlist::shufflePlaylistMethod()
+{
+    /// code allows to shuffle (with control about order (by getUniqueRandomNumbers
+    /// method) of songs) playlist without realocating memory
+
+    int songsCount = m_playlist->c_ref_songs().size();
+    auto shuffleOrderList = Playlist::getUniqueRandomNumbers(songsCount);
+
+    /// temporary store songs to add them to original list again
+    QList<SongDetails *> tmpList;
+    tmpList.reserve(songsCount);
+    for(SongDetails *song : m_playlist->c_ref_songs())
+    {
+        tmpList.append(song);
+    }
+
+    /// clear original container and prepare it
+    m_playlist->songs().clear();
+    m_playlist->songs().reserve(songsCount);
+
+    /// add songs to original list, but with specyfic order
+    for(const int &index : shuffleOrderList)
+    {
+        m_playlist->songs().append(tmpList[index]);
+    }
 }
 
 qsizetype Playlist::getPosKnowingID(const qsizetype &id) const

@@ -42,11 +42,12 @@ signals: // methods signals
     void playlistShuffled();        /// is emited when shufflePlaylist finished
     void songStateChanged();        /// is emited by updateSongState when state changed
 
-    void tellPlayerSongToPlay(const SongDetails *song);    ///
+    void currentSongChanged(const SongDetails *song);    ///
 
 
 public: // support methods
     static std::vector<int> getUniqueRandomNumbers(int count);
+    void shufflePlaylistMethod();
 
     qsizetype getPosKnowingID(const qsizetype &id) const;
     qsizetype getIDKnowingPos(const qsizetype &pos) const;

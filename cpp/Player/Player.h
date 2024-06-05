@@ -19,19 +19,28 @@ public:
 public slots:
     void play();
     void pause();
-    void play2();
-    void pause2();
 
-    void changeSongToNext(const SongDetails *song);
-
-signals:
-    void songEnded();
+    void changeSong(const SongDetails *song); /// emited by Playlist, only when Player ask to (by emiting songEnded)
+    void resetPlayer();
 
 private:
+    void updatePlayer();        /// truggered by songChanged
+    void startPlayer();         /// called by updatePlayer
+
+signals:
+    void songEnded();           /// emited when player finish playing the song
+    void songChanged();         /// emited by changeSongToNext
+
+private: // support methods
+    QString getSongTagValueByID(qsizetype id) const;
+
+private:
+    bool m_playerStarted;
     QMediaPlayer *m_player;
-    QMediaPlayer *m_player_2;
-    QAudioOutput *m_audio_output;
-    QAudioOutput *m_audio_output_2;
+    QAudioOutput *m_audioOutput;
+    SongDetails *m_song;
+
+
 };
 
 #endif // PLAYER_H

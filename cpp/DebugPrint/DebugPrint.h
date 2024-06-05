@@ -8,17 +8,19 @@
 #define EC(x) if(error_code != nullptr) *error_code = (x)
 #endif
 
+#define FUNCTION __PRETTY_FUNCTION__
+// #define FUNCTION __FUNCTION__
 
 #ifndef DB
 // easier to trace execution path
-#define DB qDebug() << qSetFieldWidth(30) << __FUNCTION__/*__PRETTY_FUNCTION__*/ << qSetFieldWidth(0)
+#define DB qDebug() << qSetFieldWidth(30) << FUNCTION << qSetFieldWidth(0)
 #endif
 
 
 #ifndef WR
 // easier to trace WARNING path
 #define WR qWarning() << qSetPadChar('#') << qSetFieldWidth(30) \
-<< QString(" ") + __FUNCTION__ + " " << qSetPadChar(' ') << qSetFieldWidth(0)
+<< QString(" ") + FUNCTION + " " << qSetPadChar(' ') << qSetFieldWidth(0)
 #endif
 
 
