@@ -217,52 +217,68 @@ void Database::createExampleData()
     QSqlQuery query(m_database);
     QList<QString> stl;
 
-#define TMP_SHORT_1 stl.append("INSERT INTO songs_tags (song_id, tag_id, value) VALUES "
-#define TMP_SHORT_2 stl.append(QString(
+#define TMP_SHORT_1(X) stl.append("INSERT INTO songs_tags (song_id, tag_id, value) VALUES (" + songID + X)
+#define TMP_SHORT_2(X) stl.append(QString(X))
 
-    // add song 1
-    stl.append("INSERT INTO songs DEFAULT VALUES;");
-    TMP_SHORT_1 "(1, 1, 1);");
-    TMP_SHORT_1 "(1, 2, 'example song title');");
-    TMP_SHORT_1 "(1, 3, 'song author');");
-    TMP_SHORT_1 "(1, 4, 'long description');");
-    TMP_SHORT_1 "(1, 5, 10);");
-    TMP_SHORT_1 "(1, 6, 999);");
-    TMP_SHORT_1 "(1, 7, 1010);");
-    TMP_SHORT_1 "(1, 8, 'tekst piosenki');");
-    TMP_SHORT_1 "(1, 9, 'path1//');");
-    TMP_SHORT_1 "(1, 10, 'path1//');");
-    TMP_SHORT_1 "(1, 11, 1711679000);");
-    TMP_SHORT_1 "(1, 12, 1711679000);");
 
-    // add song 2
-    stl.append("INSERT INTO songs DEFAULT VALUES;");
-    TMP_SHORT_1 "(2, 1, 2);");
-    TMP_SHORT_1 "(2, 2, 'new song');");
-    TMP_SHORT_1 "(2, 3, 'new author');");
-    TMP_SHORT_1 "(2, 4, 'longer description');");
-    TMP_SHORT_1 "(2, 5, 10);");
-    TMP_SHORT_1 "(2, 6, 999);");
-    TMP_SHORT_1 "(2, 7, 1010);");
-    TMP_SHORT_1 "(2, 8, 'tekst piosenki');");
-    TMP_SHORT_1 "(2, 9, 'path2//');");
-    TMP_SHORT_1 "(2, 10, 'path2//');");
-    TMP_SHORT_1 "(2, 11, 1711679000);");
-    TMP_SHORT_1 "(2, 12, 1711679000);");
+    // add number tag
+    TMP_SHORT_2("INSERT INTO tags (name, description, add_date, update_date, type, is_immutable, is_editable, is_required) "
+                "VALUES ('Is a number song', 'tells if a song is a number around 1.5 seconds (google translate voice) and is "
+                "used for test purposes', 1717550657, 1717550657, 2, 0, 1, 0);");
+    // add letter tag
+    TMP_SHORT_2("INSERT INTO tags (name, description, add_date, update_date, type, is_immutable, is_editable, is_required) "
+                "VALUES ('Is a letter song', 'tells if a song is a letter around 16 seconds (google translate voice) and is "
+                "used for test purposes', 1717550657, 1717550657, 2, 0, 1, 0);");
 
-    // add tag 1
-    TMP_SHORT_2 "INSERT INTO tags (name, description, add_date, update_date, type, is_immutable, is_editable, is_required) "
-                "VALUES ('own tag', 'own tag desc', 1711679891, 1711679891, 2, 0, 1, 0);"));
-    TMP_SHORT_2 "INSERT INTO songs_tags (song_id, tag_id) SELECT songs.id AS song_id, 13 AS tag_id FROM songs;"));
-    TMP_SHORT_2 "UPDATE songs_tags SET value = '0' WHERE song_id = 1 AND tag_id = 13;"));
-    TMP_SHORT_2 "UPDATE songs_tags SET value = '1' WHERE song_id = 2 AND tag_id = 13;"));
+    // add numbers songs
+    for(int i=0; i<10; i++)
+    {
+        // add song i
+        QString songID = QString::number(i+1);
+        QString songName = QString::number(i+100);
+        stl.append("INSERT INTO songs DEFAULT VALUES;");
+        TMP_SHORT_1(", 1, " + songID + ");");
+        TMP_SHORT_1(", 2, 'example " + songName + " song');");
+        TMP_SHORT_1(", 3, 'Google Translator');");
+        TMP_SHORT_1(", 4, 'description of " + songName + " ');");
+        TMP_SHORT_1(", 5, 0);");
+        TMP_SHORT_1(", 6, 0);");
+        TMP_SHORT_1(", 7, 1944);");
+        TMP_SHORT_1(", 8, '');");
+        TMP_SHORT_1(", 9, 'file:///" PROJ_PATH "/assets/example_songs/numbers-1.5s/" + songName + ".mp3');");
+        TMP_SHORT_1(", 10, '');");
+        TMP_SHORT_1(", 11, 1717550658);");
+        TMP_SHORT_1(", 12, 1717550658);");
+        TMP_SHORT_1(", 13, 1);"); // Is a number song
+        TMP_SHORT_1(", 14, -1);"); // Is a letter song
+    }
 
-    // add tag 2
-    TMP_SHORT_2 "INSERT INTO tags (name, description, add_date, update_date, type, is_immutable, is_editable, is_required) "
-                "VALUES ('own more flexible tag', 'flexible desc', 1711679891, 1711679891, 1, 0, 1, 0);"));
-    TMP_SHORT_2 "INSERT INTO songs_tags (song_id, tag_id) SELECT songs.id AS song_id, 14 AS tag_id FROM songs;"));
-    TMP_SHORT_2 "UPDATE songs_tags SET value = '%1' WHERE song_id = 1 AND tag_id = 14;").arg(""));
-    TMP_SHORT_2 "UPDATE songs_tags SET value = '%1' WHERE song_id = 2 AND tag_id = 14;").arg("some text that user input while adding tag"));
+    // add letters songs
+    for(int i=0; i<10; i++)
+    {
+        // add song x
+        QString songID = QString::number(i+10+1);
+        QString songName;
+        if(i==0) songName = "a"; if(i==1) songName = "b"; if(i==2) songName = "c";
+        if(i==3) songName = "e"; if(i==4) songName = "f"; if(i==5) songName = "g";
+        if(i==6) songName = "h"; if(i==7) songName = "i"; if(i==8) songName = "w";
+        if(i==9) songName = "z";
+        stl.append("INSERT INTO songs DEFAULT VALUES;");
+        TMP_SHORT_1(", 1, " + songID + ");");
+        TMP_SHORT_1(", 2, 'example " + songName + " song');");
+        TMP_SHORT_1(", 3, 'Google Translator');");
+        TMP_SHORT_1(", 4, 'description of " + songName + " ');");
+        TMP_SHORT_1(", 5, 0);");
+        TMP_SHORT_1(", 6, 0);");
+        TMP_SHORT_1(", 7, 16080);");
+        TMP_SHORT_1(", 8, '');");
+        TMP_SHORT_1(", 9, 'file:///" PROJ_PATH "/assets/example_songs/letters-16s/" + songName + ".mp3');");
+        TMP_SHORT_1(", 10, '');");
+        TMP_SHORT_1(", 11, 1717550659);");
+        TMP_SHORT_1(", 12, 1717550659);");
+        TMP_SHORT_1(", 13, -1);"); // Is a number song
+        TMP_SHORT_1(", 14, 1);"); // Is a letter song
+    }
 
     for(const auto &st : stl)
     {

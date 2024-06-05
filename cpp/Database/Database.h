@@ -33,6 +33,12 @@
 #include "cpp/Tag/TagList.h"
 #include "cpp/Filter/Filter.h"
 
+#include "cpp/OwnData.h"
+
+#ifndef PROJ_PATH
+#define PROJ_PATH ""
+#endif
+
 #define DATABASE_PATH QString("./SortManager-Music.db")     /// database directory
 #define DB_TAG_NAME_REG_EX "^[a-z][_a-z0-9]*$"              /// regular expression describes what is naming convension of tag names in database
 #define QUERY_LOG_PATH "./query.log"                        /// query log directory - stores all executed queries
