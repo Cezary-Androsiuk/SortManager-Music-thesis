@@ -85,66 +85,70 @@ Page {
 
     Component{
         id: listViewComponent
-        ListView{
-            id: filtersListView
-            model: mdl
+        ScrollView{
+            id: scrollView
             anchors.fill: parent
-            clip: true
+            ListView{
+                id: filtersListView
+                model: mdl
+                anchors.fill: parent
+                clip: true
 
-            boundsBehavior: Flickable.StopAtBounds
+                boundsBehavior: Flickable.StopAtBounds
 
-            delegate: Loader{
-                width: delegateWidth
-                height: delegateHeight
+                delegate: Loader{
+                    width: delegateWidth
+                    height: delegateHeight
 
-                // decide what style of row listView should choose
-                sourceComponent: {
-                    if(false);
-                    else if(modelData.type === 0) compareIntegerFieldComponent
-                    else if(modelData.type === 1) compareStringFieldComponent
-                    else if(modelData.type === 2) compareStateFieldComponent
-                }
+                    // decide what style of row listView should choose
+                    sourceComponent: {
+                        if(false);
+                        else if(modelData.type === 0) compareIntegerFieldComponent
+                        else if(modelData.type === 1) compareStringFieldComponent
+                        else if(modelData.type === 2) compareStateFieldComponent
+                    }
 
 
-                Component{
-                    id: compareIntegerFieldComponent
-                    CompareIntegerField{
-                        dltText: modelData.name
-                        dltComboboxValue: modelData.comparison_way
-                        onDltComboboxValueChanged: {
-                            pageFilters.mdl[index].comparison_way = dltComboboxValue
-                        }
-                        dltValue: modelData.comparison_value
-                        onDltValueChanged: {
-                            pageFilters.mdl[index].comparison_value = dltValue
+                    Component{
+                        id: compareIntegerFieldComponent
+                        CompareIntegerField{
+                            dltText: modelData.name
+                            dltComboboxValue: modelData.comparison_way
+                            onDltComboboxValueChanged: {
+                                pageFilters.mdl[index].comparison_way = dltComboboxValue
+                            }
+                            dltValue: modelData.comparison_value
+                            onDltValueChanged: {
+                                pageFilters.mdl[index].comparison_value = dltValue
+                            }
                         }
                     }
-                }
-                Component{
-                    id: compareStringFieldComponent
-                    CompareStringField{
-                        dltText: modelData.name
-                        dltComboboxValue: modelData.comparison_way
-                        onDltComboboxValueChanged: {
-                            pageFilters.mdl[index].comparison_way = dltComboboxValue
-                        }
-                        dltValue: modelData.comparison_value
-                        onDltValueChanged: {
-                            pageFilters.mdl[index].comparison_value = dltValue
-                        }
-                    }
-                }
-                Component{
-                    id: compareStateFieldComponent
-                    CompareStateField{
-                        dltText: modelData.name
-                        dltValue: modelData.comparison_value
-                        onDltValueChanged: {
-                            pageFilters.mdl[index].comparison_value = dltValue
+                    Component{
+                        id: compareStringFieldComponent
+                        CompareStringField{
+                            dltText: modelData.name
+                            dltComboboxValue: modelData.comparison_way
+                            onDltComboboxValueChanged: {
+                                pageFilters.mdl[index].comparison_way = dltComboboxValue
+                            }
+                            dltValue: modelData.comparison_value
+                            onDltValueChanged: {
+                                pageFilters.mdl[index].comparison_value = dltValue
+                            }
                         }
                     }
-                }
+                    Component{
+                        id: compareStateFieldComponent
+                        CompareStateField{
+                            dltText: modelData.name
+                            dltValue: modelData.comparison_value
+                            onDltValueChanged: {
+                                pageFilters.mdl[index].comparison_value = dltValue
+                            }
+                        }
+                    }
 
+                }
             }
         }
     }
