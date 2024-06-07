@@ -45,7 +45,7 @@ signals: // methods signals
     void currentSongChanged(const SongDetails *song);    ///
 
 
-public: // support methods
+private: // support methods
     static std::vector<int> getUniqueRandomNumbers(int count);
     void shufflePlaylistMethod();
 

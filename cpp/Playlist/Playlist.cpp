@@ -7,7 +7,7 @@ Playlist::Playlist(QObject *parent)
     m_songState({-1, -1, -1})
 {
     /// after new playlist was loaded, shuffle it
-    // QObject::connect(this, &Playlist::playlistLoaded, this, &Playlist::shufflePlaylist);
+    QObject::connect(this, &Playlist::playlistLoaded, this, &Playlist::shufflePlaylist);
 
     // /// load playlist model after playlist was shuffled (but not after playlistLoad, because
     // /// playlistLoad triggers shufflePlaylist)
@@ -67,7 +67,7 @@ void Playlist::loadPlaylist(SongDetailsList *list)
     /// reset values (player will be reseted simultaneously)
     m_songState = {-1, -1, -1};
 
-    this->shufflePlaylistMethod();
+    // this->shufflePlaylistMethod();
 
     DB << "playlist loaded";
     emit this->playlistLoaded();
@@ -75,7 +75,7 @@ void Playlist::loadPlaylist(SongDetailsList *list)
 
 void Playlist::shufflePlaylist()
 {
-    this->shufflePlaylist();
+    this->shufflePlaylistMethod();
     DB << "playlist shuffled";
     emit this->playlistShuffled();
 }
@@ -118,9 +118,9 @@ void Playlist::updateSongState()
     }
     else
     {
-        /// if all of the song states are not -1, that means are values was
+        /// if all of the song states are not -1, that means values was
         ///   set ealier (I know, I am smart af XD). If it is not first call of method,
-        ///   we can assume that player press shuffle (reload set values to -1)
+        ///   we can assume that player press shuffle (reloading set values to -1)
         /// shuffle pressed action:
 
         /// cpos need to be set again (this time using ID of song)
@@ -200,6 +200,7 @@ void Playlist::shufflePlaylistMethod()
     {
         m_playlist->songs().append(tmpList[index]);
     }
+    DB << "playlist shuffled by method";
 }
 
 qsizetype Playlist::getPosKnowingID(const qsizetype &id) const

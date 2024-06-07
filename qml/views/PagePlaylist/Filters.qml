@@ -58,23 +58,6 @@ Page {
         listViewLoader.active = true
     }
 
-    Connections{
-        target: backend.database
-    }
-
-    // Popup2{
-    //     id: pConfirmLeave
-    //     dltText: "Are you sure to exit Filters? Any changes will be discarded."
-    //     // text description will be set in onSignalFilterModelLoadError() function
-
-    //     dltTextLB: "Cancel"
-    //     dltTextRB: "Leave"
-
-    //     onDltClickedRB: {
-    //         closeFiltersPage()
-    //     }
-    // }
-
     Popup2{
         id: pConfirmSave
         dltText: "Are you sure to save Filters? Player will be stopped and reseted!"
@@ -156,6 +139,9 @@ Page {
                     CompareStateField{
                         dltText: modelData.name
                         dltValue: modelData.comparison_value
+                        onDltValueChanged: {
+                            pageFilters.mdl[index].comparison_value = dltValue
+                        }
                     }
                 }
 

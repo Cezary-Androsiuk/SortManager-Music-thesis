@@ -3,7 +3,7 @@ import QtQuick.Controls
 import QtQuick.Controls.Material
 
 import "qrc:/SortManager-Music/qml/delegates/common" // LeftText
-import "qrc:/SortManager-Music/qml/delegates/Playlist/Filters/common" // ComparatorComponent
+import "qrc:/SortManager-Music/qml/components" // TriSwitch
 
 Item{
     id: compareStateField
@@ -39,5 +39,19 @@ Item{
         }
         width: parent.width * 0.3
 
+        TriSwitch{
+            anchors{
+                verticalCenter: parent.verticalCenter
+                right: parent.right
+                rightMargin: 60
+            }
+
+            state: + dltValue
+
+            onStateChanged: {
+                if(dltValue !== "" + state)
+                    dltValue = "" + state
+            }
+        }
     }
 }

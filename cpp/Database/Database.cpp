@@ -280,6 +280,9 @@ void Database::createExampleData()
         TMP_SHORT_1(", 14, 1);"); // Is a letter song
     }
 
+    // DB << stl;
+
+    int addedCounter = 0;
     for(const auto &st : stl)
     {
         this->queryToFile(st);
@@ -289,6 +292,7 @@ void Database::createExampleData()
             WR << "error while executing statement: " << query.lastError();
             exit(1);
         }
+        // DB << "executed" << ++addedCounter << "query";
 
         this->queryToFile(st);
     }
@@ -2456,6 +2460,8 @@ void Database::updateFilters(QVariantList filters)
         twc->set_comparison_way(map["comparison_way"].toInt());
         twc->set_comparison_value(map["comparison_value"].toString());
 
+        // DB << twc->get_id() << "|" << twc->get_name() <<"|"<< twc->get_comparison_value();
+
         m_filters->tags().append(twc);
     }
 
@@ -3161,6 +3167,7 @@ QList<int> Database::prepListOfSongsForPlaylist() const
         while(query.next()){
             listOfIDs.append(query.record().value(0).toInt());
         }
+        // DB << listOfIDs;
         listOfListsOfIDs.append(listOfIDs);
     }
 
@@ -3227,22 +3234,22 @@ QString Database::prepIntegerConstraint(const TagWithComparator *twc)
     case TagWithComparator::IntegerCompare::DO_NOT_COMPARE:
         return QString();
     case TagWithComparator::IntegerCompare::IS_EQUAL_TO:
-        return constraint + QString("value = %1").arg(comparsionValue);
+        return constraint + QString("CAST(value AS INTEGER) = %1").arg(comparsionValue);
         break;
     case TagWithComparator::IntegerCompare::IS_DIFFERENT_THAN:
-        return constraint + QString("value != %1").arg(comparsionValue);
+        return constraint + QString("CAST(value AS INTEGER) != %1").arg(comparsionValue);
         break;
     case TagWithComparator::IntegerCompare::IS_LESS_OR_EQUAL_TO:
-        return constraint + QString("value <= %1").arg(comparsionValue);
+        return constraint + QString("CAST(value AS INTEGER) <= %1").arg(comparsionValue);
         break;
     case TagWithComparator::IntegerCompare::IS_LESS_THAN:
-        return constraint + QString("value < %1").arg(comparsionValue);
+        return constraint + QString("CAST(value AS INTEGER) < %1").arg(comparsionValue);
         break;
     case TagWithComparator::IntegerCompare::IS_GREATER_OR_EQUAL_TO:
-        return constraint + QString("value >= %1").arg(comparsionValue);
+        return constraint + QString("CAST(value AS INTEGER) >= %1").arg(comparsionValue);
         break;
     case TagWithComparator::IntegerCompare::IS_GREATER_THAN:
-        return constraint + QString("value > %1").arg(comparsionValue);
+        return constraint + QString("CAST(value AS INTEGER) > %1").arg(comparsionValue);
         break;
     default:
         WR << "unknown comparsion way of the tag:" << comparsionWay
@@ -3289,20 +3296,20 @@ QString Database::prepTextConstraint(const TagWithComparator *twc)
 
 QString Database::prepBoolConstraint(const TagWithComparator *twc)
 {
-    int comparsionWay = twc->get_comparison_way();
-    switch(comparsionWay + 1) /// +1 is cause in triswich do not compare is related wit -1 and compare is 1
+    int comparsionValue = twc->get_comparison_value().toInt();
+    switch(comparsionValue + 1) /// +1 is cause in triswich do not compare is related wit -1 and compare is 1
     {
     case TagWithComparator::BoolCompare::NOT_BELONG_TO_TAG:
         return QString("tag_id = %1 AND ").arg(twc->get_id()) +
-               QString("value = %1").arg(/*twc->get_comparison_value()*/-1);
+               QString("CAST(value AS INTEGER) = %1").arg(/*twc->get_comparison_value()*/-1);
     case TagWithComparator::BoolCompare::BELONG_TO_TAG:
         return QString("tag_id = %1 AND ").arg(twc->get_id()) +
-               QString("value = %1").arg(/*twc->get_comparison_value()*/1);
+               QString("CAST(value AS INTEGER) = %1").arg(/*twc->get_comparison_value()*/1);
 
     case TagWithComparator::BoolCompare::DO_NOT_COMPARE:
         return QString();
     default:
-        WR << "unknown comparsion way of the tag:" << comparsionWay
+        WR << "unknown comparsion value of the tag:" << comparsionValue
            << "skipping adding this constraint with " << twc->get_comparison_value()
            << "value";
         return QString();
