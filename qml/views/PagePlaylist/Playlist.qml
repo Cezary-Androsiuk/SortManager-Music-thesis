@@ -190,12 +190,10 @@ Page {
                         Component{
                             id: songDelegate
                             SongField{
-                                dltText: modelData.title
+                                dltText: modelData.title + " " + modelData.id
                                 onDltClickedElement: {
                                     just_used_id = + modelData.id;
                                     just_used_title = modelData.title;
-
-                                    backend.database.loadEditPlaylistSongModel(+modelData.id)
                                 }
                                 onDltClickedPlay: {
                                     console.log("play: " + modelData.title)
@@ -213,12 +211,10 @@ Page {
                                 }
 
                                 SongField{
-                                    dltText: modelData.title
+                                    dltText: modelData.title + " " + modelData.id
                                     onDltClickedElement: {
                                         just_used_id = + modelData.id;
                                         just_used_title = modelData.title;
-
-                                        backend.database.loadEditPlaylistSongModel(+modelData.id)
                                     }
                                     onDltClickedPlay: {
                                         console.log("play: " + modelData.title)
@@ -238,12 +234,10 @@ Page {
                                 }
 
                                 SongField{
-                                    dltText: modelData.title
+                                    dltText: modelData.title + " " + modelData.id
                                     onDltClickedElement: {
                                         just_used_id = + modelData.id;
                                         just_used_title = modelData.title;
-
-                                        backend.database.loadEditPlaylistSongModel(+modelData.id)
                                     }
                                     onDltClickedPlay: {
                                         console.log("play: " + modelData.title)

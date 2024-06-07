@@ -9,14 +9,13 @@ Playlist::Playlist(QObject *parent)
     /// after new playlist was loaded, shuffle it
     QObject::connect(this, &Playlist::playlistLoaded, this, &Playlist::shufflePlaylist);
 
-    // /// load playlist model after playlist was shuffled (but not after playlistLoad, because
-    // /// playlistLoad triggers shufflePlaylist)
-    // // QObject::connect(this, &Playlist::playlistLoaded, this, &Playlist::loadPlaylistModel);
-    // QObject::connect(this, &Playlist::playlistShuffled, this, &Playlist::loadPlaylistModel);
-
     /// after any playlist change update song state
     QObject::connect(this, &Playlist::playlistShuffled, this, &Playlist::updateSongState);
+    /// after all data that can be shown are updated, load playlist model
     QObject::connect(this, &Playlist::songStateChanged, this, &Playlist::loadPlaylistModel);
+
+    /// after songState was changed trigger checking if current song state changed
+    QObject::connect(this, &Playlist::songStateChanged, this, &Playlist::loadCurrentSongForPlayer);
 }
 
 void Playlist::loadPlaylistModel()
@@ -57,6 +56,16 @@ SongList* Playlist::getPlaylistModel() const
     return m_playlistModel;
 }
 
+qsizetype Playlist::getCurrentPos() const
+{
+    return m_songState.m_currentPos;
+}
+
+qsizetype Playlist::getNextPos() const
+{
+    return m_songState.m_nextPos;
+}
+
 void Playlist::loadPlaylist(SongDetailsList *list)
 {
 
@@ -66,8 +75,6 @@ void Playlist::loadPlaylist(SongDetailsList *list)
 
     /// reset values (player will be reseted simultaneously)
     m_songState = {-1, -1, -1};
-
-    // this->shufflePlaylistMethod();
 
     DB << "playlist loaded";
     emit this->playlistLoaded();
@@ -95,9 +102,9 @@ void Playlist::updateSongState()
     qsizetype &cid = m_songState.m_currentID;     // current id
     qsizetype &npos = m_songState.m_nextPos;      // next position
 
-    DB << " - start ->"
-       << (QString("{cpos: %1, cid: %2, npos: %3}")
-               .arg(cpos).arg(cid).arg(npos)).toStdString().c_str();
+    // DB << " - start ->"
+    //    << (QString("{cpos: %1, cid: %2, npos: %3}")
+    //            .arg(cpos).arg(cid).arg(npos)).toStdString().c_str();
 
     if(cpos == -1 || cid == -1 || npos == -1)
     {
@@ -137,18 +144,36 @@ void Playlist::updateSongState()
             npos = 0;
     }
 
-    DB << " - end ->"
-       << (QString("{cpos: %1, cid: %2, npos: %3}")
-               .arg(cpos).arg(cid).arg(npos)).toStdString().c_str();
+    // DB << " - end ->"
+    //    << (QString("{cpos: %1, cid: %2, npos: %3}")
+    //            .arg(cpos).arg(cid).arg(npos)).toStdString().c_str();
 
     DB << "song state changed";
     emit this->songStateChanged();
 }
 
-void Playlist::playerSongEnded()
+void Playlist::loadCurrentSongForPlayer()
 {
-    // qsizetype lastSongIndex = m_playlist->c_ref_songs().size() - 1;
-    // if()
+    if(m_songState.m_currentPos == -1)
+    {
+        DB << "loding song for Player skipped due to current pos -1";
+        return;
+    }
+    /// get song from playlist
+    const SongDetails *song = this->getCurrentSongFromPlaylist();
+    DB << "current song for player loaded, song id:" << song->get_id();
+    emit this->currentSongChanged(song);
+}
+
+void Playlist::loadNextSongForPlayer()
+{
+    /// change current song state to next
+    this->movePlaybackOrder();
+
+    /// get song from playlist
+    const SongDetails *song = this->getCurrentSongFromPlaylist();
+    DB << "next song for player loaded, song id:" << song->get_id();
+    emit this->currentSongChanged(song);
 }
 
 std::vector<int> Playlist::getUniqueRandomNumbers(int count)
@@ -201,6 +226,13 @@ void Playlist::shufflePlaylistMethod()
         m_playlist->songs().append(tmpList[index]);
     }
     DB << "playlist shuffled by method";
+}
+
+void Playlist::movePlaybackOrder()
+{
+    m_songState.m_currentPos = m_songState.m_nextPos;
+    m_songState.m_currentID = this->getIDKnowingPos(m_songState.m_currentPos);
+    m_songState.m_nextPos = this->getComputedNextSongPos(); /// currentPos was already set, and can be used
 }
 
 qsizetype Playlist::getPosKnowingID(const qsizetype &id) const
@@ -258,32 +290,7 @@ qsizetype Playlist::getComputedNextSongPos() const
         return cpos+1;
 }
 
-qsizetype Playlist::getCurrentPos() const
+const SongDetails *Playlist::getCurrentSongFromPlaylist() const
 {
-    return m_songState.m_currentPos;
-}
-
-qsizetype Playlist::getCurrentID() const
-{
-    return m_songState.m_currentID;
-}
-
-qsizetype Playlist::getNextPos() const
-{
-    return m_songState.m_nextPos;
-}
-
-void Playlist::setCurrentPos(const qsizetype &pos)
-{
-    m_songState.m_currentPos = pos;
-}
-
-void Playlist::setCurrentID(const qsizetype &id)
-{
-    m_songState.m_currentID = id;
-}
-
-void Playlist::setNextPos(const qsizetype &pos)
-{
-    m_songState.m_nextPos = pos;
+    return this->m_playlist->c_ref_songs().at(m_songState.m_currentPos);
 }

@@ -147,6 +147,7 @@ Page {
             MouseArea{
                 anchors.fill: parent
                 onClicked: {
+                    backend.player.nextSong()
                     console.log( "next song" )
                 }
             }

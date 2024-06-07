@@ -19,6 +19,7 @@ public:
 public slots:
     void play();
     void pause();
+    void nextSong();
 
     void changeSong(const SongDetails *song); /// emited by Playlist, only when Player ask to (by emiting songEnded)
     void resetPlayer();

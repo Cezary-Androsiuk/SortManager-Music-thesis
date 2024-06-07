@@ -44,7 +44,7 @@ void Backend::initializeConnections()
     QObject::connect(m_database, &Database::signalPlaylistLoaded, m_playlist, &Playlist::loadPlaylist);
 
     /// when Player finish playing current song, notify Playlist about it
-    QObject::connect(m_player, &Player::songEnded, m_playlist, &Playlist::playerSongEnded);
+    QObject::connect(m_player, &Player::songEnded, m_playlist, &Playlist::loadNextSongForPlayer);
 
     /// when Playlist changed current song, notify Player about it (initialization and when Player end song)
     QObject::connect(m_playlist, &Playlist::currentSongChanged, m_player, &Player::changeSong);

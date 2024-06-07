@@ -28,8 +28,14 @@ void Player::pause()
     m_player->pause();
 }
 
+void Player::nextSong()
+{
+    emit this->songEnded();
+}
+
 void Player::changeSong(const SongDetails *receivedSong)
 {
+    if(receivedSong)
     /// use received song as a source to create this song
     m_song->set_id(receivedSong->get_id());
     TagList *tagList = new TagList(m_song);

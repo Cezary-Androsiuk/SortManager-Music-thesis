@@ -111,9 +111,9 @@ DONE - dodać ładowanie w moemncie importowania i exportowania danych
 
 Zdarzenia playlist:
 reaload() -> zatrzymanie playera, załadowanie piosenek, changePlayingSongsData
-reload -> wciśnięcie przycisku reload
-shuffle -> wciśnięcie przyckisku shuffle
-ended -> zakończenie odtwarzania piosenki przez Player
+reload = wciśnięcie przycisku reload
+shuffle = wciśnięcie przyckisku shuffle
+ended = zakończenie odtwarzania piosenki przez Player
 case:
 	odtwarza się pierwsza piosenka
 		piosenek jest 1 -> currentSongPos = 0, nextSongPos = 0
