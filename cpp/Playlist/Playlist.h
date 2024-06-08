@@ -40,6 +40,7 @@ public slots: // methods
     void movePlaybackOrder();
     void loadCurrentSongForPlayer();            ///
     void loadNextSongForPlayer();               ///
+    void switchNextSongTo(qsizetype id);
 
 signals: // methods signals
     void playlistLoaded();          /// is emited when loadPlaylist finished

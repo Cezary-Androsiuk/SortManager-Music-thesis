@@ -192,8 +192,9 @@ Page {
                             SongField{
                                 dltText: modelData.title + " " + modelData.id
                                 onDltClickedElement: {
-                                    just_used_id = + modelData.id;
-                                    just_used_title = modelData.title;
+                                    // just_used_id = + modelData.id;
+                                    // just_used_title = modelData.title;
+                                    backend.playlist.switchNextSongTo(modelData.id)
                                 }
                                 onDltClickedPlay: {
                                     console.log("play: " + modelData.title)

@@ -208,6 +208,12 @@ void Playlist::loadNextSongForPlayer()
     emit this->currentSongChanged(song);
 }
 
+void Playlist::switchNextSongTo(qsizetype id)
+{
+    m_songState.m_nextPos = this->getPosKnowingID(id);
+    emit this->songStateChanged();
+}
+
 std::vector<int> Playlist::getUniqueRandomNumbers(int count)
 {
     // create variables
