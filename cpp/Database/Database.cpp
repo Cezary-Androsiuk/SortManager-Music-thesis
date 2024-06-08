@@ -231,11 +231,11 @@ void Database::createExampleData()
                 "used for test purposes', 1717550657, 1717550657, 2, 0, 1, 0);");
 
     // add numbers songs
-    for(int i=0; i<10; i++)
+    for(int i=0; i<9; i++)
     {
         // add song i
         QString songID = QString::number(i+1);
-        QString songName = QString::number(i+100);
+        QString songName = QString::number(i+101);
         stl.append("INSERT INTO songs DEFAULT VALUES;");
         TMP_SHORT_1(", 1, " + songID + ");");
         TMP_SHORT_1(", 2, 'example " + songName + " song');");
@@ -2504,7 +2504,7 @@ void Database::loadPlaylist()
             6,  /* End */
             // 7,  /* Duration - check if realy used */
             9,  /* Song Path */
-            // 10, /* Thumbnail Path - check if realy used */
+            10, /* Thumbnail Path */
         };
 
         while(query.next()){

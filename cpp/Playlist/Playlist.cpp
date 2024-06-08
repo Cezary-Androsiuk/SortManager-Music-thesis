@@ -9,13 +9,12 @@ Playlist::Playlist(QObject *parent)
     /// after new playlist was loaded, shuffle it
     QObject::connect(this, &Playlist::playlistLoaded, this, &Playlist::shufflePlaylist);
 
-    /// after any playlist change update song state
-    QObject::connect(this, &Playlist::playlistShuffled, this, &Playlist::updateSongState);
-    /// after all data that can be shown are updated, load playlist model
-    QObject::connect(this, &Playlist::songStateChanged, this, &Playlist::loadPlaylistModel);
+    /// after any playlist change update song state and reload playlist model
+    // QObject::connect(this, &Playlist::playlistShuffled, this, &Playlist::updateSongState);
+    QObject::connect(this, &Playlist::playlistShuffled, this, &Playlist::loadPlaylistModel);
+    QObject::connect(this, &Playlist::playlistShuffled, this, &Playlist::loadCurrentSongForPlayer); /// (change to the same song is handled in Player)
 
-    /// after songState was changed trigger checking if current song state changed
-    QObject::connect(this, &Playlist::songStateChanged, this, &Playlist::loadCurrentSongForPlayer);
+    QObject::connect(this, &Playlist::songStateMoved, this, &Playlist::songStateChanged);
 }
 
 void Playlist::loadPlaylistModel()
@@ -68,7 +67,6 @@ qsizetype Playlist::getNextPos() const
 
 void Playlist::loadPlaylist(SongDetailsList *list)
 {
-
     if(m_playlist != nullptr)
         delete m_playlist;
     m_playlist = list;
@@ -82,7 +80,32 @@ void Playlist::loadPlaylist(SongDetailsList *list)
 
 void Playlist::shufflePlaylist()
 {
-    this->shufflePlaylistMethod();
+    /// code allows to shuffle (with control about order (by getUniqueRandomNumbers
+    /// method) of songs) playlist without realocating memory
+
+    int songsCount = m_playlist->c_ref_songs().size();
+    auto shuffleOrderList = Playlist::getUniqueRandomNumbers(songsCount);
+
+    /// temporary store songs to add them to original list again
+    QList<SongDetails *> tmpList;
+    tmpList.reserve(songsCount);
+    for(SongDetails *song : m_playlist->c_ref_songs())
+    {
+        tmpList.append(song);
+    }
+
+    /// clear original container and prepare it
+    m_playlist->songs().clear();
+    m_playlist->songs().reserve(songsCount);
+
+    /// add songs to original list, but with specyfic order
+    for(const int &index : shuffleOrderList)
+    {
+        m_playlist->songs().append(tmpList[index]);
+    }
+
+    this->updateSongState();
+
     DB << "playlist shuffled";
     emit this->playlistShuffled();
 }
@@ -152,6 +175,15 @@ void Playlist::updateSongState()
     emit this->songStateChanged();
 }
 
+void Playlist::movePlaybackOrder()
+{
+    m_songState.m_currentPos = m_songState.m_nextPos;
+    m_songState.m_currentID = this->getIDKnowingPos(m_songState.m_currentPos);
+    m_songState.m_nextPos = this->getComputedNextSongPos(); /// currentPos was already set, and can be used
+
+    emit this->songStateMoved();
+}
+
 void Playlist::loadCurrentSongForPlayer()
 {
     if(m_songState.m_currentPos == -1)
@@ -198,41 +230,6 @@ std::vector<int> Playlist::getUniqueRandomNumbers(int count)
     }
 
     return result;
-}
-
-void Playlist::shufflePlaylistMethod()
-{
-    /// code allows to shuffle (with control about order (by getUniqueRandomNumbers
-    /// method) of songs) playlist without realocating memory
-
-    int songsCount = m_playlist->c_ref_songs().size();
-    auto shuffleOrderList = Playlist::getUniqueRandomNumbers(songsCount);
-
-    /// temporary store songs to add them to original list again
-    QList<SongDetails *> tmpList;
-    tmpList.reserve(songsCount);
-    for(SongDetails *song : m_playlist->c_ref_songs())
-    {
-        tmpList.append(song);
-    }
-
-    /// clear original container and prepare it
-    m_playlist->songs().clear();
-    m_playlist->songs().reserve(songsCount);
-
-    /// add songs to original list, but with specyfic order
-    for(const int &index : shuffleOrderList)
-    {
-        m_playlist->songs().append(tmpList[index]);
-    }
-    DB << "playlist shuffled by method";
-}
-
-void Playlist::movePlaybackOrder()
-{
-    m_songState.m_currentPos = m_songState.m_nextPos;
-    m_songState.m_currentID = this->getIDKnowingPos(m_songState.m_currentPos);
-    m_songState.m_nextPos = this->getComputedNextSongPos(); /// currentPos was already set, and can be used
 }
 
 qsizetype Playlist::getPosKnowingID(const qsizetype &id) const

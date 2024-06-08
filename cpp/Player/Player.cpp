@@ -8,24 +8,39 @@ Player::Player(QObject *parent)
     m_audioOutput = new QAudioOutput(this);
     m_song = new SongDetails(this);
 
-    m_player->setAudioOutput(m_audioOutput);
-    m_player->setSource(QUrl::fromLocalFile("C:/0_Vigiland - Friday Night‬‬‬/Vigiland - Friday Night‬‬‬ (1080p_25fps_H264-128kbit_AAC).mp4"));
+
+    this->buildParametersConnections();
+
+    // m_player->setSource(QUrl::fromLocalFile("C:/0_Vigiland - Friday Night‬‬‬/Vigiland - Friday Night‬‬‬ (1080p_25fps_H264-128kbit_AAC).mp4"));
 
 
+    /// connection don't need to be reconeced after restart player, cause it won't use parameters (m_player, m_song, ...)
     QObject::connect(this, &Player::songChanged, this, &Player::updatePlayer);
+}
+
+void Player::buildParametersConnections()
+{
+    /// is called after parameters was reinitialized (like after restart player)
+    /// to reconnect broken connections
+
     m_audioOutput->setVolume(0.1);
+    m_player->setAudioOutput(m_audioOutput);
+
+    QObject::connect(m_player, &QMediaPlayer::mediaStatusChanged, this, &Player::onMediaStatusChanged);
 }
 
 void Player::play()
 {
-    m_player->play();
-
     m_playerStarted = true;
+
+    m_player->play();
 }
 
 void Player::pause()
 {
     m_player->pause();
+
+    m_playerStarted = false;
 }
 
 void Player::nextSong()
@@ -35,7 +50,18 @@ void Player::nextSong()
 
 void Player::changeSong(const SongDetails *receivedSong)
 {
-    if(receivedSong)
+    /// update player (to the same song) only when player is not playing
+    if(receivedSong->get_id() == m_song->get_id())
+    {
+        DB << "updating song to the same one";
+        if(m_player->isPlaying())
+        {
+            return;
+        }
+
+        /// if not playing, then song can be changed
+    }
+
     /// use received song as a source to create this song
     m_song->set_id(receivedSong->get_id());
     TagList *tagList = new TagList(m_song);
@@ -57,6 +83,9 @@ void Player::changeSong(const SongDetails *receivedSong)
     }
     m_song->set_tags(tagList);
 
+    m_songData.title = this->getSongTagValueByID(2/*Name*/);
+    m_songData.thumbnail = this->getSongTagValueByID(10/*Thumbnail*/);
+
     DB << "song was changed";
     emit this->songChanged();
 }
@@ -64,32 +93,69 @@ void Player::changeSong(const SongDetails *receivedSong)
 void Player::resetPlayer()
 {
     m_playerStarted = false;
+
+    if(m_player != nullptr) delete m_player;
+    m_player = new QMediaPlayer(this);
+
+    if(m_audioOutput != nullptr) delete m_audioOutput;
+    m_audioOutput = new QAudioOutput(this);
+
+    if(m_song != nullptr) delete m_song;
+    m_song = new SongDetails(this);
+
+    this->buildParametersConnections();
+}
+
+void Player::onMediaStatusChanged(QMediaPlayer::MediaStatus status)
+{
+    switch (status) {
+    case QMediaPlayer::MediaStatus::BufferedMedia:
+        // DB << "media player status changed to: BufferedMedia";
+
+        break;
+    case QMediaPlayer::MediaStatus::BufferingMedia:
+        // DB << "media player status changed to: BufferingMedia";
+
+        break;
+    case QMediaPlayer::MediaStatus::EndOfMedia:
+        DB << "media player status changed to: EndOfMedia";
+        emit this->songEnded();
+        break;
+    case QMediaPlayer::MediaStatus::InvalidMedia:
+        DB << "media player status changed to: InvalidMedia";
+        emit this->songEnded();
+        break;
+    case QMediaPlayer::MediaStatus::LoadedMedia:
+        // DB << "media player status changed to: LoadedMedia";
+
+        break;
+    case QMediaPlayer::MediaStatus::LoadingMedia:
+        // DB << "media player status changed to: LoadingMedia";
+
+        break;
+    case QMediaPlayer::MediaStatus::NoMedia:
+        DB << "media player status changed to: NoMedia";
+        emit this->songEnded();
+        break;
+    case QMediaPlayer::MediaStatus::StalledMedia:
+        // DB << "media player status changed to: StalledMedia";
+
+        break;
+    }
+
 }
 
 void Player::updatePlayer()
 {
-    DB << "updating player...";
-    if(!m_playerStarted)
+    m_player->setSource(this->getSongTagValueByID(9/*Song Path*/));
+
+    /// do not play song if wasn't playing before songs change
+    /// it handle case when user start the app -> first song will be shown in player
+    if(m_playerStarted)
     {
-        this->startPlayer();
-    }
-    else
-    {
-        m_player->setSource(this->getSongTagValueByID(9/*Song Path*/));
         m_player->play();
     }
-    DB << "player updated to: " << this->getSongTagValueByID(2/*Name*/);
-}
-
-void Player::startPlayer()
-{
-    DB << "starting player...";
-    /// start player will not play song, it just prepare song (after playlist was loaded)
-    /// to handle case when user start the app -> first song will be shown in player
-    /// but it won't playing
-
-    m_player->setSource(this->getSongTagValueByID(9/*Song Path*/));
-    DB << "player started";
+    DB << "player updated to: " << m_songData.title;
 }
 
 QString Player::getSongTagValueByID(qsizetype id) const
@@ -99,6 +165,16 @@ QString Player::getSongTagValueByID(qsizetype id) const
         if(tag->get_id() == id)
             return tag->get_value();
     }
-    WR << "tag not found";
+    WR << "tag not found! looking for tag id="<< id << "in" << m_song;
+    if(m_song != nullptr)
+    {
+        WR << m_song->get_id();
+        WR << m_song->get_tags()->c_ref_tags();
+    }
     exit(1);
+}
+
+QString Player::getTitle() const
+{
+    return m_songData.title;
 }

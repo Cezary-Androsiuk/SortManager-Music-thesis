@@ -139,6 +139,19 @@ Rectangle {
                 color: color_controls
             }
         }
+
+        Text{
+            id: title
+            anchors{
+                bottom: audioControls.bottom
+                left: audioControls.left
+                right: audioControls.right
+            }
+            height: audioControls.height/3
+
+            font.pixelSize: 10
+            text: backend.player.title
+        }
     }
 
     Rectangle{
