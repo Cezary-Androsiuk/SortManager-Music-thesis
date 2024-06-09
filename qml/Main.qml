@@ -194,6 +194,9 @@ ApplicationWindow {
     property color color_accent2: dark_theme ? color_dark_accent : color_light_accent
     property color color_mouse_hover: dark_theme ? rgb(56,56,59) : rgb(225,221,224)
     property color color_background: dark_theme ? rgb(28,27,31) : rgb(255,251,254)
+    function color_background_opacity(opacity){
+        return dark_theme ? rgb(28,27,31,opacity) : rgb(255,251,254,opacity)
+    }
 
     property color color_element_idle: color_accent1
     property color color_element_hover: dark_theme ? rgb(140, 140, 140) : rgb(110, 110, 110)
@@ -234,7 +237,7 @@ ApplicationWindow {
     property string ppsst_addtag:               page_prefix + "/PageSettings/Tags/AddTag.qml"
     property string ppsst_edittag:              page_prefix + "/PageSettings/Tags/EditTag.qml"
 
-    property string current_main_loader_page: path_page_player
+    property string current_main_loader_page: path_page_playlist//path_page_player
 
 
     // ListView last positions

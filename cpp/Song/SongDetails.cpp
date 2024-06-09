@@ -25,5 +25,7 @@ void SongDetails::set_id(const int &id)
 
 void SongDetails::set_tags(const TagList *tags)
 {
+    if(m_tags != nullptr)
+        delete m_tags;
     m_tags = tags;
 }

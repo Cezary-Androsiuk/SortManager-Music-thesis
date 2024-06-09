@@ -23,29 +23,38 @@ void Player::buildParametersConnections()
     /// is called after parameters was reinitialized (like after restart player)
     /// to reconnect broken connections
 
-    m_audioOutput->setVolume(0.1);
+    // m_audioOutput->setVolume(0.1);
     m_player->setAudioOutput(m_audioOutput);
 
+    QObject::connect(m_player, &QMediaPlayer::positionChanged, this, &Player::updatePlayerProgress);
+
     QObject::connect(m_player, &QMediaPlayer::mediaStatusChanged, this, &Player::onMediaStatusChanged);
+
+    QObject::connect(m_player, &QMediaPlayer::playingChanged, this, &Player::playingChanged);
 }
 
 void Player::play()
 {
-    m_playerStarted = true;
-
-    m_player->play();
-}
-
-void Player::pause()
-{
-    m_player->pause();
-
-    m_playerStarted = false;
+    if(m_player->isPlaying())
+    {
+        m_player->pause();
+        m_playerStarted = false;
+    }
+    else
+    {
+        m_playerStarted = true;
+        m_player->play();
+    }
 }
 
 void Player::nextSong()
 {
     emit this->songEnded();
+}
+
+void Player::restartSong()
+{
+    this->updatePlayer(); /// gives effect equal to move player to the start
 }
 
 void Player::changeSong(const SongDetails *receivedSong)
@@ -84,7 +93,10 @@ void Player::changeSong(const SongDetails *receivedSong)
     m_song->set_tags(tagList);
 
     m_songData.title = this->getSongTagValueByID(2/*Name*/);
-    m_songData.thumbnail = this->getSongTagValueByID(10/*Thumbnail*/);
+    m_songData.thumbnail = this->validThumbnailPath(
+        this->getSongTagValueByID(10/*Thumbnail*/));
+    m_songData.begin = this->getSongTagValueByID(5/*Begin*/).toLongLong();
+    m_songData.end = this->getSongTagValueByID(6/*End*/).toLongLong();
 
     DB << "song was changed";
     emit this->songChanged();
@@ -126,8 +138,8 @@ void Player::onMediaStatusChanged(QMediaPlayer::MediaStatus status)
         emit this->songEnded();
         break;
     case QMediaPlayer::MediaStatus::LoadedMedia:
-        // DB << "media player status changed to: LoadedMedia";
-
+        DB << "media player status changed to: LoadedMedia";
+        m_player->setPosition(m_songData.begin);
         break;
     case QMediaPlayer::MediaStatus::LoadingMedia:
         // DB << "media player status changed to: LoadingMedia";
@@ -148,6 +160,7 @@ void Player::onMediaStatusChanged(QMediaPlayer::MediaStatus status)
 void Player::updatePlayer()
 {
     m_player->setSource(this->getSongTagValueByID(9/*Song Path*/));
+    /// some data are set after LoadedMedia
 
     /// do not play song if wasn't playing before songs change
     /// it handle case when user start the app -> first song will be shown in player
@@ -156,6 +169,21 @@ void Player::updatePlayer()
         m_player->play();
     }
     DB << "player updated to: " << m_songData.title;
+}
+
+void Player::updatePlayerProgress(qsizetype position)
+{
+    qsizetype remainingTime = m_player->duration() - position;
+
+    if(remainingTime <= m_player->duration() - m_songData.end && m_songData.end != 0)
+    {
+        // DB << "end";
+        m_player->pause();
+        emit this->songEnded();
+    }
+    // // qsizetype realDuration = m_player->duration() - m_songData.begin - m_songData.end;
+    // // qsizetype realPosition = position - m_songData.begin;
+    // emit this->updatePlayerProgress(realDuration, realPosition);
 }
 
 QString Player::getSongTagValueByID(qsizetype id) const
@@ -174,7 +202,31 @@ QString Player::getSongTagValueByID(qsizetype id) const
     exit(1);
 }
 
+QString Player::validThumbnailPath(QString thumbnail) const
+{
+    DB << "thumbnail: " << thumbnail;
+    if(QFile::exists(QUrl(thumbnail).toLocalFile()))
+    {
+        return thumbnail;
+    }
+    else
+    {
+        DB << "song does not contains thumbnail";
+        return "";
+    }
+}
+
+bool Player::getIsPlaying() const
+{
+    return this->m_player->isPlaying();
+}
+
 QString Player::getTitle() const
 {
     return m_songData.title;
+}
+
+QString Player::getThumbnail() const
+{
+    return m_songData.thumbnail;
 }

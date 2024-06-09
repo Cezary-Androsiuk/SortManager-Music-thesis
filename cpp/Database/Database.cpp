@@ -251,13 +251,14 @@ void Database::createExampleData()
         TMP_SHORT_1(", 12, 1717550658);");
         TMP_SHORT_1(", 13, 1);"); // Is a number song
         TMP_SHORT_1(", 14, -1);"); // Is a letter song
+        DB<< "songName: "  << songName;
     }
 
     // add letters songs
     for(int i=0; i<10; i++)
     {
         // add song x
-        QString songID = QString::number(i+10+1);
+        QString songID = QString::number(i+10);
         QString songName;
         if(i==0) songName = "a"; if(i==1) songName = "b"; if(i==2) songName = "c";
         if(i==3) songName = "e"; if(i==4) songName = "f"; if(i==5) songName = "g";
