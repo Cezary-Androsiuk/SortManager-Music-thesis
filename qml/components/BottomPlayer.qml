@@ -33,14 +33,10 @@ Item{
             right: background.right
         }
         height: 20
-
+        
         gradient: Gradient{
             orientation: Gradient.Vertical
-            // contains multiple GradientStops, because trasition doesn't looks linear like i expected
             GradientStop { position: 0.00; color: root.color_background_opacity(0) }
-            GradientStop { position: 0.30; color: root.color_background_opacity(90) }
-            GradientStop { position: 0.50; color: root.color_background_opacity(127) }
-            GradientStop { position: 0.80; color: root.color_background_opacity(210) }
             GradientStop { position: 1.00; color: root.color_background_opacity(255) }
         }
     }

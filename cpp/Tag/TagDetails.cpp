@@ -112,6 +112,8 @@ void TagDetails::set_is_required(const bool &is_required)
 }
 void TagDetails::set_songs(const SongList *songs)
 {
+    if(m_songs != nullptr)
+        delete songs;
     m_songs = songs;
 }
 
