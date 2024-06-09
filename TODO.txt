@@ -98,6 +98,7 @@ DONE - dodać weryfikację czy playlist model jest załadowany poprawnie, jak ni
 DONE ### przetestować co się stanie gdy przy example data utworzymy tag X i importujemy 2 piosenki ale bez tagu X a następnie wyeksportujemy wszystkie dane (w tych dwóch nowych tagach nie powinno być tagu X) a to znaczyło by że nie tworzy się element który nie zostanie określony w pliku json w trakcie importowania
 DONE - dodać ładowanie w moemncie importowania i exportowania danych
 - usunąć niepotrzebne get/set dla m_songState w Playlist
+- dodać ostrzeżenie o Begin > End  oraz o Begin > Duration lub End > Duration
 
 ==========================
 // tak się teraz zastanawiam co zrobić z filtrami, można je zainicjalizować (domyślnie albo z personalization) oraz zmienić czy zapisać. Jednak co w przypadku gdy użytkownik doda nowe tagi
@@ -153,6 +154,28 @@ case:
 			reload -> reload()
 			shuffle ->  currentSongPos = getSongPosByID(currentSongID), nextSongPos = 0
 			ended -> currentSongPos = 0, nextSongPos = 1
+
+inicjalizacja:
+dane:
+	Player:
+		m_player - zainicjalizoway ale pusty
+		m_audioOutput - zainicjalizoway ale pusty
+		m_song - zainicjalizoway ale pusty
+		m_playerStarted = false		
+akcje:
+	1. Playlist: 
+		ładuje playlistę, 
+		miesza ją, 
+		ustawia zmienne songState 
+			na {-1,-1,-1} gdy playlist jest pusty,
+			na {0, ?, 0} gdy playlist posiada 1 piosenkę,
+			na {0, ?, 1} gdy playlist posiada więcej niż 1 piosenkę
+		buduje model playlist,
+		ładuje obecną piosenkę dla Player jeżeli jest różna od -1
+	2. Player:
+		jeżeli nie załadowano piosenki to czekamy na ponowne załadowanie playlisty więc fakt, że nie została zainicjalizowana nam nie przeszkadza (bo przy reload i tak resetujemy)
+		po załadowaniu kopiujemy jej dane i ustawiamy flagę (bool), że załadowano. w tym momencie jest wskazana piosenka ale nie została jeszce puszczona 
+
 
 ==========================
 playlist:
