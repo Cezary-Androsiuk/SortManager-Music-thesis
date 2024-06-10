@@ -237,7 +237,13 @@ ApplicationWindow {
     property string ppsst_addtag:               page_prefix + "/PageSettings/Tags/AddTag.qml"
     property string ppsst_edittag:              page_prefix + "/PageSettings/Tags/EditTag.qml"
 
-    property string current_main_loader_page: path_page_playlist//path_page_player
+    readonly property int startPage: 2
+    property string current_main_loader_page: {
+        if(false);
+        else if(startPage === 1) path_page_settings
+        else if(startPage === 2) path_page_player
+        else if(startPage === 3) path_page_playlist
+    }
 
 
     // ListView last positions

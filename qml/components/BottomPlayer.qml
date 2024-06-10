@@ -14,9 +14,9 @@ Item{
     }
     height: root._h * 0.2
 
+    property bool isPlaying
     readonly property int bottomMainFieldHeight: bottomPlayer.height * 0.3
     readonly property bool showAreas: false
-    property bool isPlaying
 
     Component.onCompleted: {
         // set isPlaying this way, because if isPlaying is constantly readed from
@@ -70,31 +70,37 @@ Item{
                 }
                 width: height
 
-                // Rectangle{
-                //     id: imageMask
-                //     anchors{
-                //         fill: parent
-                //         margins: 3 // removes white lines around
-                //     }
-                //     radius: width * 0.3
-                // }
+                Rectangle{
+                    id: thumbnailMask
+                    anchors{
+                        fill: parent
+                        margins: 3 // removes white lines around
+                    }
+                    radius: width * 0.1
+                }
 
                 Image{
+                    id: thumbnail
                     fillMode: Image.PreserveAspectCrop
                     anchors.fill: parent
 
                     source: {
                         if(backend.player.thumbnail === "")
-                            "qrc:/SortManager-Music/assets/noSongThumbnail.png"
+                        {
+                            if(root.dark_theme)
+                                "qrc:/SortManager-Music/assets/noSongThumbnailDark.png"
+                            else
+                                "qrc:/SortManager-Music/assets/noSongThumbnailLight.png"
+                        }
                         else
                             backend.player.thumbnail
                     }
 
-                    // layer.enabled: true
-                    // layer.effect: OpacityMask {
-                    //     maskSource: imageMask
-                    //     cached: true
-                    // }
+                    layer.enabled: true
+                    layer.effect: OpacityMask {
+                        maskSource: thumbnailMask
+                        cached: true
+                    }
                 }
             }
 

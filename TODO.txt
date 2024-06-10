@@ -108,6 +108,10 @@ DONE - dodać ładowanie w moemncie importowania i exportowania danych
 //	 x not belong to A oraz x belong to B => ustawiamy na domyślną 'do not compare'
 // ale się tak teraz zastanawiam jak ugryźć (i czy wgl dam radę to zrobić) zarządzanie pamięcią m_filters oraz m_filersModel. Może zamiast pisać to wyjaśnienie powinienem próbować to zaprogramować -.-
 ... kiepskie jest to, że importując tagi nie można dodać jakie piosenki będą miały jaką wartość dla niego, ale wychodzi, że to jest najprostrze rozwiązanie i cóż
+- Dodać noSongThumbnailLight
+- funkcjonalny slider dla player
+- zmaina głośności
+- lepsze delegate w playlist
 
 
 Zdarzenia playlist:

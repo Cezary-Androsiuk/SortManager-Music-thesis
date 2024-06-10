@@ -251,7 +251,6 @@ void Database::createExampleData()
         TMP_SHORT_1(", 12, 1717550658);");
         TMP_SHORT_1(", 13, 1);"); // Is a number song
         TMP_SHORT_1(", 14, -1);"); // Is a letter song
-        DB<< "songName: "  << songName;
     }
 
     // add letters songs
