@@ -125,7 +125,7 @@ qt_add_qml_module(appSortManager-Music
     RESOURCES assets/icons/trash_open_512px.png
 
     RESOURCES assets/noSongThumbnailDark.png
-    # RESOURCES assets/noSongThumbnailLight.png
+    RESOURCES assets/noSongThumbnailLight.png
 
 )
 
