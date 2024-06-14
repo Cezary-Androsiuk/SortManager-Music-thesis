@@ -587,7 +587,6 @@ void Database::importSongsToDatabase(const QUrl &input_qurl)
     }
     CATCH;
 
-
     QList<QVariantList> listOfStructures;
     for(const auto &jsonSongIt : jsonSongs)
     {
@@ -599,7 +598,19 @@ void Database::importSongsToDatabase(const QUrl &input_qurl)
 
             /// replace tagValue if value exist in json
             if(jsonSong.contains(tagName))
-                tagValue = jsonSong.value(tagName).toString();
+            {
+                if(jsonSong.value(tagName).isString())
+                {
+                    tagValue = jsonSong.value(tagName).toString();
+                }
+                else
+                {
+                    int tmpTagValue = jsonSong.value(tagName).toInt();
+                    tagValue = QString::number(tmpTagValue);
+                }
+
+                DB << "equal: " << tagValue;
+            }
 
             /// find tagID of tagName
             int tagID = IDEquivalentForName[tagName];
@@ -638,6 +649,7 @@ void Database::importSongsToDatabase(const QUrl &input_qurl)
             /// btw, i can't imagine how event flow could look like with
             /// connection and calling following method and how this will allways
             /// handle the error...
+            // DB << "stucture passed to addSong:" << structure;
             this->addSong(structure);
 
             if(!addSongErrorInfo.isNull())

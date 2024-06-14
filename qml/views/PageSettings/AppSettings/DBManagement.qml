@@ -5,6 +5,7 @@ import QtQuick.Dialogs
 
 import "qrc:/SortManager-Music/qml/popups"
 import "qrc:/SortManager-Music/qml/delegates/DBManagement"
+import "qrc:/SortManager-Music/qml/delegates"                   // SeparatorField
 
 Page {
     property var backend: Backend
@@ -17,10 +18,11 @@ Page {
     Component.onCompleted: {
         mainLoader.anchors.top = tabBar.top
 
-        mdl.push({id: 100, name: "Export Songs from database"})
         mdl.push({id: 150, name: "Export Tags from database"})
-        mdl.push({id: 200, name: "Import Songs to database"})
+        mdl.push({id: 100, name: "Export Songs from database"})
         mdl.push({id: 300, name: "Import Tags to database"})
+        mdl.push({id: 200, name: "Import Songs to database"})
+        mdl.push({id: 250, name: "-- SEPARATOR --"})
         mdl.push({id: 400, name: "Reeset database"})
 
         listViewLoader.active = true;
@@ -185,6 +187,7 @@ Page {
                     else if(modelData.id === 150) delegateFileSaveButtonField;
                     else if(modelData.id === 200) delegateFileSelectButtonField;
                     else if(modelData.id === 300) delegateFileSelectButtonField;
+                    else if(modelData.id === 250) separatorDelegate;
                     else if(modelData.id === 400) delegateDeleteDatabase;
                 }
 
@@ -213,6 +216,14 @@ Page {
                             else if(modelData.id === 300) // tags
                                 backend.database.importTagsToDatabase(ownSelectedFile);
                         }
+                    }
+                }
+
+
+                Component{
+                    id: separatorDelegate
+                    SeparatorField{
+
                     }
                 }
 
