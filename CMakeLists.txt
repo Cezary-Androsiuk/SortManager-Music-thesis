@@ -64,7 +64,8 @@ qt_add_qml_module(appSortManager-Music
     QML_FILES qml/components/InfoToolTip.qml
     QML_FILES qml/components/ThinSeparator.qml
     QML_FILES qml/components/EmptyListInfo.qml
-    QML_FILES qml/views/PagePlaylist/components/PlaylistHeader.qml
+    QML_FILES qml/components/PagePlayer/SongTitle.qml
+    QML_FILES qml/components/PagePlaylist/PlaylistHeader.qml
 
     # delegates
     QML_FILES qml/delegates/FileSelectField.qml

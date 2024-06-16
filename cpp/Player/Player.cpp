@@ -92,6 +92,7 @@ void Player::changeSong(const SongDetails *receivedSong)
     }
     m_song->set_tags(tagList);
 
+    m_songData.songID = this->getSongTagValueByID(1 /*ID*/).toInt();
     m_songData.title = this->getSongTagValueByID(2/*Name*/);
     m_songData.thumbnail = this->validThumbnailPath(
         this->getSongTagValueByID(10/*Thumbnail*/));
@@ -140,6 +141,7 @@ void Player::onMediaStatusChanged(QMediaPlayer::MediaStatus status)
     case QMediaPlayer::MediaStatus::LoadedMedia:
         DB << "media player status changed to: LoadedMedia";
         m_player->setPosition(m_songData.begin);
+        emit this->songStarted();
         break;
     case QMediaPlayer::MediaStatus::LoadingMedia:
         // DB << "media player status changed to: LoadingMedia";
@@ -219,6 +221,11 @@ QString Player::validThumbnailPath(QString thumbnail) const
 bool Player::getIsPlaying() const
 {
     return this->m_player->isPlaying();
+}
+
+qsizetype Player::getSongID() const
+{
+    return m_songData.songID;
 }
 
 QString Player::getTitle() const

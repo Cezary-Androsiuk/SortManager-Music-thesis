@@ -6,7 +6,7 @@ import Qt5Compat.GraphicalEffects
 import "qrc:/SortManager-Music/qml/popups"
 import "qrc:/SortManager-Music/qml/components" // ImageButton
 import "qrc:/SortManager-Music/qml/delegates/Playlist"
-import "components" // PlaylistHeader
+import "qrc:/SortManager-Music/qml/components/PagePlaylist" // PlaylistHeader
 
 Page {
     id: pagePlaylist

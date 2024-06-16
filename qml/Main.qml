@@ -260,6 +260,8 @@ ApplicationWindow {
     property double last_pos_edit_playlist_song: 0
     property double last_pos_filters: 0
 
+    property bool globalVisibleChanger: true
+
     Item{
         id: rootContainer
         anchors.fill: parent
@@ -330,6 +332,11 @@ ApplicationWindow {
         Keys.onEscapePressed: root.close()
         Keys.onSpacePressed: console.log("")
         Keys.onDeletePressed: backend.database.createExampleData();
+        Keys.onPressed: (event) => {
+              if (event.key === Qt.Key_V) {
+                  root.globalVisibleChanger = !root.globalVisibleChanger;
+              }
+          }
         // Keys.onLeftPressed: {
         //     if(tabBar.currentIndex > 0)
         //         tabBar.currentIndex --;
