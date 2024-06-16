@@ -29,6 +29,7 @@
 #define DEFAULT_SONGS_OPEN_PATH "C:/"
 #define DEFAULT_SHOW_ERROR_DESC true
 #define DEFAULT_SHOW_FILTERS_SAVE true
+#define DEFAULT_STOP_SONG_WHILE_SEEK true
 
 #define CHECK_KEY(arg) if(jp.contains(key)) arg;\
 else WR << PERSONALIZATION_JSON_PATH << " file not contains value related with '" << key << "' key";
@@ -47,6 +48,7 @@ class Personalization : public QObject
     Q_PROPERTY(QString songOpenPath     READ getSongOpenPath        WRITE setSongOpenPath       NOTIFY songOpenPathChanged      FINAL)
     Q_PROPERTY(bool showErrorDesc       READ getShowErrorDesc       WRITE setShowErrorDesc      NOTIFY showErrorDescChanged     FINAL)
     Q_PROPERTY(bool showFiltersSave     READ getShowFiltersSave     WRITE setShowFiltersSave    NOTIFY showFiltersSaveChanged   FINAL)
+    Q_PROPERTY(bool stopSongWhileSeek   READ getStopSongWhileSeek   WRITE setStopSongWhileSeek  NOTIFY stopSongWhileSeekChanged FINAL)
 
 
 public:
@@ -78,6 +80,7 @@ public: // getters / setters
     QString getSongOpenPath() const;
     bool getShowErrorDesc() const;
     bool getShowFiltersSave() const;
+    bool getStopSongWhileSeek() const;
 
     void setIsDarkTheme(bool isDarkTheme);
     void setSaveExecQuery(bool saveExecQuery);
@@ -89,6 +92,7 @@ public: // getters / setters
     void setSongOpenPath(const QString &songOpenPath);
     void setShowErrorDesc(bool showErrorDesc);
     void setShowFiltersSave(bool showFiltersSave);
+    void setStopSongWhileSeek(bool stopSongWhileSeek);
 
 signals:
     void isDarkThemeChanged();
@@ -101,6 +105,7 @@ signals:
     void songOpenPathChanged();
     void showErrorDescChanged();
     void showFiltersSaveChanged();
+    void stopSongWhileSeekChanged();
 
 private:
     int m_errorCodeIfOccurWhileLoading;
@@ -115,6 +120,7 @@ private:
     QString m_songOpenPath;
     bool m_showErrorDesc;
     bool m_showFiltersSave;         /// descirbes if confirmation will be shown while saving Filters
+    bool m_stopSongWhileSeek;    /// song will be stopped while user changing song position (between mouse press and release). Seek is a word that describes changing song position, better will be seeking (but to long word)
 };
 
 #endif // PERSONALIZATION_H

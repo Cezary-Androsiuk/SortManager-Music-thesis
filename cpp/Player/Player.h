@@ -14,11 +14,13 @@
 class Player : public QObject
 {
     Q_OBJECT
-    Q_PROPERTY(bool         isPlaying   READ getIsPlaying   NOTIFY playingChanged   FINAL)
+    Q_PROPERTY(bool         isPlaying   READ getIsPlaying   NOTIFY playingChanged       FINAL)
 
-    Q_PROPERTY(qsizetype    songID      READ getSongID      NOTIFY songChanged      FINAL)
-    Q_PROPERTY(QString      title       READ getTitle       NOTIFY songChanged      FINAL)
-    Q_PROPERTY(QString      thumbnail   READ getThumbnail   NOTIFY songChanged      FINAL)
+    Q_PROPERTY(qsizetype    songID      READ getSongID      NOTIFY songFullyLoaded      FINAL)
+    Q_PROPERTY(QString      title       READ getTitle       NOTIFY songFullyLoaded      FINAL)
+    Q_PROPERTY(QString      thumbnail   READ getThumbnail   NOTIFY songFullyLoaded      FINAL)
+    Q_PROPERTY(qsizetype    duration    READ getDuration    NOTIFY songFullyLoaded      FINAL)
+    Q_PROPERTY(qsizetype    position    READ getPosition    WRITE setPosition   NOTIFY songPositionChanged  FINAL)
 public:
     explicit Player(QObject *parent = nullptr);
 
@@ -37,8 +39,10 @@ signals:
     void songEnded();           /// emited when player finish playing the song
 
     void songChanged();         /// emited by changeSongToNext
+    void songFullyLoaded();
     void playingChanged();      ///
     void songStarted();
+    void songPositionChanged();
 
 public slots:
     void onMediaStatusChanged(QMediaPlayer::MediaStatus status);
@@ -56,6 +60,10 @@ public: // qml getters
     qsizetype getSongID() const;
     QString getTitle() const;
     QString getThumbnail() const;
+    qsizetype getDuration() const;
+    qsizetype getPosition() const;
+
+    void setPosition(qsizetype position);
 
 private:
     bool m_playerStarted;
@@ -69,6 +77,8 @@ private:
         QString thumbnail;
         qsizetype begin;
         qsizetype end;
+        qsizetype duration;
+        qsizetype position;
     } m_songData;
 
 };

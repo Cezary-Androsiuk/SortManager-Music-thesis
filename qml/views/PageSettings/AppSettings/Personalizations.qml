@@ -13,16 +13,17 @@ Page {
     property var mdl: []
 
     Component.onCompleted: {
-        mdl.push({id: 100, name: "Dark Theme"})
-        mdl.push({id: 200, name: "Save Query to File"})
-        mdl.push({id: 300, name: "Accent Color"})
-        mdl.push({id: 400, name: "Show Constant Tags in List"})
-        mdl.push({id: 500, name: "Default Add Tag Type"})
+        mdl.push({id: 100, name: "Dark theme"})
+        mdl.push({id: 200, name: "Save query to file"})
+        mdl.push({id: 300, name: "Accent color"})
+        mdl.push({id: 400, name: "Show constant Tags in list"})
+        mdl.push({id: 500, name: "Default add Tag type"})
         mdl.push({id: 550, name: "Always keep a list position"})
         // mdl.push({id: 600, name: "Songs Open Path"})
         // mdl.push({id: 700, name: "Songs Main Path"})
         mdl.push({id: 800, name: "Show error description"})
         mdl.push({id: 900, name: "Show save confirmation for Filters"})
+        mdl.push({id: 950, name: "Stop Song while using seek bar"})
 
         listViewLoader.active = true
     }
@@ -83,6 +84,7 @@ Page {
                         // else if(modelData.id === 700) pathSelectDelegate;
                         else if(modelData.id === 800) switchFieldDelegate;
                         else if(modelData.id === 900) switchFieldDelegate;
+                        else if(modelData.id === 950) switchFieldDelegate;
                         else console.log("unknown source component: " + modelData.id)
                     }
 
@@ -100,6 +102,7 @@ Page {
                                 else if(modelData.id === 550) backend.personalization.alwaysKeepListPos
                                 else if(modelData.id === 800) backend.personalization.showErrorDesc
                                 else if(modelData.id === 900) backend.personalization.showFiltersSave
+                                else if(modelData.id === 950) backend.personalization.stopSongWhileSeek
                                 else {console.log("unknown switch input value: " + modelData.id); false}
                             }
                             onDltValueChanged: {
@@ -128,6 +131,7 @@ Page {
                                 }
                                 else if(modelData.id === 800) backend.personalization.showErrorDesc = dltValue
                                 else if(modelData.id === 900) backend.personalization.showFiltersSave = dltValue
+                                else if(modelData.id === 950) backend.personalization.stopSongWhileSeek = dltValue
                                 else console.log("unknown switch output value: " + modelData.id)
                             }
                         }

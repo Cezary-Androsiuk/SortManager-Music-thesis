@@ -27,6 +27,7 @@ void Player::buildParametersConnections()
     m_player->setAudioOutput(m_audioOutput);
 
     QObject::connect(m_player, &QMediaPlayer::positionChanged, this, &Player::updatePlayerProgress);
+    QObject::connect(m_player, &QMediaPlayer::positionChanged, this, &Player::songPositionChanged);
 
     QObject::connect(m_player, &QMediaPlayer::mediaStatusChanged, this, &Player::onMediaStatusChanged);
 
@@ -139,8 +140,13 @@ void Player::onMediaStatusChanged(QMediaPlayer::MediaStatus status)
         emit this->songEnded();
         break;
     case QMediaPlayer::MediaStatus::LoadedMedia:
+        if(m_songData.position != 0) /// that means song is playing and do not set position again
+            break;
+        /// song need to be loaded again when position was changed (for example go back by 10s)
         DB << "media player status changed to: LoadedMedia";
         m_player->setPosition(m_songData.begin);
+        m_songData.duration = m_player->duration();
+        emit this->songFullyLoaded();
         emit this->songStarted();
         break;
     case QMediaPlayer::MediaStatus::LoadingMedia:
@@ -176,6 +182,7 @@ void Player::updatePlayer()
 void Player::updatePlayerProgress(qsizetype position)
 {
     qsizetype remainingTime = m_player->duration() - position;
+    m_songData.position = position - m_songData.begin;
 
     if(remainingTime <= m_player->duration() - m_songData.end && m_songData.end != 0)
     {
@@ -236,4 +243,24 @@ QString Player::getTitle() const
 QString Player::getThumbnail() const
 {
     return m_songData.thumbnail;
+}
+
+qsizetype Player::getDuration() const
+{
+    return m_songData.duration;
+}
+
+qsizetype Player::getPosition() const
+{
+    return m_songData.position;
+}
+
+void Player::setPosition(qsizetype position)
+{
+    if(m_songData.position == position)
+        return;
+
+    m_songData.position = position;
+    m_player->setPosition(position);
+    emit this->songPositionChanged();
 }

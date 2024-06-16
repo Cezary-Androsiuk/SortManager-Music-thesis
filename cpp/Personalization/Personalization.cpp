@@ -24,6 +24,7 @@ void Personalization::printValues() const
     DB << "\t - songOpenPath: " << m_songOpenPath;
     DB << "\t - showErrorDesc: " << m_showErrorDesc;
     DB << "\t - showFiltersSave: " << m_showFiltersSave;
+    DB << "\t - stopSongWhileSeek: " << m_stopSongWhileSeek;
 #endif
 }
 
@@ -62,6 +63,9 @@ void Personalization::setDefaultPersonalizationData()
     m_showErrorDesc = DEFAULT_SHOW_ERROR_DESC;
     emit this->showErrorDescChanged();
     m_showFiltersSave = DEFAULT_SHOW_FILTERS_SAVE;
+    emit this->showFiltersSaveChanged();
+    m_stopSongWhileSeek = DEFAULT_STOP_SONG_WHILE_SEEK;
+    emit this->stopSongWhileSeekChanged();
 
     m_errorCodeIfOccurWhileLoading = 0;
 }
@@ -136,6 +140,9 @@ void Personalization::loadPersonalizationFromJson()
     key = "show filters save confirmation";
     CHECK_KEY(this->setShowFiltersSave(jp[key].toBool()));
 
+    key = "stop song while using seek bar";
+    CHECK_KEY(this->setStopSongWhileSeek(jp[key].toBool()));
+
 
     DB << "personalization data readed!";
     this->printValues();
@@ -179,6 +186,7 @@ void Personalization::savePersonalizationToJson()
     json_object["songs open path"] = this->getSongOpenPath();
     json_object["show error description"] = this->getShowErrorDesc();
     json_object["show filters save confirmation"] = this->getShowFiltersSave();
+    json_object["stop song while using seek bar"] = this->getStopSongWhileSeek();
 
     QJsonDocument json_data(json_object);
 
@@ -249,6 +257,11 @@ bool Personalization::getShowErrorDesc() const
 bool Personalization::getShowFiltersSave() const
 {
     return m_showFiltersSave;
+}
+
+bool Personalization::getStopSongWhileSeek() const
+{
+    return m_stopSongWhileSeek;
 }
 
 void Personalization::setIsDarkTheme(bool isDarkTheme)
@@ -339,4 +352,13 @@ void Personalization::setShowFiltersSave(bool showFiltersSave)
 
     m_showFiltersSave = showFiltersSave;
     emit this->showFiltersSaveChanged();
+}
+
+void Personalization::setStopSongWhileSeek(bool stopSongWhileSeek)
+{
+    if(m_stopSongWhileSeek == stopSongWhileSeek)
+        return;
+
+    m_stopSongWhileSeek = stopSongWhileSeek;
+    emit this->stopSongWhileSeekChanged();
 }

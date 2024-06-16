@@ -4,7 +4,7 @@ import QtQuick.Controls.Material
 import Qt5Compat.GraphicalEffects
 
 import "qrc:/SortManager-Music/qml/components" // ImageButton
-import "qrc:/SortManager-Music/qml/components/PagePlayer"
+import "qrc:/SortManager-Music/qml/components/Player"
 
 Page {
     id: pagePlayer
@@ -20,14 +20,13 @@ Page {
     // slider
     readonly property double sliderFieldTopMarginRatio: 0.016
     readonly property double sliderFieldHeightRatio: 0.05
-    // audio controls
-    readonly property double audioControlsFieldTopMarginRatio: 0.02
-    readonly property double audioControlsFieldHeightRatio: 0.11
-    readonly property int audioControlsDistanceBetweenControls: 25
+    // controls
+    readonly property double controlsFieldTopMarginRatio: 0.02
+    readonly property double controlsFieldHeightRatio: 0.11
+    readonly property int controlsDistanceBetweenControls: 25
     readonly property double nonPlayTopControlsSizeRatio: 0.8
 
-    readonly property double titleTopMarginRatio: 0
-    readonly property double titleHeightRatio: 0
+    property bool stoppedBySlider: false // useful when user decided that song should stop, while changing song position
 
     readonly property bool showAreas: !root.globalVisibleChanger
 
@@ -124,7 +123,9 @@ Page {
 
             Rectangle{anchors.fill: parent; color: "green"; opacity: 0.2; visible: showAreas}
 
-            SongTitle{ /*all data are handled in songTitle*/ }
+            SongTitle{
+                isPlayerLarge: true
+            }
         }
 
         Item{
@@ -148,18 +149,45 @@ Page {
                     rightMargin: parent.width * 0.12
                     verticalCenter: parent.verticalCenter
                 }
+                from: 0
+                to: backend.player.duration
+                value: backend.player.position
+                onPressedChanged: {
+                    if(!backend.personalization.stopSongWhileSeek)
+                        return
+
+                    if(!isPlaying)
+                        return;
+
+                    if(pressed)
+                    {
+                        pagePlayer.stoppedBySlider = true;
+                        backend.player.play();
+                    }
+                    else
+                    {
+                        if(pagePlayer.stoppedBySlider)
+                        {
+                            pagePlayer.stoppedBySlider = false;
+                            backend.player.play();
+                        }
+                    }
+                }
+                onMoved: {
+                    backend.player.position = value
+                }
             }
         }
 
         Item{
-            id: audioControlsField
+            id: controlsField
             anchors{
                 top: sliderField.bottom
-                topMargin: parent.height * pagePlayer.audioControlsFieldTopMarginRatio
+                topMargin: parent.height * pagePlayer.controlsFieldTopMarginRatio
                 left: parent.left
                 right: parent.right
             }
-            height: parent.height * pagePlayer.audioControlsFieldHeightRatio
+            height: parent.height * pagePlayer.controlsFieldHeightRatio
 
             Rectangle{anchors.fill: parent; color: "red"; opacity: 0.2; visible: showAreas}
 
@@ -168,7 +196,7 @@ Page {
                 anchors{
                     verticalCenter: playField.verticalCenter
                     right: playField.left
-                    rightMargin: pagePlayer.audioControlsDistanceBetweenControls
+                    rightMargin: pagePlayer.controlsDistanceBetweenControls
                 }
                 height: parent.height * pagePlayer.nonPlayTopControlsSizeRatio
                 width: height
@@ -210,7 +238,7 @@ Page {
                 anchors{
                     verticalCenter: playField.verticalCenter
                     left: playField.right
-                    leftMargin: pagePlayer.audioControlsDistanceBetweenControls
+                    leftMargin: pagePlayer.controlsDistanceBetweenControls
                 }
                 height: parent.height * pagePlayer.nonPlayTopControlsSizeRatio
                 width: height

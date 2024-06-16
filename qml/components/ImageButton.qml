@@ -12,6 +12,7 @@ Item{
     required property string dltImageHover
     property bool dltBackgroundVisible: false
     property bool dltUsePopupColor: false
+    property double dltImageMarginsRatio: 0.2
     onDltImageIdleChanged: {
         img.source = dltImageIdle // sometimes was not refresh it self
     }
@@ -63,8 +64,8 @@ Item{
         anchors{
             fill: parent
             margins: {
-                var pw = parent.width * 0.20;
-                var ph = parent.height * 0.20;
+                var pw = parent.width * imageButton.dltImageMarginsRatio;
+                var ph = parent.height * imageButton.dltImageMarginsRatio;
 
                 (pw < ph) ? pw : ph;
             }

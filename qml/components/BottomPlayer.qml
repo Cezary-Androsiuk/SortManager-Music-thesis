@@ -4,6 +4,7 @@ import QtQuick.Controls.Material
 import Qt5Compat.GraphicalEffects
 
 import "qrc:/SortManager-Music/qml/components" // ImageButton
+import "Player" // SongTitle
 
 Item{
     id: bottomPlayer
@@ -15,8 +16,21 @@ Item{
     height: root._h * 0.2
 
     property bool isPlaying
-    readonly property int bottomMainFieldHeight: bottomPlayer.height * 0.3
-    readonly property bool showAreas: false
+    // title
+    readonly property double titleFieldTopMarginRatio: 0.05
+    readonly property double titleFieldHeightRatio: 0.3
+    // slider
+    readonly property double sliderFieldTopMarginRatio: -0.05
+    readonly property double sliderFieldHeightRatio: 0.25
+    // controls
+    readonly property double controlsFieldBottomMarginRatio: 0.1
+    readonly property double controlsFieldHeightRatio: 0.35
+    readonly property int controlsDistanceBetweenControls: 15
+    readonly property double nonPlayTopControlsSizeRatio: 0.8
+
+    property bool stoppedBySlider: false // useful when user decided that song should stop, while changing song position
+
+    readonly property bool showAreas: !root.globalVisibleChanger
 
     Component.onCompleted: {
         // set isPlaying this way, because if isPlaying is constantly readed from
@@ -51,8 +65,9 @@ Item{
     Item{
         id: mainField
         anchors.fill: parent
+
         Item{
-            id: leftMainField
+            id: thumbnailField
             anchors{
                 top: parent.top
                 bottom: parent.bottom
@@ -61,7 +76,6 @@ Item{
             width: height
 
             Item{
-                id: thumbnailField
                 anchors{
                     top: parent.top
                     bottom: parent.bottom
@@ -76,7 +90,6 @@ Item{
                         fill: parent
                         margins: 10
                     }
-
                     glowRadius: 15
                     spread: 0.2
                     color: root.color_accent1
@@ -96,7 +109,6 @@ Item{
                     id: thumbnail
                     fillMode: Image.PreserveAspectCrop
                     anchors.fill: parent
-
                     source: {
                         if(backend.player.thumbnail === "")
                         {
@@ -108,7 +120,6 @@ Item{
                         else
                             backend.player.thumbnail
                     }
-
                     layer.enabled: true
                     layer.effect: OpacityMask {
                         maskSource: thumbnailMask
@@ -121,113 +132,261 @@ Item{
         }
 
         Item{
-            id: rightMainField
+            id: titleField
             anchors{
                 top: parent.top
-                bottom: parent.bottom
-                left: leftMainField.right
+                topMargin: parent.height * bottomPlayer.titleFieldTopMarginRatio
+                left: thumbnailField.right
+                leftMargin: parent.width * 0
                 right: parent.right
+                rightMargin: parent.width * 0.01
             }
+            height: parent.height * bottomPlayer.titleFieldHeightRatio
+            clip: true
+            Rectangle{anchors.fill: parent; color: "green"; opacity: 0.2; visible: showAreas}
+            SongTitle{
+                isPlayerLarge: false
+            }
+        }
 
-            Item{
-                id: controlsField
+        Item{
+            id: sliderField
+            anchors{
+                top: titleField.bottom
+                topMargin: parent.height * bottomPlayer.sliderFieldTopMarginRatio
+                left: thumbnailField.right
+                leftMargin: parent.width * 0.01
+                right: parent.right
+                rightMargin: parent.width * 0.01
+            }
+            height: parent.height * bottomPlayer.sliderFieldHeightRatio
+            Rectangle{anchors.fill: parent; color: "blue"; opacity: 0.2; visible: showAreas}
+            Slider{
+                id: slider
                 anchors{
-                    top: parent.top
-                    right: parent.right
-                    left: parent.left
-                    bottom: sliderField.top
-                    rightMargin: 40
-                    leftMargin: 40
+                    fill: parent
+                    leftMargin: parent.height * 0.2
+                    rightMargin: parent.height * 0.2
                 }
+                from: 0
+                to: backend.player.duration
+                value: backend.player.position
+                onPressedChanged: {
+                    if(!backend.personalization.stopSongWhileSeek)
+                        return
 
-                Item{
-                    id: prevField
-                    anchors{
-                        top: parent.top
-                        left: parent.left
-                        bottom: parent.bottom
+                    if(!isPlaying)
+                        return;
+
+                    if(pressed)
+                    {
+                        bottomPlayer.stoppedBySlider = true;
+                        backend.player.play();
                     }
-                    width: parent.width / 4
-
-                    ImageButton{
-                        id: prevImage
-                        dltImageIdle: Qt.resolvedUrl("qrc:/SortManager-Music/assets/icons/player/start_64px.png")
-                        dltImageHover: dltImageIdle
-                        onUserClicked: {
-                            backend.player.restartSong()
-                        }
-                    }
-                }
-                Item{
-                    id: playField
-                    anchors{
-                        top: parent.top
-                        bottom: parent.bottom
-                        left: prevField.right
-                        right: nextField.left
-                    }
-
-                    ImageButton{
-                        id: playImage
-                        dltImageIdle: {
-                            if(isPlaying)
-                                Qt.resolvedUrl("qrc:/SortManager-Music/assets/icons/player/pause_64px.png")
-                            else
-                                Qt.resolvedUrl("qrc:/SortManager-Music/assets/icons/player/play_64px.png")
-                        }
-
-                        dltImageHover: dltImageIdle
-                        onUserClicked: {
+                    else
+                    {
+                        if(bottomPlayer.stoppedBySlider)
+                        {
+                            bottomPlayer.stoppedBySlider = false;
                             backend.player.play();
-                            bottomPlayer.isPlaying = !bottomPlayer.isPlaying
                         }
                     }
                 }
-                Item{
-                    id: nextField
-                    anchors{
-                        top: parent.top
-                        right: parent.right
-                        bottom: parent.bottom
-                        margins: 10
-                    }
-                    width: parent.width / 4
+                onMoved: {
+                    backend.player.position = value
+                }
+            }
+        }
 
-                    ImageButton{
-                        id: nextImage
-                        dltImageIdle: Qt.resolvedUrl("qrc:/SortManager-Music/assets/icons/player/end_64px.png")
-                        dltImageHover: dltImageIdle
-                        onUserClicked: {
-                            backend.player.nextSong()
-                        }
-                    }
+        Item{
+            id: controlsField
+            anchors{
+                left: thumbnailField.right
+                leftMargin: parent.width * 0.01
+                right: parent.right
+                rightMargin: parent.width * 0.01
+                bottom: parent.bottom
+                bottomMargin: parent.height * bottomPlayer.controlsFieldBottomMarginRatio
+            }
+            height: parent.height * bottomPlayer.controlsFieldHeightRatio
+            Rectangle{anchors.fill: parent; color: "pink"; opacity: 0.2; visible: showAreas}
+            Item{
+                id: prevField
+                anchors{
+                    verticalCenter: playField.verticalCenter
+                    right: playField.left
+                    rightMargin: bottomPlayer.controlsDistanceBetweenControls
                 }
+                height: parent.height * bottomPlayer.nonPlayTopControlsSizeRatio
+                width: height
 
                 Rectangle{anchors.fill: parent; color: "blue"; opacity: 0.2; visible: showAreas}
-            }
-
-            Item{
-                id: sliderField
-                anchors{
-                    right: parent.right
-                    bottom: parent.bottom
-                    left: parent.left
-                }
-                height: bottomPlayer.bottomMainFieldHeight
-
-                Rectangle{anchors.fill: parent; color: "green"; opacity: 0.2; visible: showAreas}
-
-                Slider{
-                    id: slider
-                    anchors{
-                        fill: parent
-                        leftMargin: parent.height * 0.2
-                        rightMargin: parent.height * 0.2
+                ImageButton{
+                    id: prevImage
+                    dltImageIdle: Qt.resolvedUrl("qrc:/SortManager-Music/assets/icons/player/start_64px.png")
+                    dltImageHover: dltImageIdle
+                    dltImageMarginsRatio: 0.12
+                    onUserClicked: {
+                        backend.player.restartSong()
                     }
                 }
             }
+            Item{
+                id: playField
+                anchors.centerIn: parent
+                height: parent.height
+                width: height
 
+                Rectangle{anchors.fill: parent; color: "blue"; opacity: 0.2; visible: showAreas}
+                ImageButton{
+                    id: playImage
+                    dltImageIdle: {
+                        if(isPlaying)
+                            Qt.resolvedUrl("qrc:/SortManager-Music/assets/icons/player/pause_64px.png")
+                        else
+                            Qt.resolvedUrl("qrc:/SortManager-Music/assets/icons/player/play_64px.png")
+                    }
+                    dltImageHover: dltImageIdle
+                    dltImageMarginsRatio: 0.12
+                    onUserClicked: {
+                        backend.player.play();
+                        bottomPlayer.isPlaying = !bottomPlayer.isPlaying
+                    }
+                }
+            }
+            Item{
+                id: nextField
+                anchors{
+                    verticalCenter: playField.verticalCenter
+                    left: playField.right
+                    leftMargin: bottomPlayer.controlsDistanceBetweenControls
+                }
+                height: parent.height * bottomPlayer.nonPlayTopControlsSizeRatio
+                width: height
+
+                Rectangle{anchors.fill: parent; color: "blue"; opacity: 0.2; visible: showAreas}
+                ImageButton{
+                    id: nextImage
+                    dltImageIdle: Qt.resolvedUrl("qrc:/SortManager-Music/assets/icons/player/end_64px.png")
+                    dltImageHover: dltImageIdle
+                    dltImageMarginsRatio: 0.12
+                    onUserClicked: {
+                        backend.player.nextSong()
+                    }
+                }
+            }
         }
+
+
+
+        // Item{
+        //     id: rightMainField
+        //     anchors{
+        //         top: parent.top
+        //         bottom: parent.bottom
+        //         left: leftMainField.right
+        //         right: parent.right
+        //     }
+
+        //     Item{
+        //         id: controlsField
+        //         anchors{
+        //             top: parent.top
+        //             right: parent.right
+        //             left: parent.left
+        //             bottom: sliderField.top
+        //             rightMargin: 40
+        //             leftMargin: 40
+        //         }
+
+        //         Item{
+        //             id: prevField
+        //             anchors{
+        //                 top: parent.top
+        //                 left: parent.left
+        //                 bottom: parent.bottom
+        //             }
+        //             width: parent.width / 4
+
+        //             ImageButton{
+        //                 id: prevImage
+        //                 dltImageIdle: Qt.resolvedUrl("qrc:/SortManager-Music/assets/icons/player/start_64px.png")
+        //                 dltImageHover: dltImageIdle
+        //                 onUserClicked: {
+        //                     backend.player.restartSong()
+        //                 }
+        //             }
+        //         }
+        //         Item{
+        //             id: playField
+        //             anchors{
+        //                 top: parent.top
+        //                 bottom: parent.bottom
+        //                 left: prevField.right
+        //                 right: nextField.left
+        //             }
+
+        //             ImageButton{
+        //                 id: playImage
+        //                 dltImageIdle: {
+        //                     if(isPlaying)
+        //                         Qt.resolvedUrl("qrc:/SortManager-Music/assets/icons/player/pause_64px.png")
+        //                     else
+        //                         Qt.resolvedUrl("qrc:/SortManager-Music/assets/icons/player/play_64px.png")
+        //                 }
+
+        //                 dltImageHover: dltImageIdle
+        //                 onUserClicked: {
+        //                     backend.player.play();
+        //                     bottomPlayer.isPlaying = !bottomPlayer.isPlaying
+        //                 }
+        //             }
+        //         }
+        //         Item{
+        //             id: nextField
+        //             anchors{
+        //                 top: parent.top
+        //                 right: parent.right
+        //                 bottom: parent.bottom
+        //                 margins: 10
+        //             }
+        //             width: parent.width / 4
+
+        //             ImageButton{
+        //                 id: nextImage
+        //                 dltImageIdle: Qt.resolvedUrl("qrc:/SortManager-Music/assets/icons/player/end_64px.png")
+        //                 dltImageHover: dltImageIdle
+        //                 onUserClicked: {
+        //                     backend.player.nextSong()
+        //                 }
+        //             }
+        //         }
+
+        //         Rectangle{anchors.fill: parent; color: "blue"; opacity: 0.2; visible: showAreas}
+        //     }
+
+        //     Item{
+        //         id: sliderField
+        //         anchors{
+        //             right: parent.right
+        //             bottom: parent.bottom
+        //             left: parent.left
+        //         }
+        //         height: bottomPlayer.bottomMainFieldHeight
+
+        //         Rectangle{anchors.fill: parent; color: "green"; opacity: 0.2; visible: showAreas}
+
+        //         Slider{
+        //             id: slider
+        //             anchors{
+        //                 fill: parent
+        //                 leftMargin: parent.height * 0.2
+        //                 rightMargin: parent.height * 0.2
+        //             }
+        //         }
+        //     }
+
+        // }
     }
 
 }
