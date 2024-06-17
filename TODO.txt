@@ -110,10 +110,12 @@ DONE - dodać ładowanie w moemncie importowania i exportowania danych
 ... kiepskie jest to, że importując tagi nie można dodać jakie piosenki będą miały jaką wartość dla niego, ale wychodzi, że to jest najprostrze rozwiązanie i cóż
 DONE - Dodać noSongThumbnailLight
 DONE - funkcjonalny slider dla player
-- zmaina głośności
+DONE - zmaina głośności
 - lepsze delegate w playlist
 - sprawdzić co spowalnia ładowanie playlisty
 - obsłużyć player/wyświetlanie playera gdy playlist jest puste
+- naprawić begin oraz end w player, bo nie działa prawidłowo
+- dodać liczbę czasu piosenki oraz liczbę obecnej pozycji (w minutach/sekundach) pod sliderem
 
 
 Zdarzenia playlist:

@@ -49,6 +49,10 @@ void Backend::initializeConnections()
     /// when Playlist changed current song, notify Player about it (initialization and when Player end song)
     QObject::connect(m_playlist, &Playlist::currentSongChanged, m_player, &Player::changeSong);
 
+    /// on personalization playerVolume change, change also player's volume
+    QObject::connect(m_personalization, &Personalization::playerVolumeChanged, this, [&](){
+        m_player->setVolume(m_personalization->getPlayerVolume());
+    });
 }
 
 void Backend::initializeParameters()

@@ -25,6 +25,7 @@ void Personalization::printValues() const
     DB << "\t - showErrorDesc: " << m_showErrorDesc;
     DB << "\t - showFiltersSave: " << m_showFiltersSave;
     DB << "\t - stopSongWhileSeek: " << m_stopSongWhileSeek;
+    DB << "\t - playerVolume: " << m_playerVolume;
 #endif
 }
 
@@ -66,6 +67,8 @@ void Personalization::setDefaultPersonalizationData()
     emit this->showFiltersSaveChanged();
     m_stopSongWhileSeek = DEFAULT_STOP_SONG_WHILE_SEEK;
     emit this->stopSongWhileSeekChanged();
+    m_playerVolume = DEFAULT_PLAYER_VOLUME;
+    emit this->playerVolumeChanged();
 
     m_errorCodeIfOccurWhileLoading = 0;
 }
@@ -143,6 +146,9 @@ void Personalization::loadPersonalizationFromJson()
     key = "stop song while using seek bar";
     CHECK_KEY(this->setStopSongWhileSeek(jp[key].toBool()));
 
+    key = "player volume";
+    CHECK_KEY(this->setPlayerVolume(jp[key].toString().toUInt()));
+
 
     DB << "personalization data readed!";
     this->printValues();
@@ -187,6 +193,7 @@ void Personalization::savePersonalizationToJson()
     json_object["show error description"] = this->getShowErrorDesc();
     json_object["show filters save confirmation"] = this->getShowFiltersSave();
     json_object["stop song while using seek bar"] = this->getStopSongWhileSeek();
+    json_object["player volume"] = QString::number(this->getPlayerVolume());
 
     QJsonDocument json_data(json_object);
 
@@ -262,6 +269,11 @@ bool Personalization::getShowFiltersSave() const
 bool Personalization::getStopSongWhileSeek() const
 {
     return m_stopSongWhileSeek;
+}
+
+uint Personalization::getPlayerVolume() const
+{
+    return m_playerVolume;
 }
 
 void Personalization::setIsDarkTheme(bool isDarkTheme)
@@ -361,4 +373,19 @@ void Personalization::setStopSongWhileSeek(bool stopSongWhileSeek)
 
     m_stopSongWhileSeek = stopSongWhileSeek;
     emit this->stopSongWhileSeekChanged();
+}
+
+void Personalization::setPlayerVolume(uint playerVolume)
+{
+    if(m_playerVolume == playerVolume)
+        return;
+
+    if(playerVolume > 100)
+    {
+        WR << "player volume is in range 0-100, but was given:" << playerVolume;
+        playerVolume = 100;
+    }
+
+    m_playerVolume = playerVolume;
+    emit this->playerVolumeChanged();
 }

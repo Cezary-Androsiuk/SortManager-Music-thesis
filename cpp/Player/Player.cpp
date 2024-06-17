@@ -11,8 +11,6 @@ Player::Player(QObject *parent)
 
     this->buildParametersConnections();
 
-    // m_player->setSource(QUrl::fromLocalFile("C:/0_Vigiland - Friday Night‬‬‬/Vigiland - Friday Night‬‬‬ (1080p_25fps_H264-128kbit_AAC).mp4"));
-
 
     /// connection don't need to be reconeced after restart player, cause it won't use parameters (m_player, m_song, ...)
     QObject::connect(this, &Player::songChanged, this, &Player::updatePlayer);
@@ -23,7 +21,6 @@ void Player::buildParametersConnections()
     /// is called after parameters was reinitialized (like after restart player)
     /// to reconnect broken connections
 
-    // m_audioOutput->setVolume(0.1);
     m_player->setAudioOutput(m_audioOutput);
 
     QObject::connect(m_player, &QMediaPlayer::positionChanged, this, &Player::updatePlayerProgress);
@@ -56,6 +53,12 @@ void Player::nextSong()
 void Player::restartSong()
 {
     this->updatePlayer(); /// gives effect equal to move player to the start
+}
+
+void Player::setVolume(int volume)
+{
+    float rangeVolume = static_cast<float>(volume) / 100.f;
+    this->m_audioOutput->setVolume(rangeVolume);
 }
 
 void Player::changeSong(const SongDetails *receivedSong)

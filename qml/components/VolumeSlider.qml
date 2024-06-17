@@ -3,29 +3,25 @@ import QtQuick.Controls
 import QtQuick.Controls.Material
 import QtQuick.Dialogs
 
-import "qrc:/SortManager-Music/qml/components" // ImageButton
+// ImageButton
 
 Item {
     id: volumeSlider
     anchors.fill: parent
 
-    property int playerVolume: 0
+    property int playerVolume: backend.personalization.playerVolume
     readonly property int popupHeight: 200
 
     readonly property var speakerIcon100: Qt.resolvedUrl("qrc:/SortManager-Music/assets/icons/not_compare_64px.png")
     readonly property var speakerIcon050: Qt.resolvedUrl("qrc:/SortManager-Music/assets/icons/not_compare_64px.png")
     readonly property var speakerIcon000: Qt.resolvedUrl("qrc:/SortManager-Music/assets/icons/not_compare_64px.png")
     readonly property var speakerIcon: {
-        if(playerVolume > 0.5)
+        if(playerVolume > 50)
             speakerIcon100
         else if(playerVolume > 0)
             speakerIcon050
         else
             speakerIcon000
-    }
-
-    Component.onCompleted: {
-        playerVolume = 50
     }
 
     Popup{
@@ -75,7 +71,8 @@ Item {
                 stepSize: 1
                 value: playerVolume
                 onMoved: {
-                    playerVolume = value
+                    backend.personalization.playerVolume = value
+                    console.log("new volume: " + backend.personalization.playerVolume)
                 }
             }
         }
@@ -98,49 +95,6 @@ Item {
                 dltImageMarginsRatio: 0
             }
         }
-
-
-        // Loader{
-        //     id: listLoader
-        //     anchors.centerIn: parent
-        //     width: parent.width
-        //     height: parent.height
-        //     sourceComponent: listComponent
-        //     active: false
-        // }
-
-        // Component{
-        //     id: listComponent
-        //     ListView{
-        //         anchors.fill: parent
-        //         model: dltModel
-        //         clip: true
-        //         boundsBehavior: Flickable.StopAtBounds
-        //         opacity: 0.5
-        //         currentIndex: dltIndex
-        //         highlight: Rectangle{
-        //             color: root.color_accent2
-        //             opacity: 0.3
-        //         }
-
-        //         delegate: Item{
-        //             width: parent.width
-        //             height: comparatorComponent.popup_case_height+1 // +1 because "LIKE" icon looks better
-
-        //             ImageButton{
-        //                 dltDescription: modelData.desc
-        //                 dltImageIdle: modelData.image
-        //                 dltImageHover: dltImageIdle
-        //                 onUserClicked: {
-        //                     popup.close()
-        //                     dltIndex = index
-        //                 }
-        //                 dltUsePopupColor: true
-        //                 dltBackgroundVisible: true
-        //             }
-        //         }
-        //     }
-        // }
     }
 
     Item{

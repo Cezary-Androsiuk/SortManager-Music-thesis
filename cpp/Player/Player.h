@@ -14,12 +14,12 @@
 class Player : public QObject
 {
     Q_OBJECT
-    Q_PROPERTY(bool         isPlaying   READ getIsPlaying   NOTIFY playingChanged       FINAL)
+    Q_PROPERTY(bool         isPlaying   READ getIsPlaying                       NOTIFY playingChanged       FINAL)
 
-    Q_PROPERTY(qsizetype    songID      READ getSongID      NOTIFY songFullyLoaded      FINAL)
-    Q_PROPERTY(QString      title       READ getTitle       NOTIFY songFullyLoaded      FINAL)
-    Q_PROPERTY(QString      thumbnail   READ getThumbnail   NOTIFY songFullyLoaded      FINAL)
-    Q_PROPERTY(qsizetype    duration    READ getDuration    NOTIFY songFullyLoaded      FINAL)
+    Q_PROPERTY(qsizetype    songID      READ getSongID                          NOTIFY songFullyLoaded      FINAL)
+    Q_PROPERTY(QString      title       READ getTitle                           NOTIFY songFullyLoaded      FINAL)
+    Q_PROPERTY(QString      thumbnail   READ getThumbnail                       NOTIFY songFullyLoaded      FINAL)
+    Q_PROPERTY(qsizetype    duration    READ getDuration                        NOTIFY songFullyLoaded      FINAL)
     Q_PROPERTY(qsizetype    position    READ getPosition    WRITE setPosition   NOTIFY songPositionChanged  FINAL)
 public:
     explicit Player(QObject *parent = nullptr);
@@ -28,9 +28,9 @@ public:
 
 public slots:
     void play();
-    // void pause();
     void nextSong();
     void restartSong();
+    void setVolume(int volume);
 
     void changeSong(const SongDetails *song); /// emited by Playlist, only when Player ask to (by emiting songEnded)
     void resetPlayer();

@@ -2,7 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Controls.Material
 
-import "qrc:/SortManager-Music/qml/components"
+import "qrc:/SortManager-Music/qml/components" // BottomPlayer
 import "qrc:/SortManager-Music/qml/popups"
 
 Page {

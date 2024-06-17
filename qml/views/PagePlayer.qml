@@ -3,8 +3,8 @@ import QtQuick.Controls
 import QtQuick.Controls.Material
 import Qt5Compat.GraphicalEffects
 
-import "qrc:/SortManager-Music/qml/components" // ImageButton
-import "qrc:/SortManager-Music/qml/components/Player"
+import "qrc:/SortManager-Music/qml/components" // ImageButton, VolumeSlider
+import "qrc:/SortManager-Music/qml/components/Player" // SongTitle
 
 Page {
     id: pagePlayer
@@ -34,6 +34,7 @@ Page {
         // set isPlaying this way, because if isPlaying is constantly readed from
         // backend then within song change, play button blinks (playing is changed to pause for a moment)
         isPlaying = backend.player.isPlaying
+        // in bottomPlayer is readed constantly because song can be stopped by reloading (and this mess up the play button)
     }
 
     Item{

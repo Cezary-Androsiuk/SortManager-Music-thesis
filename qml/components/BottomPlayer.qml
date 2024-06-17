@@ -3,7 +3,8 @@ import QtQuick.Controls
 import QtQuick.Controls.Material
 import Qt5Compat.GraphicalEffects
 
-import "qrc:/SortManager-Music/qml/components" // ImageButton
+// ImageButton
+// VolumeSlider
 import "Player" // SongTitle
 
 Item{
@@ -15,7 +16,6 @@ Item{
     }
     height: root._h * 0.2
 
-    property bool isPlaying
     // title
     readonly property double titleFieldTopMarginRatio: 0.05
     readonly property double titleFieldHeightRatio: 0.3
@@ -31,12 +31,6 @@ Item{
     property bool stoppedBySlider: false // useful when user decided that song should stop, while changing song position
 
     readonly property bool showAreas: !root.globalVisibleChanger
-
-    Component.onCompleted: {
-        // set isPlaying this way, because if isPlaying is constantly readed from
-        // backend then within song change, play button blinks (playing is changed to pause for a moment)
-        isPlaying = backend.player.isPlaying
-    }
 
 
     Rectangle{
@@ -175,7 +169,7 @@ Item{
                     if(!backend.personalization.stopSongWhileSeek)
                         return
 
-                    if(!isPlaying)
+                    if(!backend.player.isPlaying)
                         return;
 
                     if(pressed)
@@ -241,7 +235,7 @@ Item{
                 ImageButton{
                     id: playImage
                     dltImageIdle: {
-                        if(isPlaying)
+                        if(backend.player.isPlaying)
                             Qt.resolvedUrl("qrc:/SortManager-Music/assets/icons/player/pause_64px.png")
                         else
                             Qt.resolvedUrl("qrc:/SortManager-Music/assets/icons/player/play_64px.png")
@@ -250,7 +244,6 @@ Item{
                     dltImageMarginsRatio: 0.12
                     onUserClicked: {
                         backend.player.play();
-                        bottomPlayer.isPlaying = !bottomPlayer.isPlaying
                     }
                 }
             }
