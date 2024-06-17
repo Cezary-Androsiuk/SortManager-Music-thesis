@@ -161,6 +161,7 @@ Item{
                     fill: parent
                     leftMargin: parent.height * 0.2
                     rightMargin: parent.height * 0.2
+                    topMargin: -10
                 }
                 from: 0
                 to: backend.player.duration
@@ -189,6 +190,42 @@ Item{
                 onMoved: {
                     backend.player.position = value
                 }
+            }
+
+            Text{
+                id: positionText
+                anchors{
+                    top: slider.bottom
+                    topMargin: -12
+                    left: slider.left
+                    leftMargin: 5
+                }
+                height: parent.height/2
+                width: 40
+                text: backend.player.displayPosition
+                font.pixelSize: 10
+                color: root.color_accent1
+                horizontalAlignment: Text.AlignHCenter
+                verticalAlignment: Text.AlignVCenter
+                Rectangle{anchors.fill: parent; color: "yellow"; opacity: 0.2; visible: showAreas}
+            }
+
+            Text{
+                id: durationText
+                anchors{
+                    top: slider.bottom
+                    topMargin: -12
+                    right: slider.right
+                    rightMargin: 5
+                }
+                height: parent.height/2
+                width: 40
+                text: backend.player.displayDuration
+                font.pixelSize: 10
+                color: root.color_accent1
+                horizontalAlignment: Text.AlignHCenter
+                verticalAlignment: Text.AlignVCenter
+                Rectangle{anchors.fill: parent; color: "yellow"; opacity: 0.2; visible: showAreas}
             }
         }
 

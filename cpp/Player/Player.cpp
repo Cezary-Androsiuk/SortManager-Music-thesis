@@ -149,6 +149,9 @@ void Player::onMediaStatusChanged(QMediaPlayer::MediaStatus status)
         DB << "media player status changed to: LoadedMedia";
         m_player->setPosition(m_songData.begin);
         m_songData.duration = m_player->duration();
+        m_lastUpdatedDisplayValues = m_player->position();
+        emit this->displayPositionChanged();
+        emit this->displayDurationChanged();
         emit this->songFullyLoaded();
         emit this->songStarted();
         break;
@@ -193,9 +196,8 @@ void Player::updatePlayerProgress(qsizetype position)
         m_player->pause();
         emit this->songEnded();
     }
-    // // qsizetype realDuration = m_player->duration() - m_songData.begin - m_songData.end;
-    // // qsizetype realPosition = position - m_songData.begin;
-    // emit this->updatePlayerProgress(realDuration, realPosition);
+
+    emit this->displayPositionChanged();
 }
 
 QString Player::getSongTagValueByID(qsizetype id) const
@@ -228,6 +230,16 @@ QString Player::validThumbnailPath(QString thumbnail) const
     }
 }
 
+QString Player::createDisplayTime(qsizetype time)
+{
+    int minutes = time / (1000 * 60);
+    int seconds = time / 1000 - minutes * 60;
+    // int miliseconds = time - seconds * 1000 - minutes * 1000 * 60;
+    return QString(
+        (minutes < 10 ? "0" : "") + QString::number(minutes) + ":" +
+        (seconds < 10 ? "0" : "") + QString::number(seconds));
+}
+
 bool Player::getIsPlaying() const
 {
     return this->m_player->isPlaying();
@@ -258,12 +270,25 @@ qsizetype Player::getPosition() const
     return m_songData.position;
 }
 
+QString Player::getDisplayDuration() const
+{
+    /// i know that getters shouln't compute anything, but this code is already a nice spaghetti
+    return Player::createDisplayTime(m_songData.duration);
+}
+
+QString Player::getDisplayPosition() const
+{
+    /// i know that getters shouln't compute anything, but this code is already a nice spaghetti
+    return Player::createDisplayTime(m_songData.position);
+}
+
 void Player::setPosition(qsizetype position)
 {
     if(m_songData.position == position)
         return;
 
     m_songData.position = position;
+    m_lastUpdatedDisplayValues = position;
     m_player->setPosition(position);
     emit this->songPositionChanged();
 }

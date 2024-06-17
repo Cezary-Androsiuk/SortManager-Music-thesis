@@ -11,6 +11,8 @@
 #include "cpp/DebugPrint/DebugPrint.h"
 #include "cpp/Song/SongDetails.h"
 
+#define REFRESH_DISPLAY_POSITION_MS 1000
+
 class Player : public QObject
 {
     Q_OBJECT
@@ -21,6 +23,9 @@ class Player : public QObject
     Q_PROPERTY(QString      thumbnail   READ getThumbnail                       NOTIFY songFullyLoaded      FINAL)
     Q_PROPERTY(qsizetype    duration    READ getDuration                        NOTIFY songFullyLoaded      FINAL)
     Q_PROPERTY(qsizetype    position    READ getPosition    WRITE setPosition   NOTIFY songPositionChanged  FINAL)
+
+    Q_PROPERTY(QString      displayDuration     READ getDisplayDuration     NOTIFY displayDurationChanged   FINAL)
+    Q_PROPERTY(QString      displayPosition     READ getDisplayPosition     NOTIFY displayPositionChanged   FINAL)
 public:
     explicit Player(QObject *parent = nullptr);
 
@@ -43,6 +48,8 @@ signals:
     void playingChanged();      ///
     void songStarted();
     void songPositionChanged();
+    void displayDurationChanged();
+    void displayPositionChanged();
 
 public slots:
     void onMediaStatusChanged(QMediaPlayer::MediaStatus status);
@@ -54,6 +61,7 @@ private:
 private: // support methods
     QString getSongTagValueByID(qsizetype id) const;
     QString validThumbnailPath(QString thumbnail) const;
+    static QString createDisplayTime(qsizetype time);
 
 public: // qml getters
     bool getIsPlaying() const;
@@ -62,6 +70,8 @@ public: // qml getters
     QString getThumbnail() const;
     qsizetype getDuration() const;
     qsizetype getPosition() const;
+    QString getDisplayDuration() const;
+    QString getDisplayPosition() const;
 
     void setPosition(qsizetype position);
 
@@ -81,6 +91,7 @@ private:
         qsizetype position;
     } m_songData;
 
+    qsizetype m_lastUpdatedDisplayValues;
 };
 
 #endif // PLAYER_H

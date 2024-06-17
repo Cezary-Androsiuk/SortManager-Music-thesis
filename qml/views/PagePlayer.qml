@@ -178,6 +178,38 @@ Page {
                     backend.player.position = value
                 }
             }
+
+            Text{
+                id: positionText
+                anchors{
+                    verticalCenter: parent.verticalCenter
+                    right: slider.left
+                }
+                height: parent.height
+                width: 40
+                text: backend.player.displayPosition
+                font.pixelSize: 14
+                color: root.color_accent1
+                horizontalAlignment: Text.AlignHCenter
+                verticalAlignment: Text.AlignVCenter
+                Rectangle{anchors.fill: parent; color: "yellow"; opacity: 0.2; visible: showAreas}
+            }
+
+            Text{
+                id: durationText
+                anchors{
+                    verticalCenter: parent.verticalCenter
+                    left: slider.right
+                }
+                height: parent.height
+                width: 40
+                text: backend.player.displayDuration
+                font.pixelSize: 14
+                color: root.color_accent1
+                horizontalAlignment: Text.AlignHCenter
+                verticalAlignment: Text.AlignVCenter
+                Rectangle{anchors.fill: parent; color: "yellow"; opacity: 0.2; visible: showAreas}
+            }
         }
 
         Item{

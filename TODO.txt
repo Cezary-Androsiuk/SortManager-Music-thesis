@@ -115,7 +115,7 @@ DONE - zmaina głośności
 - sprawdzić co spowalnia ładowanie playlisty
 - obsłużyć player/wyświetlanie playera gdy playlist jest puste
 - naprawić begin oraz end w player, bo nie działa prawidłowo
-- dodać liczbę czasu piosenki oraz liczbę obecnej pozycji (w minutach/sekundach) pod sliderem
+DONE - dodać liczbę czasu piosenki oraz liczbę obecnej pozycji (w minutach/sekundach) pod sliderem
 
 
 Zdarzenia playlist:

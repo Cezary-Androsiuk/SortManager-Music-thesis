@@ -72,7 +72,6 @@ Item {
                 value: playerVolume
                 onMoved: {
                     backend.personalization.playerVolume = value
-                    console.log("new volume: " + backend.personalization.playerVolume)
                 }
             }
         }
