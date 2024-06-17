@@ -194,7 +194,7 @@ Page {
             Item{
                 id: prevField
                 anchors{
-                    verticalCenter: playField.verticalCenter
+                    verticalCenter: parent.verticalCenter
                     right: playField.left
                     rightMargin: pagePlayer.controlsDistanceBetweenControls
                 }
@@ -236,7 +236,7 @@ Page {
             Item{
                 id: nextField
                 anchors{
-                    verticalCenter: playField.verticalCenter
+                    verticalCenter: parent.verticalCenter
                     left: playField.right
                     leftMargin: pagePlayer.controlsDistanceBetweenControls
                 }
@@ -250,6 +250,21 @@ Page {
                     onUserClicked: {
                         backend.player.nextSong()
                     }
+                }
+            }
+
+            Item{
+                id: volumeSliderField
+                anchors{
+                    verticalCenter: parent.verticalCenter
+                    right: parent.right
+                    rightMargin: 20
+                }
+                height: parent.height * pagePlayer.nonPlayTopControlsSizeRatio
+                width: height
+                Rectangle{anchors.fill: parent; color: "red"; opacity: 0.2; visible: showAreas}
+                VolumeSlider{
+
                 }
             }
         }

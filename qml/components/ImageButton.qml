@@ -90,6 +90,11 @@ Item{
         anchors.fill: parent
         hoverEnabled: true
 
+        onContainsMouseChanged: {
+            // console.log("new contains mouse: " + "" + (msArea.containsMouse && (dltDescription !== "")) + "" + msArea.containsMouse + "" + (dltDescription !== ""))
+            // tooltip.
+        }
+
         // following code is emulating button fine and don't need any changes
         onEntered: {
             // change image to hover
@@ -126,6 +131,10 @@ Item{
         ToolTip{
             id: tooltip
             visible: msArea.containsMouse && (dltDescription !== "") // && Backend.personalization.showTooltips
+            // onVisibleChanged: {
+            //     console.log("new visible: " + visible)
+            // }
+
             text: dltDescription
             delay: 800
         }
