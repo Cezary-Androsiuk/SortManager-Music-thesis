@@ -103,6 +103,15 @@ void Player::changeSong(const SongDetails *receivedSong)
     m_songData.begin = this->getSongTagValueByID(5/*Begin*/).toLongLong();
     m_songData.end = this->getSongTagValueByID(6/*End*/).toLongLong();
 
+    DB << "Loaded song with:";
+    DB << "\t id" << m_songData.songID;
+    DB << "\t title" << m_songData.title;
+    DB << "\t thumbnail" << m_songData.thumbnail;
+    DB << "\t begin" << m_songData.begin;
+    DB << "\t end" << m_songData.end;
+    DB << "\t source" << this->getSongTagValueByID(9/*Song Path*/);
+    fflush(stdout);
+
     DB << "song was changed";
     emit this->songChanged();
 }
@@ -143,18 +152,30 @@ void Player::onMediaStatusChanged(QMediaPlayer::MediaStatus status)
         emit this->songEnded();
         break;
     case QMediaPlayer::MediaStatus::LoadedMedia:
+    {
         if(m_songData.position != 0) /// that means song is playing and do not set position again
             break;
         /// song need to be loaded again when position was changed (for example go back by 10s)
         DB << "media player status changed to: LoadedMedia";
         m_player->setPosition(m_songData.begin);
-        m_songData.duration = m_player->duration();
+        if(m_songData.end > m_player->duration() || m_songData.end == 0) /// correct if is larger or 0
+            m_songData.end = m_player->duration();
+        m_songData.realDuration = m_songData.end;
+
+        DB << "song loaded and:";
+        DB << "\t starts in" << m_songData.begin;
+        DB << "\t with duration" << m_player->duration();
+        DB << "\t with real duration" << m_songData.realDuration;
+        DB << "\t ends in" << m_songData.end;
+        fflush(stdout);
+
         m_lastUpdatedDisplayValues = m_player->position();
-        emit this->displayPositionChanged();
-        emit this->displayDurationChanged();
-        emit this->songFullyLoaded();
-        emit this->songStarted();
+        // emit this->displayPositionChanged();
+        // emit this->displayDurationChanged();
+        // emit this->songFullyLoaded();
+        // emit this->songStarted();
         break;
+    }
     case QMediaPlayer::MediaStatus::LoadingMedia:
         // DB << "media player status changed to: LoadingMedia";
 
@@ -183,21 +204,22 @@ void Player::updatePlayer()
         m_player->play();
     }
     DB << "player updated to: " << m_songData.title;
+    fflush(stdout);
 }
 
 void Player::updatePlayerProgress(qsizetype position)
 {
-    qsizetype remainingTime = m_player->duration() - position;
     m_songData.position = position - m_songData.begin;
+    emit this->displayPositionChanged(); /// computed in getter...
 
-    if(remainingTime <= m_player->duration() - m_songData.end && m_songData.end != 0)
+    qsizetype remainingTime = m_songData.realDuration - position; /// realDuration takes into account song's end
+    const bool songReachedEnd = remainingTime <= 0;
+    if(songReachedEnd)
     {
-        // DB << "end";
         m_player->pause();
         emit this->songEnded();
+        return;
     }
-
-    emit this->displayPositionChanged();
 }
 
 QString Player::getSongTagValueByID(qsizetype id) const
@@ -260,9 +282,14 @@ QString Player::getThumbnail() const
     return m_songData.thumbnail;
 }
 
-qsizetype Player::getDuration() const
+qsizetype Player::getRealDuration() const
 {
-    return m_songData.duration;
+    return m_songData.realDuration;
+}
+
+qsizetype Player::getBegin() const
+{
+    return m_songData.begin;
 }
 
 qsizetype Player::getPosition() const
@@ -273,13 +300,17 @@ qsizetype Player::getPosition() const
 QString Player::getDisplayDuration() const
 {
     /// i know that getters shouln't compute anything, but this code is already a nice spaghetti
-    return Player::createDisplayTime(m_songData.duration);
+    DB << "realDuration"<< m_songData.realDuration << "begin" << m_songData.begin;
+    fflush(stdout);
+    return Player::createDisplayTime(m_songData.realDuration - m_songData.begin);
 }
 
 QString Player::getDisplayPosition() const
 {
     /// i know that getters shouln't compute anything, but this code is already a nice spaghetti
-    return Player::createDisplayTime(m_songData.position);
+    DB << "position"<< m_songData.position << "begin" << m_songData.begin;
+    fflush(stdout);
+    return Player::createDisplayTime(m_songData.position - m_songData.begin);
 }
 
 void Player::setPosition(qsizetype position)
