@@ -3,7 +3,8 @@ import QtQuick.Controls
 import QtQuick.Controls.Material
 import Qt5Compat.GraphicalEffects
 
-import "qrc:/SortManager-Music/qml/components"
+import "../common" // LeftText
+import "qrc:/SortManager-Music/qml/components" // ImageButton
 
 Item{
     id: listButtonField
@@ -11,60 +12,37 @@ Item{
 
     property string dltText: ""
 
-    signal dltClickedElement()
+    // signal dltClickedElement() // limited for june
     signal dltClickedPlay()
 
-    TabButton{
-        id: elementButton
+    LeftText{
+        id: leftText
+        dltText: listButtonField.dltText
+        // dltDesc: "some text"
+        dltAnchorRight: playButtonContainer.left
+        // onClicked: dltClickedElement()
+    }
+
+    Item{
+        id: playButtonContainer
         anchors{
             top: parent.top
             bottom: parent.bottom
-            left: parent.left
-            right: {
-                playSongButton.left
-            }
-        }
-
-        ToolTip.visible: hovered && (text.contentWidth > text.width)
-        ToolTip.text: dltText
-
-        onClicked: dltClickedElement()
-
-        Text{
-            id: text
-            anchors{
-                verticalCenter: parent.verticalCenter
-                left: parent.left
-                leftMargin: 20
-                right: parent.right
-                rightMargin: 10
-            }
-            text: dltText
-            font.pixelSize: 15
-            color: root.color_accent1
-            verticalAlignment: Text.AlignVCenter
-
-            // elide: Text.ElideRight
-            clip: true
-        }
-    }
-
-
-
-
-    TabButton{
-        id: playSongButton
-        height: parent.height
-        width: height
-
-        anchors{
-            top: parent.top
             right: parent.right
         }
+        width: height
 
-        // text: "▶" //(index !== 2 ? "▶" : "")
-        font.pixelSize: 30
-        onClicked: dltClickedPlay()
+        ImageButton{
+            id: headImage
+            dltDescription: "play"
+            // Qt.resolvedUrl("qrc:/SortManager-Music/assets/icons/player/pause_64px.png")
+            dltImageIdle: Qt.resolvedUrl("qrc:/SortManager-Music/assets/icons/player/play_64px.png")
+            dltImageHover: dltImageIdle
+            onUserClicked: {
+                dltClickedPlay()
+            }
+            dltImageMarginsRatio: 0.12
+        }
     }
 
 }

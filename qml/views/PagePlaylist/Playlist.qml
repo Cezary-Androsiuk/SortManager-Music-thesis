@@ -191,13 +191,12 @@ Page {
                             id: songDelegate
                             SongField{
                                 dltText: modelData.title + " " + modelData.id
-                                onDltClickedElement: {
-                                    // just_used_id = + modelData.id;
-                                    // just_used_title = modelData.title;
-                                    backend.playlist.switchNextSongTo(modelData.id)
-                                }
+                                // onDltClickedElement: {
+                                //     // just_used_id = + modelData.id;
+                                //     // just_used_title = modelData.title;
+                                // }
                                 onDltClickedPlay: {
-                                    console.log("play: " + modelData.title)
+                                    backend.playlist.switchNextSongTo(modelData.id)
                                 }
                             }
                         }
@@ -213,10 +212,10 @@ Page {
 
                                 SongField{
                                     dltText: modelData.title + " " + modelData.id
-                                    onDltClickedElement: {
-                                        just_used_id = + modelData.id;
-                                        just_used_title = modelData.title;
-                                    }
+                                    // onDltClickedElement: {
+                                    //     just_used_id = + modelData.id;
+                                    //     just_used_title = modelData.title;
+                                    // }
                                     onDltClickedPlay: {
                                         console.log("play: " + modelData.title)
                                     }
@@ -236,10 +235,10 @@ Page {
 
                                 SongField{
                                     dltText: modelData.title + " " + modelData.id
-                                    onDltClickedElement: {
-                                        just_used_id = + modelData.id;
-                                        just_used_title = modelData.title;
-                                    }
+                                    // onDltClickedElement: {
+                                    //     just_used_id = + modelData.id;
+                                    //     just_used_title = modelData.title;
+                                    // }
                                     onDltClickedPlay: {
                                         console.log("play: " + modelData.title)
                                     }
