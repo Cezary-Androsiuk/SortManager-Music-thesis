@@ -131,9 +131,7 @@ Page {
                 ListView{
                     id: playlistListView
                     model: mdl
-
                     clip: true
-
                     boundsBehavior: Flickable.StopAtBounds
 
                     header: PlaylistHeader{}
@@ -142,7 +140,6 @@ Page {
                         width: parent.width - 15 /*scrollbar offset*/
                         height: delegateHeight/2
                     }
-
 
                     Component.onCompleted: {
                         // console.log("completed listview")
@@ -163,33 +160,17 @@ Page {
                             else
                                 root.last_pos_playlist = 0;
                         }
-
                     }
 
                     delegate: Loader{
                         width: delegateWidth - 15 /*scrollbar offset*/
                         height: delegateHeight
 
-                        sourceComponent: {
-                            if(index === backend.playlist.currentPos)
-                            {
-                                songCurrentDelegate;
-                            }
-                            else if(index === backend.playlist.nextPos)
-                            {
-                                songNextDelegate;
-                            }
-                            else
-                            {
-                                songDelegate;
-                            }
-
-                        }
-
-
-                        Component{
+                        sourceComponent: Component{
                             id: songDelegate
                             SongField{
+                                isCurrentSong: index === backend.playlist.currentPos
+                                isNextSong: index === backend.playlist.nextPos
                                 dltText: modelData.title + " " + modelData.id
                                 // onDltClickedElement: {
                                 //     // just_used_id = + modelData.id;
@@ -200,57 +181,14 @@ Page {
                                 }
                             }
                         }
-                        Component{
-                            id: songCurrentDelegate
-                            Item{
-                                anchors.fill: parent
-                                Rectangle{
-                                    anchors.fill: parent
-                                    color: "red"
-                                    opacity: 0.6
-                                }
-
-                                SongField{
-                                    dltText: modelData.title + " " + modelData.id
-                                    // onDltClickedElement: {
-                                    //     just_used_id = + modelData.id;
-                                    //     just_used_title = modelData.title;
-                                    // }
-                                    onDltClickedPlay: {
-                                        console.log("play: " + modelData.title)
-                                    }
-                                }
-                            }
-
-                        }
-                        Component{
-                            id: songNextDelegate
-                            Item{
-                                anchors.fill: parent
-                                Rectangle{
-                                    anchors.fill: parent
-                                    color: "red"
-                                    opacity: 0.3
-                                }
-
-                                SongField{
-                                    dltText: modelData.title + " " + modelData.id
-                                    // onDltClickedElement: {
-                                    //     just_used_id = + modelData.id;
-                                    //     just_used_title = modelData.title;
-                                    // }
-                                    onDltClickedPlay: {
-                                        console.log("play: " + modelData.title)
-                                    }
-                                }
-                            }
-                        }
-
-
                     }
+
+
                 }
             }
         }
-
     }
+
+
+
 }

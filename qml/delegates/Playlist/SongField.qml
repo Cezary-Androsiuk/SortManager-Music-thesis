@@ -11,6 +11,8 @@ Item{
     anchors.fill: parent
 
     property string dltText: ""
+    property bool isCurrentSong: false
+    property bool isNextSong: false
 
     // signal dltClickedElement() // limited for june
     signal dltClickedPlay()
@@ -21,6 +23,19 @@ Item{
         // dltDesc: "some text"
         dltAnchorRight: playButtonContainer.left
         // onClicked: dltClickedElement()
+    }
+
+    Rectangle{
+        anchors.fill: leftText
+        color: root.color_accent2
+        opacity: {
+            if(listButtonField.isCurrentSong)
+                0.5
+            else if(listButtonField.isNextSong)
+                0.2
+            else
+                0.0
+        }
     }
 
     Item{
@@ -35,8 +50,20 @@ Item{
         ImageButton{
             id: headImage
             dltDescription: "play"
-            // Qt.resolvedUrl("qrc:/SortManager-Music/assets/icons/player/pause_64px.png")
-            dltImageIdle: Qt.resolvedUrl("qrc:/SortManager-Music/assets/icons/player/play_64px.png")
+            dltImageIdle: {
+                if(listButtonField.isCurrentSong)
+                {
+                    if(listButtonField.isNextSong)
+                        Qt.resolvedUrl("qrc:/SortManager-Music/assets/icons/player/play_64px.png")// current and next song icon
+                    else
+                        Qt.resolvedUrl("qrc:/SortManager-Music/assets/icons/player/play_64px.png")// current song icon
+                }
+                else if(listButtonField.isNextSong)
+                    Qt.resolvedUrl("qrc:/SortManager-Music/assets/icons/player/play_64px.png")// next song icon
+                else
+                    Qt.resolvedUrl("qrc:/SortManager-Music/assets/icons/player/play_64px.png")
+            }
+
             dltImageHover: dltImageIdle
             onUserClicked: {
                 dltClickedPlay()

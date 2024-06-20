@@ -105,6 +105,10 @@ qt_add_qml_module(appSortManager-Music
     RESOURCES assets/icons/player/pause_64px.png
     RESOURCES assets/icons/player/play_64px.png
     RESOURCES assets/icons/player/start_64px.png
+    RESOURCES assets/icons/player/volume0_64px.png
+    RESOURCES assets/icons/player/volume1_64px.png
+    RESOURCES assets/icons/player/volume2_64px.png
+    RESOURCES assets/icons/player/volume3_64px.png
 
     RESOURCES assets/icons/not_compare_64px.png
     RESOURCES assets/icons/approximately_equal_64px.png

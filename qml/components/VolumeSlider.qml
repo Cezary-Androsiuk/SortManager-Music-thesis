@@ -12,16 +12,19 @@ Item {
     property int playerVolume: backend.personalization.playerVolume
     readonly property int popupHeight: 200
 
-    readonly property var speakerIcon100: Qt.resolvedUrl("qrc:/SortManager-Music/assets/icons/not_compare_64px.png")
-    readonly property var speakerIcon050: Qt.resolvedUrl("qrc:/SortManager-Music/assets/icons/not_compare_64px.png")
-    readonly property var speakerIcon000: Qt.resolvedUrl("qrc:/SortManager-Music/assets/icons/not_compare_64px.png")
+    readonly property var speakerIcon75: Qt.resolvedUrl("qrc:/SortManager-Music/assets/icons/player/volume3_64px.png")
+    readonly property var speakerIcon50: Qt.resolvedUrl("qrc:/SortManager-Music/assets/icons/player/volume2_64px.png")
+    readonly property var speakerIcon25: Qt.resolvedUrl("qrc:/SortManager-Music/assets/icons/player/volume1_64px.png")
+    readonly property var speakerIcon00: Qt.resolvedUrl("qrc:/SortManager-Music/assets/icons/player/volume0_64px.png")
     readonly property var speakerIcon: {
-        if(playerVolume > 50)
-            speakerIcon100
+        if(playerVolume > 66)
+            speakerIcon75
+        else if(playerVolume > 33)
+                speakerIcon50
         else if(playerVolume > 0)
-            speakerIcon050
+            speakerIcon25
         else
-            speakerIcon000
+            speakerIcon00
     }
 
     Popup{
@@ -102,8 +105,6 @@ Item {
             fill: parent
             margins: 5
         }
-
-        opacity: 0.4
 
         ImageButton{
             id: headImage
