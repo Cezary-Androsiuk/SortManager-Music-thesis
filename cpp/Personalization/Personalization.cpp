@@ -132,7 +132,7 @@ void Personalization::loadPersonalizationFromJson()
     CHECK_KEY(this->setDefaultAddTagType(jp[key].toInteger()))
 
     key = "always keep list position";
-    CHECK_KEY(this->setAlwaysKeepListPos(jp[key].toInteger()))
+    CHECK_KEY(this->setAlwaysKeepListPos(jp[key].toBool()))
 
     key = "songs open path";
     CHECK_KEY(this->setSongOpenPath(jp[key].toString()))
@@ -246,7 +246,7 @@ int Personalization::getDefaultAddTagType() const
     return m_defaultAddTagType;
 }
 
-int Personalization::getAlwaysKeepListPos() const
+bool Personalization::getAlwaysKeepListPos() const
 {
     return m_alwaysKeepListPos;
 }

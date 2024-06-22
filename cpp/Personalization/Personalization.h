@@ -78,7 +78,7 @@ public: // getters / setters
     QColor getLightAccentColor() const;
     bool getShowConstantTags() const;
     int getDefaultAddTagType() const;
-    int getAlwaysKeepListPos() const;
+    bool getAlwaysKeepListPos() const;
     QString getSongOpenPath() const;
     bool getShowErrorDesc() const;
     bool getShowFiltersSave() const;
