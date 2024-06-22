@@ -27,7 +27,10 @@ Item {
                 dltDescription: "Reload Songs"
                 dltImageIdle: Qt.resolvedUrl("qrc:/SortManager-Music/assets/icons/refresh_36px.png")
                 dltImageHover: dltImageIdle
-                onUserClicked: backend.database.refreshPlaylist()
+                onUserClicked: {
+                    backend.database.refreshPlaylist()
+                    reloadPressed()
+                }
             }
         }
 

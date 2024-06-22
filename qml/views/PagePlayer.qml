@@ -34,7 +34,6 @@ Page {
         // set isPlaying this way, because if isPlaying is constantly readed from
         // backend then within song change, play button blinks (playing is changed to pause for a moment)
         isPlaying = backend.player.isPlaying
-        // in bottomPlayer is readed constantly because song can be stopped by reloading (and this mess up the play button)
     }
 
     Item{

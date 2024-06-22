@@ -16,6 +16,7 @@ Item{
     }
     height: root._h * 0.2
 
+    property bool isPlaying
     // title
     readonly property double titleFieldTopMarginRatio: 0.05
     readonly property double titleFieldHeightRatio: 0.3
@@ -32,6 +33,19 @@ Item{
 
     readonly property bool showAreas: !root.globalVisibleChanger
 
+    signal switchIsPlayingToFalse()
+    onSwitchIsPlayingToFalse: {
+        // used by playlist (refresh playlist button)
+        if(isPlaying)
+            isPlaying = false
+    }
+
+
+    Component.onCompleted: {
+        // set isPlaying this way, because if isPlaying is constantly readed from
+        // backend then within song change, play button blinks (playing is changed to pause for a moment)
+        isPlaying = backend.player.isPlaying
+    }
 
     Rectangle{
         id: topSmoothFadeIn
@@ -170,7 +184,7 @@ Item{
                     if(!backend.personalization.stopSongWhileSeek)
                         return
 
-                    if(!backend.player.isPlaying)
+                    if(!isPlaying)
                         return;
 
                     if(pressed)
@@ -272,7 +286,7 @@ Item{
                 ImageButton{
                     id: playImage
                     dltImageIdle: {
-                        if(backend.player.isPlaying)
+                        if(isPlaying)
                             Qt.resolvedUrl("qrc:/SortManager-Music/assets/icons/player/pause_64px.png")
                         else
                             Qt.resolvedUrl("qrc:/SortManager-Music/assets/icons/player/play_64px.png")
@@ -281,6 +295,7 @@ Item{
                     dltImageMarginsRatio: 0.12
                     onUserClicked: {
                         backend.player.play();
+                        bottomPlayer.isPlaying = !bottomPlayer.isPlaying
                     }
                 }
             }

@@ -111,11 +111,12 @@ DONE - dodać ładowanie w moemncie importowania i exportowania danych
 DONE - Dodać noSongThumbnailLight
 DONE - funkcjonalny slider dla player
 DONE - zmaina głośności
-- lepsze delegate w playlist
+DONE - lepsze delegate w playlist
 - sprawdzić co spowalnia ładowanie playlisty
 - obsłużyć player/wyświetlanie playera gdy playlist jest puste
 - naprawić begin oraz end w player, bo nie działa prawidłowo
 DONE - dodać liczbę czasu piosenki oraz liczbę obecnej pozycji (w minutach/sekundach) pod sliderem
+DONE - dodać ikony do delegate playlist
 
 
 Zdarzenia playlist:

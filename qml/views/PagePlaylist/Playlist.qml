@@ -36,14 +36,15 @@ Page {
         SELECT song_id, value AS title FROM songs_tags WHERE tag_id = 2;
     */
 
+    // this is the only case when player will be stopped while playing,
+    // then to update play icon, action need to be handled this way
+    signal reloadPressed()
+    // onReloadPressed: {
+    //     console.log("reload pressed!! nice")
+    // }
+
     Component.onCompleted: {
         console.log("Playlist.qml")
-
-        // for(var _song of backend.database.playlist_model.songs)
-        // {
-        //     mdl.push(_song);
-        //     mdlLength += 1
-        // }
 
         // playlist model will be constantly loaded
         listViewLoader.active = true

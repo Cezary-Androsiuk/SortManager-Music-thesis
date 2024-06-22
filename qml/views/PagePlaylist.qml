@@ -49,7 +49,15 @@ Page {
         }
         source: root.ppp_playlist
         active: false
+        onLoaded: {
+            // swich play button to pause if needed
+            playlistLoader.item.reloadPressed.connect(
+                        function (){
+                            bottomPlayer.switchIsPlayingToFalse()
+                        })
+        }
     }
+
 
     BottomPlayer {
         id: bottomPlayer
