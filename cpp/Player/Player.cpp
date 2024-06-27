@@ -63,6 +63,12 @@ void Player::setVolume(int volume)
 
 void Player::changeSong(const SongDetails *receivedSong)
 {
+    DB <<"\n\n\n\n\n\n\n\n";
+    // DB << "pause";
+    // {QEventLoop loop; QTimer::singleShot(2000, &loop, &QEventLoop::quit); loop.exec();}
+    // DB << "continue";
+
+    DB << "received song from playlist and changing to:" << receivedSong->get_tags()->c_ref_tags().at(1)->get_value();
     /// update player (to the same song) only when player is not playing
     if(receivedSong->get_id() == m_song->get_id())
     {
@@ -103,21 +109,27 @@ void Player::changeSong(const SongDetails *receivedSong)
     m_songData.begin = this->getSongTagValueByID(5/*Begin*/).toLongLong();
     m_songData.end = this->getSongTagValueByID(6/*End*/).toLongLong();
 
-    DB << "Loaded song with:";
-    DB << "\t id" << m_songData.songID;
-    DB << "\t title" << m_songData.title;
-    DB << "\t thumbnail" << m_songData.thumbnail;
-    DB << "\t begin" << m_songData.begin;
-    DB << "\t end" << m_songData.end;
-    DB << "\t source" << this->getSongTagValueByID(9/*Song Path*/);
-    fflush(stdout);
+    // DB << "Loaded song with:";
+    // DB << "\t id" << m_songData.songID;
+    // DB << "\t title" << m_songData.title;
+    // DB << "\t thumbnail" << m_songData.thumbnail;
+    // DB << "\t begin" << m_songData.begin;
+    // DB << "\t end" << m_songData.end;
+    // DB << "\t source" << this->getSongTagValueByID(9/*Song Path*/);
+
 
     DB << "song was changed";
+
+    DB << "pause";
+    {QEventLoop loop; QTimer::singleShot(200, &loop, &QEventLoop::quit); loop.exec();}
+    DB << "continue";
+
     emit this->songChanged();
 }
 
 void Player::resetPlayer()
 {
+    DB << "restarting player";
     m_playerStarted = false;
 
     if(m_player != nullptr) delete m_player;
@@ -130,6 +142,7 @@ void Player::resetPlayer()
     m_song = new SongDetails(this);
 
     this->buildParametersConnections();
+    DB << "player restarted";
 }
 
 void Player::onMediaStatusChanged(QMediaPlayer::MediaStatus status)
@@ -145,7 +158,8 @@ void Player::onMediaStatusChanged(QMediaPlayer::MediaStatus status)
         break;
     case QMediaPlayer::MediaStatus::EndOfMedia:
         DB << "media player status changed to: EndOfMedia";
-        emit this->songEnded();
+        /// song ended is emited in updatePlayerProgress
+        // emit this->songEnded();
         break;
     case QMediaPlayer::MediaStatus::InvalidMedia:
         DB << "media player status changed to: InvalidMedia";
@@ -164,15 +178,26 @@ void Player::onMediaStatusChanged(QMediaPlayer::MediaStatus status)
 
         DB << "song loaded and:";
         DB << "\t starts in" << m_songData.begin;
+        DB << "\t but is on position" << m_player->position();
         DB << "\t with duration" << m_player->duration();
         DB << "\t with real duration" << m_songData.realDuration;
         DB << "\t ends in" << m_songData.end;
-        fflush(stdout);
+
+        DB << "pause";
+        {QEventLoop loop; QTimer::singleShot(200, &loop, &QEventLoop::quit); loop.exec();}
+        DB << "continue";
+
+        /// do not play song if wasn't playing before songs change
+        /// it handle case when user start the app -> first song will be shown in player
+        if(m_playerStarted)
+        {
+            m_player->play();
+        }
 
         m_lastUpdatedDisplayValues = m_player->position();
-        // emit this->displayPositionChanged();
-        // emit this->displayDurationChanged();
-        // emit this->songFullyLoaded();
+        emit this->displayPositionChanged();
+        emit this->displayDurationChanged();
+        emit this->songDataChanged();
         // emit this->songStarted();
         break;
     }
@@ -194,17 +219,15 @@ void Player::onMediaStatusChanged(QMediaPlayer::MediaStatus status)
 
 void Player::updatePlayer()
 {
+    DB << "set source";
     m_player->setSource(this->getSongTagValueByID(9/*Song Path*/));
     /// some data are set after LoadedMedia
 
-    /// do not play song if wasn't playing before songs change
-    /// it handle case when user start the app -> first song will be shown in player
-    if(m_playerStarted)
-    {
-        m_player->play();
-    }
-    DB << "player updated to: " << m_songData.title;
-    fflush(stdout);
+    DB << "source set, waiting for media load";
+
+    // DB << "pause";
+    // {QEventLoop loop; QTimer::singleShot(200, &loop, &QEventLoop::quit); loop.exec();}
+    // DB << "continue";
 }
 
 void Player::updatePlayerProgress(qsizetype position)
@@ -216,6 +239,12 @@ void Player::updatePlayerProgress(qsizetype position)
     const bool songReachedEnd = remainingTime <= 0;
     if(songReachedEnd)
     {
+        DB << "reached end of media";
+
+        DB << "pause";
+        {QEventLoop loop; QTimer::singleShot(200, &loop, &QEventLoop::quit); loop.exec();}
+        DB << "continue";
+
         m_player->pause();
         emit this->songEnded();
         return;
@@ -240,7 +269,7 @@ QString Player::getSongTagValueByID(qsizetype id) const
 
 QString Player::validThumbnailPath(QString thumbnail) const
 {
-    DB << "thumbnail: " << thumbnail;
+    // DB << "thumbnail: " << thumbnail;
     if(QFile::exists(QUrl(thumbnail).toLocalFile()))
     {
         return thumbnail;
@@ -300,7 +329,7 @@ qsizetype Player::getPosition() const
 QString Player::getDisplayDuration() const
 {
     /// i know that getters shouln't compute anything, but this code is already a nice spaghetti
-    DB << "realDuration"<< m_songData.realDuration << "begin" << m_songData.begin;
+    // DB << "realDuration"<< m_songData.realDuration << "begin" << m_songData.begin;
     fflush(stdout);
     return Player::createDisplayTime(m_songData.realDuration - m_songData.begin);
 }
@@ -308,7 +337,7 @@ QString Player::getDisplayDuration() const
 QString Player::getDisplayPosition() const
 {
     /// i know that getters shouln't compute anything, but this code is already a nice spaghetti
-    DB << "position"<< m_songData.position << "begin" << m_songData.begin;
+    // DB << "position"<< m_songData.position << "begin" << m_songData.begin;
     fflush(stdout);
     return Player::createDisplayTime(m_songData.position - m_songData.begin);
 }

@@ -8,6 +8,8 @@
 #include <QEventLoop>
 #include <QFile>
 
+#include <QTimer>
+
 #include "cpp/DebugPrint/DebugPrint.h"
 #include "cpp/Song/SongDetails.h"
 
@@ -18,12 +20,12 @@ class Player : public QObject
     Q_OBJECT
     Q_PROPERTY(bool         isPlaying       READ getIsPlaying                       NOTIFY playingChanged       FINAL)
 
-    Q_PROPERTY(qsizetype    songID          READ getSongID                          NOTIFY songFullyLoaded      FINAL)
-    Q_PROPERTY(QString      title           READ getTitle                           NOTIFY songFullyLoaded      FINAL)
-    Q_PROPERTY(QString      thumbnail       READ getThumbnail                       NOTIFY songFullyLoaded      FINAL)
+    Q_PROPERTY(qsizetype    songID          READ getSongID                          NOTIFY songDataChanged      FINAL)
+    Q_PROPERTY(QString      title           READ getTitle                           NOTIFY songDataChanged      FINAL)
+    Q_PROPERTY(QString      thumbnail       READ getThumbnail                       NOTIFY songDataChanged      FINAL)
 
-    Q_PROPERTY(qsizetype    realDuration    READ getRealDuration                    NOTIFY songFullyLoaded      FINAL)
-    Q_PROPERTY(qsizetype    begin           READ getBegin                           NOTIFY songFullyLoaded      FINAL)
+    Q_PROPERTY(qsizetype    realDuration    READ getRealDuration                    NOTIFY songDataChanged      FINAL)
+    Q_PROPERTY(qsizetype    begin           READ getBegin                           NOTIFY songDataChanged      FINAL)
     Q_PROPERTY(qsizetype    position        READ getPosition    WRITE setPosition   NOTIFY songPositionChanged  FINAL)
 
     Q_PROPERTY(QString      displayDuration     READ getDisplayDuration     NOTIFY displayDurationChanged   FINAL)
@@ -45,10 +47,10 @@ public slots:
 signals:
     void songEnded();           /// emited when player finish playing the song
 
-    void songChanged();         /// emited by changeSongToNext
-    void songFullyLoaded();
+    void songChanged();         /// emited by changeSong
+    void songDataChanged();
     void playingChanged();      ///
-    void songStarted();
+    // void songStarted();
     void songPositionChanged();
     void displayDurationChanged();
     void displayPositionChanged();
