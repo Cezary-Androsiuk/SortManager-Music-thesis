@@ -238,7 +238,7 @@ Page {
                     dltImageIdle: Qt.resolvedUrl("qrc:/SortManager-Music/assets/icons/player/start_64px.png")
                     dltImageHover: dltImageIdle
                     onUserClicked: {
-                        backend.player.restartSong()
+                        backend.player.prevSong()
                     }
                 }
             }

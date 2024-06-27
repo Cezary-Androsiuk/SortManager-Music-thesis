@@ -6,14 +6,9 @@ Player::Player(QObject *parent)
 {
     m_player = new QMediaPlayer(this);
     m_audioOutput = new QAudioOutput(this);
-    m_song = new SongDetails(this);
 
 
     this->buildParametersConnections();
-
-
-    /// connection don't need to be reconeced after restart player, cause it won't use parameters (m_player, m_song, ...)
-    QObject::connect(this, &Player::songChanged, this, &Player::updatePlayer);
 }
 
 void Player::buildParametersConnections()
@@ -23,7 +18,7 @@ void Player::buildParametersConnections()
 
     m_player->setAudioOutput(m_audioOutput);
 
-    QObject::connect(m_player, &QMediaPlayer::positionChanged, this, &Player::updatePlayerProgress);
+    QObject::connect(m_player, &QMediaPlayer::positionChanged, this, &Player::updateDisplayPosition);
     QObject::connect(m_player, &QMediaPlayer::positionChanged, this, &Player::songPositionChanged);
 
     QObject::connect(m_player, &QMediaPlayer::mediaStatusChanged, this, &Player::onMediaStatusChanged);
@@ -50,9 +45,10 @@ void Player::nextSong()
     emit this->songEnded();
 }
 
-void Player::restartSong()
+void Player::prevSong()
 {
-    this->updatePlayer(); /// gives effect equal to move player to the start
+    DB << "move to begin instead of changing song";
+    this->m_player->setPosition(0);
 }
 
 void Player::setVolume(int volume)
@@ -65,7 +61,7 @@ void Player::setVolume(int volume)
 void Player::changeSong(const SongDetails *receivedSong)
 {
     /// update player (to the same song) only when player is not playing
-    if(receivedSong->get_id() == m_song->get_id())
+    if(receivedSong->get_id() ==m_songData.songID)
     {
         DB << "updating song to the same one";
         if(m_player->isPlaying())
@@ -77,8 +73,9 @@ void Player::changeSong(const SongDetails *receivedSong)
     }
 
     /// use received song as a source to create this song
-    m_song->set_id(receivedSong->get_id());
-    TagList *tagList = new TagList(m_song);
+    SongDetails song;
+    song.set_id(receivedSong->get_id());
+    TagList *tagList = new TagList(&song);
 
     const TagList *receivedTagList = receivedSong->get_tags();
     for(const Tag *receivedTag : receivedTagList->c_ref_tags())
@@ -95,16 +92,24 @@ void Player::changeSong(const SongDetails *receivedSong)
 
         tagList->tags().append(tag);
     }
-    m_song->set_tags(tagList); // set_tags removes old ones
+    song.set_tags(tagList); // set_tags removes old ones
 
-    m_songData.songID = this->getSongTagValueByID(1 /*ID*/).toInt();
-    m_songData.title = this->getSongTagValueByID(2/*Name*/);
+    m_songData.songID = this->getSongTagValueByID(&song, 1  /*ID*/          ).toInt();
+    m_songData.title =  this->getSongTagValueByID(&song, 2  /*Name*/        );
     m_songData.thumbnail = this->validThumbnailPath(
-        this->getSongTagValueByID(10/*Thumbnail*/));
-    m_songData.begin = this->getSongTagValueByID(5/*Begin*/).toLongLong();
-    m_songData.end = this->getSongTagValueByID(6/*End*/).toLongLong();
+                        this->getSongTagValueByID(&song, 10 /*Thumbnail*/   ));
+    m_player->setSource(this->getSongTagValueByID(&song, 9  /*Song Path*/   ));
+    /// some data are set after LoadedMedia
 
-    DB << "song was changed";
+    /// do not play song if wasn't playing before songs change
+    /// it handle case when user start the app -> first song will be shown in player
+    /// and support continues playing within the song change
+    if(m_playerStarted)
+    {
+        m_player->play();
+    }
+
+    DB << "song was changed" << m_songData.title;
     emit this->songChanged();
 }
 
@@ -118,9 +123,6 @@ void Player::resetPlayer()
     if(m_audioOutput != nullptr) delete m_audioOutput;
     m_audioOutput = new QAudioOutput(this);
     this->m_audioOutput->setVolume(m_volume);
-
-    if(m_song != nullptr) delete m_song;
-    m_song = new SongDetails(this);
 
     this->buildParametersConnections();
 }
@@ -145,17 +147,16 @@ void Player::onMediaStatusChanged(QMediaPlayer::MediaStatus status)
         emit this->songEnded();
         break;
     case QMediaPlayer::MediaStatus::LoadedMedia:
-        if(m_songData.position != 0) /// that means song is playing and do not set position again
+        if(m_player->position() != 0) /// that means song is playing and do not set position again
             break;
         /// song need to be loaded again when position was changed (for example go back by 10s)
         DB << "media player status changed to: LoadedMedia";
-        m_player->setPosition(m_songData.begin);
-        m_songData.duration = m_player->duration();
-        m_lastUpdatedDisplayValues = m_player->position();
-        emit this->displayPositionChanged();
-        emit this->displayDurationChanged();
-        emit this->songFullyLoaded();
-        emit this->songStarted();
+
+        this->updateDisplayPosition(0);
+        this->updateDisplayDuration(m_player->duration());
+
+        emit this->songLoaded();
+        emit this->songStarted(); /// for SongTitle (i don't remember why)
         break;
     case QMediaPlayer::MediaStatus::LoadingMedia:
         // DB << "media player status changed to: LoadingMedia";
@@ -170,51 +171,34 @@ void Player::onMediaStatusChanged(QMediaPlayer::MediaStatus status)
 
         break;
     }
-
 }
 
-void Player::updatePlayer()
+void Player::updateDisplayPosition(qint64 position)
 {
-    m_player->setSource(this->getSongTagValueByID(9/*Song Path*/));
-    /// some data are set after LoadedMedia
-
-    /// do not play song if wasn't playing before songs change
-    /// it handle case when user start the app -> first song will be shown in player
-    if(m_playerStarted)
-    {
-        m_player->play();
-    }
-    DB << "player updated to: " << m_songData.title;
-}
-
-void Player::updatePlayerProgress(qsizetype position)
-{
-    qsizetype remainingTime = m_player->duration() - position;
-    m_songData.position = position - m_songData.begin;
-
-    if(remainingTime <= m_player->duration() - m_songData.end && m_songData.end != 0)
-    {
-        // DB << "end";
-        m_player->pause();
-        emit this->songEnded();
-    }
-
+    m_displayPosition = Player::createDisplayTime(position);
     emit this->displayPositionChanged();
 }
 
-QString Player::getSongTagValueByID(qsizetype id) const
+void Player::updateDisplayDuration(qint64 duration)
 {
-    for(const Tag *tag : m_song->get_tags()->c_ref_tags())
+    m_displayDuration = Player::createDisplayTime(duration);
+    emit this->displayDurationChanged();
+}
+
+QString Player::getSongTagValueByID(SongDetails *song, qsizetype id) const
+{
+    for(const Tag *tag : song->get_tags()->c_ref_tags())
     {
         if(tag->get_id() == id)
             return tag->get_value();
     }
-    WR << "tag not found! looking for tag id="<< id << "in" << m_song;
-    if(m_song != nullptr)
+    WR << "tag not found! looking for tag id="<< id << "in" << song;
+    if(song != nullptr)
     {
-        WR << m_song->get_id();
-        WR << m_song->get_tags()->c_ref_tags();
+        WR << song->get_id();
+        WR << song->get_tags()->c_ref_tags();
     }
+    WR << "CRITICAL ERROR -> EXIT";
     exit(1);
 }
 
@@ -264,33 +248,29 @@ QString Player::getThumbnail() const
 
 qsizetype Player::getDuration() const
 {
-    return m_songData.duration;
+    return m_player->duration();
 }
 
 qsizetype Player::getPosition() const
 {
-    return m_songData.position;
+    return m_player->position();
 }
 
 QString Player::getDisplayDuration() const
 {
-    /// i know that getters shouln't compute anything, but this code is already a nice spaghetti
-    return Player::createDisplayTime(m_songData.duration);
+    return m_displayDuration;
 }
 
 QString Player::getDisplayPosition() const
 {
-    /// i know that getters shouln't compute anything, but this code is already a nice spaghetti
-    return Player::createDisplayTime(m_songData.position);
+    return m_displayPosition;
 }
 
 void Player::setPosition(qsizetype position)
 {
-    if(m_songData.position == position)
+    if(m_player->position() == position)
         return;
 
-    m_songData.position = position;
-    m_lastUpdatedDisplayValues = position;
     m_player->setPosition(position);
     emit this->songPositionChanged();
 }

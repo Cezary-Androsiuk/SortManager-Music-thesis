@@ -11,17 +11,15 @@
 #include "cpp/DebugPrint/DebugPrint.h"
 #include "cpp/Song/SongDetails.h"
 
-#define REFRESH_DISPLAY_POSITION_MS 1000
-
 class Player : public QObject
 {
     Q_OBJECT
     Q_PROPERTY(bool         isPlaying   READ getIsPlaying                       NOTIFY playingChanged       FINAL)
 
-    Q_PROPERTY(qsizetype    songID      READ getSongID                          NOTIFY songFullyLoaded      FINAL)
-    Q_PROPERTY(QString      title       READ getTitle                           NOTIFY songFullyLoaded      FINAL)
-    Q_PROPERTY(QString      thumbnail   READ getThumbnail                       NOTIFY songFullyLoaded      FINAL)
-    Q_PROPERTY(qsizetype    duration    READ getDuration                        NOTIFY songFullyLoaded      FINAL)
+    Q_PROPERTY(qsizetype    songID      READ getSongID                          NOTIFY songLoaded      FINAL)
+    Q_PROPERTY(QString      title       READ getTitle                           NOTIFY songLoaded      FINAL)
+    Q_PROPERTY(QString      thumbnail   READ getThumbnail                       NOTIFY songLoaded      FINAL)
+    Q_PROPERTY(qsizetype    duration    READ getDuration                        NOTIFY songLoaded      FINAL)
     Q_PROPERTY(qsizetype    position    READ getPosition    WRITE setPosition   NOTIFY songPositionChanged  FINAL)
 
     Q_PROPERTY(QString      displayDuration     READ getDisplayDuration     NOTIFY displayDurationChanged   FINAL)
@@ -34,7 +32,7 @@ public:
 public slots:
     void play();
     void nextSong();
-    void restartSong();
+    void prevSong();
     void setVolume(int volume);
 
     void changeSong(const SongDetails *song); /// emited by Playlist, only when Player ask to (by emiting songEnded)
@@ -44,7 +42,7 @@ signals:
     void songEnded();           /// emited when player finish playing the song
 
     void songChanged();         /// emited by changeSongToNext
-    void songFullyLoaded();
+    void songLoaded();
     void playingChanged();      ///
     void songStarted();
     void songPositionChanged();
@@ -55,11 +53,11 @@ public slots:
     void onMediaStatusChanged(QMediaPlayer::MediaStatus status);
 
 private:
-    void updatePlayer();        /// truggered by songChanged
-    void updatePlayerProgress(qsizetype position);
+    void updateDisplayPosition(qint64 position);
+    void updateDisplayDuration(qint64 duration);
 
 private: // support methods
-    QString getSongTagValueByID(qsizetype id) const;
+    QString getSongTagValueByID(SongDetails *song, qsizetype id) const;
     QString validThumbnailPath(QString thumbnail) const;
     static QString createDisplayTime(qsizetype time);
 
@@ -79,21 +77,16 @@ private:
     bool m_playerStarted;
     QMediaPlayer *m_player;
     QAudioOutput *m_audioOutput;
-    SongDetails *m_song;
 
     struct{
         qsizetype songID;
         QString title;
         QString thumbnail;
-        qsizetype begin;
-        qsizetype end;
-        qsizetype duration;
-        qsizetype position;
     } m_songData;
 
+    QString m_displayPosition;
+    QString m_displayDuration;
     float m_volume;
-
-    qsizetype m_lastUpdatedDisplayValues;
 };
 
 #endif // PLAYER_H

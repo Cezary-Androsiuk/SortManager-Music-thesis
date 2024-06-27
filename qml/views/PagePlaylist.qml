@@ -50,6 +50,7 @@ Page {
         source: root.ppp_playlist
         active: false
         onLoaded: {
+            console.log("playlist loader loaded, error is fine (cause deleting objects is not working properly or something)")
             // swich play button to pause if needed
             playlistLoader.item.reloadPressed.connect(
                         function (){

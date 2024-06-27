@@ -272,7 +272,7 @@ Item{
                     dltImageHover: dltImageIdle
                     dltImageMarginsRatio: 0.12
                     onUserClicked: {
-                        backend.player.restartSong()
+                        backend.player.prevSong()
                     }
                 }
             }
