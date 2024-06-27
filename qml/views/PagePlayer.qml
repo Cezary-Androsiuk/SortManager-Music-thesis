@@ -150,8 +150,8 @@ Page {
                     verticalCenter: parent.verticalCenter
                 }
                 from: 0
-                to: backend.player.realDuration - backend.player.begin
-                value: backend.player.position - backend.player.begin
+                to: backend.player.duration
+                value: backend.player.position
                 onPressedChanged: {
                     if(!backend.personalization.stopSongWhileSeek)
                         return

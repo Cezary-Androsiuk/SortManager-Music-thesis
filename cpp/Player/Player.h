@@ -8,8 +8,6 @@
 #include <QEventLoop>
 #include <QFile>
 
-#include <QTimer>
-
 #include "cpp/DebugPrint/DebugPrint.h"
 #include "cpp/Song/SongDetails.h"
 
@@ -18,15 +16,13 @@
 class Player : public QObject
 {
     Q_OBJECT
-    Q_PROPERTY(bool         isPlaying       READ getIsPlaying                       NOTIFY playingChanged       FINAL)
+    Q_PROPERTY(bool         isPlaying   READ getIsPlaying                       NOTIFY playingChanged       FINAL)
 
-    Q_PROPERTY(qsizetype    songID          READ getSongID                          NOTIFY songDataChanged      FINAL)
-    Q_PROPERTY(QString      title           READ getTitle                           NOTIFY songDataChanged      FINAL)
-    Q_PROPERTY(QString      thumbnail       READ getThumbnail                       NOTIFY songDataChanged      FINAL)
-
-    Q_PROPERTY(qsizetype    realDuration    READ getRealDuration                    NOTIFY songDataChanged      FINAL)
-    Q_PROPERTY(qsizetype    begin           READ getBegin                           NOTIFY songDataChanged      FINAL)
-    Q_PROPERTY(qsizetype    position        READ getPosition    WRITE setPosition   NOTIFY songPositionChanged  FINAL)
+    Q_PROPERTY(qsizetype    songID      READ getSongID                          NOTIFY songFullyLoaded      FINAL)
+    Q_PROPERTY(QString      title       READ getTitle                           NOTIFY songFullyLoaded      FINAL)
+    Q_PROPERTY(QString      thumbnail   READ getThumbnail                       NOTIFY songFullyLoaded      FINAL)
+    Q_PROPERTY(qsizetype    duration    READ getDuration                        NOTIFY songFullyLoaded      FINAL)
+    Q_PROPERTY(qsizetype    position    READ getPosition    WRITE setPosition   NOTIFY songPositionChanged  FINAL)
 
     Q_PROPERTY(QString      displayDuration     READ getDisplayDuration     NOTIFY displayDurationChanged   FINAL)
     Q_PROPERTY(QString      displayPosition     READ getDisplayPosition     NOTIFY displayPositionChanged   FINAL)
@@ -47,10 +43,10 @@ public slots:
 signals:
     void songEnded();           /// emited when player finish playing the song
 
-    void songChanged();         /// emited by changeSong
-    void songDataChanged();
+    void songChanged();         /// emited by changeSongToNext
+    void songFullyLoaded();
     void playingChanged();      ///
-    // void songStarted();
+    void songStarted();
     void songPositionChanged();
     void displayDurationChanged();
     void displayPositionChanged();
@@ -72,8 +68,7 @@ public: // qml getters
     qsizetype getSongID() const;
     QString getTitle() const;
     QString getThumbnail() const;
-    qsizetype getRealDuration() const;
-    qsizetype getBegin() const;
+    qsizetype getDuration() const;
     qsizetype getPosition() const;
     QString getDisplayDuration() const;
     QString getDisplayPosition() const;
@@ -92,7 +87,7 @@ private:
         QString thumbnail;
         qsizetype begin;
         qsizetype end;
-        qsizetype realDuration;
+        qsizetype duration;
         qsizetype position;
     } m_songData;
 

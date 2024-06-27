@@ -14,7 +14,6 @@ Item {
 
     readonly property bool showAreas: !root.globalVisibleChanger
     required property bool isPlayerLarge
-    required property bool isCurrentSong
     property double fadeAreaLenght
     property double stopPositionWhenAnimated
     property bool animated: false
