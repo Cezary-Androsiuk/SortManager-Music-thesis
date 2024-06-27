@@ -6,7 +6,7 @@ import Qt5Compat.GraphicalEffects
 import "qrc:/SortManager-Music/qml/popups"
 import "qrc:/SortManager-Music/qml/components" // ImageButton
 import "qrc:/SortManager-Music/qml/delegates/Playlist"
-import "qrc:/SortManager-Music/qml/components/PagePlaylist" // PlaylistHeader
+import "qrc:/SortManager-Music/qml/components/PagePlaylist" // PlaylistHeader, ScrollCurrentSongMarker
 
 Page {
     id: pagePlaylist
@@ -186,6 +186,13 @@ Page {
 
 
                 }
+            }
+
+
+            ScrollCurrentSongMarker{
+                dltSongIndex: backend.playlist.currentPos
+                dltSongsCount: mdlLength
+                dltVisible: scrollView.contentHeight > scrollView.height
             }
         }
     }

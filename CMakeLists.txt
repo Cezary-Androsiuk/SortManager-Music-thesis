@@ -67,6 +67,7 @@ qt_add_qml_module(appSortManager-Music
     QML_FILES qml/components/VolumeSlider.qml
     QML_FILES qml/components/Player/SongTitle.qml
     QML_FILES qml/components/PagePlaylist/PlaylistHeader.qml
+    QML_FILES qml/components/PagePlaylist/ScrollCurrentSongMarker.qml
 
     # delegates
     QML_FILES qml/delegates/FileSelectField.qml
