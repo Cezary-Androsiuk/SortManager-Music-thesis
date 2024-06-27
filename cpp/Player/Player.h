@@ -91,6 +91,8 @@ private:
         qsizetype position;
     } m_songData;
 
+    float m_volume;
+
     qsizetype m_lastUpdatedDisplayValues;
 };
 

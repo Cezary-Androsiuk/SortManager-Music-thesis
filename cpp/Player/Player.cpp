@@ -57,8 +57,9 @@ void Player::restartSong()
 
 void Player::setVolume(int volume)
 {
-    float rangeVolume = static_cast<float>(volume) / 100.f;
-    this->m_audioOutput->setVolume(rangeVolume);
+    m_volume = static_cast<float>(volume) / 100.f;
+    this->m_audioOutput->setVolume(m_volume);
+    /// after restart m_audioOutput variable, volume need to be set again
 }
 
 void Player::changeSong(const SongDetails *receivedSong)
@@ -116,6 +117,7 @@ void Player::resetPlayer()
 
     if(m_audioOutput != nullptr) delete m_audioOutput;
     m_audioOutput = new QAudioOutput(this);
+    this->m_audioOutput->setVolume(m_volume);
 
     if(m_song != nullptr) delete m_song;
     m_song = new SongDetails(this);
