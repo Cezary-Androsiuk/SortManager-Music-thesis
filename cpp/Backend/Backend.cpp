@@ -7,6 +7,12 @@ Backend::Backend(QObject *parent)
     m_player(nullptr),
     m_playlist(nullptr)
 {
+    const char *application = "SortManager-Music";
+    const char *author = "Cezary Androsiuk";
+    fprintf(stdout, "application: %s\n", application);
+    fprintf(stdout, "author: %s\n\n", author);
+    fflush(stdout);
+
     this->createParameters();
     this->initializeConnections();
     this->initializeParameters();
@@ -48,6 +54,7 @@ void Backend::initializeConnections()
 
     /// when Playlist changed current song, notify Player about it (initialization and when Player end song)
     QObject::connect(m_playlist, &Playlist::currentSongChanged, m_player, &Player::changeSong);
+    QObject::connect(m_playlist, &Playlist::noSongToChangeSong, m_player, &Player::clearPlayerNoSong);
 
     /// on personalization playerVolume change, change also player's volume
     QObject::connect(m_personalization, &Personalization::playerVolumeChanged, this, [&](){

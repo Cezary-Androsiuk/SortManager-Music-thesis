@@ -14,7 +14,8 @@ Item{
         right: parent.right
         bottom: parent.bottom
     }
-    height: root._h * 0.2
+    height: backend.player.isPlayerEmpty ? 0 : root._h * 0.2
+    visible: !backend.player.isPlayerEmpty
 
     property bool isPlaying
     // title

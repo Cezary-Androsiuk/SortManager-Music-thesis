@@ -3,7 +3,7 @@ import QtQuick.Controls
 import QtQuick.Controls.Material
 import Qt5Compat.GraphicalEffects
 
-import "qrc:/SortManager-Music/qml/components" // ImageButton, VolumeSlider
+import "qrc:/SortManager-Music/qml/components" // ImageButton, VolumeSlider, EmptyPlaylistInfo
 import "qrc:/SortManager-Music/qml/components/Player" // SongTitle
 
 Page {
@@ -46,260 +46,283 @@ Page {
         }
 
         Item{
-            id: thumbnailField
-            anchors{
-                top: parent.top
-                topMargin: parent.height * pagePlayer.thumbnailFieldTopMarginRatio
-                left: parent.left
-                right: parent.right
-            }
-            height: parent.height * pagePlayer.thumbnailFieldHeightRatio
+            id: playerField
+            anchors.fill: parent
 
-            Rectangle{anchors.fill: parent; color: "red"; opacity: 0.2; visible: showAreas}
+            visible: !backend.player.isPlayerEmpty
 
             Item{
+                id: thumbnailField
                 anchors{
                     top: parent.top
-                    bottom: parent.bottom
-                    horizontalCenter: parent.horizontalCenter
-                    margins: 8
-                }
-                width: height
-
-                RectangularGlow{
-                    id: fadeInImage
-                    anchors{
-                        fill: parent
-                        margins: 10
-                    }
-                    glowRadius: 15
-                    spread: 0.2
-                    color: root.color_accent1
-                    cornerRadius: glowRadius + thumbnailMask.radius - 1.8*anchors.margins
-                }
-
-                Rectangle{
-                    id: thumbnailMask
-                    anchors{
-                        fill: parent
-                        margins: 3 // removes white lines around
-                    }
-                    radius: width * 0.1
-                }
-
-                Image{
-                    id: thumbnail
-                    fillMode: Image.PreserveAspectCrop
-                    anchors.fill: parent
-                    source: {
-                        if(backend.player.thumbnail === "")
-                        {
-                            if(root.dark_theme)
-                                "qrc:/SortManager-Music/assets/noSongThumbnailDark.png"
-                            else
-                                "qrc:/SortManager-Music/assets/noSongThumbnailLight.png"
-                        }
-                        else
-                            backend.player.thumbnail
-                    }
-                    layer.enabled: true
-                    layer.effect: OpacityMask {
-                        maskSource: thumbnailMask
-                        cached: true
-                    }
-                }
-            }
-        }
-
-        Item{
-            id: titleField
-            anchors{
-                top: thumbnailField.bottom
-                topMargin: parent.height * pagePlayer.titleFieldTopMarginRatio
-                left: parent.left
-                right: parent.right
-            }
-            height: parent.height * pagePlayer.titleFieldHeightRatio
-
-            Rectangle{anchors.fill: parent; color: "green"; opacity: 0.2; visible: showAreas}
-
-            SongTitle{
-                isPlayerLarge: true
-            }
-        }
-
-        Item{
-            id: sliderField
-            anchors{
-                top: titleField.bottom
-                topMargin: parent.height * pagePlayer.sliderFieldTopMarginRatio
-                left: parent.left
-                right: parent.right
-            }
-            height: parent.height * pagePlayer.sliderFieldHeightRatio
-
-            Rectangle{anchors.fill: parent; color: "blue"; opacity: 0.2; visible: showAreas}
-
-            Slider{
-                id: slider
-                anchors{
+                    topMargin: parent.height * pagePlayer.thumbnailFieldTopMarginRatio
                     left: parent.left
-                    leftMargin: parent.width * 0.12
                     right: parent.right
-                    rightMargin: parent.width * 0.12
-                    verticalCenter: parent.verticalCenter
                 }
-                from: 0
-                to: backend.player.duration
-                value: backend.player.position
-                onPressedChanged: {
-                    if(!backend.personalization.stopSongWhileSeek)
-                        return
+                height: parent.height * pagePlayer.thumbnailFieldHeightRatio
 
-                    if(!isPlaying)
-                        return;
+                Rectangle{anchors.fill: parent; color: "red"; opacity: 0.2; visible: showAreas}
 
-                    if(pressed)
-                    {
-                        pagePlayer.stoppedBySlider = true;
-                        backend.player.play();
+                Item{
+                    anchors{
+                        top: parent.top
+                        bottom: parent.bottom
+                        horizontalCenter: parent.horizontalCenter
+                        margins: 8
                     }
-                    else
-                    {
-                        if(pagePlayer.stoppedBySlider)
+                    width: height
+
+                    RectangularGlow{
+                        id: fadeInImage
+                        anchors{
+                            fill: parent
+                            margins: 10
+                        }
+                        glowRadius: 15
+                        spread: 0.2
+                        color: root.color_accent1
+                        cornerRadius: glowRadius + thumbnailMask.radius - 1.8*anchors.margins
+                    }
+
+                    Rectangle{
+                        id: thumbnailMask
+                        anchors{
+                            fill: parent
+                            margins: 3 // removes white lines around
+                        }
+                        radius: width * 0.1
+                    }
+
+                    Image{
+                        id: thumbnail
+                        fillMode: Image.PreserveAspectCrop
+                        anchors.fill: parent
+                        source: {
+                            if(backend.player.thumbnail === "")
+                            {
+                                if(root.dark_theme)
+                                    "qrc:/SortManager-Music/assets/noSongThumbnailDark.png"
+                                else
+                                    "qrc:/SortManager-Music/assets/noSongThumbnailLight.png"
+                            }
+                            else
+                                backend.player.thumbnail
+                        }
+                        layer.enabled: true
+                        layer.effect: OpacityMask {
+                            maskSource: thumbnailMask
+                            cached: true
+                        }
+                    }
+                }
+            }
+
+            Item{
+                id: titleField
+                anchors{
+                    top: thumbnailField.bottom
+                    topMargin: parent.height * pagePlayer.titleFieldTopMarginRatio
+                    left: parent.left
+                    right: parent.right
+                }
+                height: parent.height * pagePlayer.titleFieldHeightRatio
+
+                Rectangle{anchors.fill: parent; color: "green"; opacity: 0.2; visible: showAreas}
+
+                SongTitle{
+                    isPlayerLarge: true
+                }
+            }
+
+            Item{
+                id: sliderField
+                anchors{
+                    top: titleField.bottom
+                    topMargin: parent.height * pagePlayer.sliderFieldTopMarginRatio
+                    left: parent.left
+                    right: parent.right
+                }
+                height: parent.height * pagePlayer.sliderFieldHeightRatio
+
+                Rectangle{anchors.fill: parent; color: "blue"; opacity: 0.2; visible: showAreas}
+
+                Slider{
+                    id: slider
+                    anchors{
+                        left: parent.left
+                        leftMargin: parent.width * 0.12
+                        right: parent.right
+                        rightMargin: parent.width * 0.12
+                        verticalCenter: parent.verticalCenter
+                    }
+                    from: 0
+                    to: backend.player.duration
+                    value: backend.player.position
+                    onPressedChanged: {
+                        if(!backend.personalization.stopSongWhileSeek)
+                            return
+
+                        if(!isPlaying)
+                            return;
+
+                        if(pressed)
                         {
-                            pagePlayer.stoppedBySlider = false;
+                            pagePlayer.stoppedBySlider = true;
                             backend.player.play();
                         }
+                        else
+                        {
+                            if(pagePlayer.stoppedBySlider)
+                            {
+                                pagePlayer.stoppedBySlider = false;
+                                backend.player.play();
+                            }
+                        }
+                    }
+                    onMoved: {
+                        backend.player.position = value
                     }
                 }
-                onMoved: {
-                    backend.player.position = value
+
+                Text{
+                    id: positionText
+                    anchors{
+                        verticalCenter: parent.verticalCenter
+                        right: slider.left
+                    }
+                    height: parent.height
+                    width: 40
+                    text: backend.player.displayPosition
+                    font.pixelSize: 14
+                    color: root.color_accent1
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                    Rectangle{anchors.fill: parent; color: "yellow"; opacity: 0.2; visible: showAreas}
+                }
+
+                Text{
+                    id: durationText
+                    anchors{
+                        verticalCenter: parent.verticalCenter
+                        left: slider.right
+                    }
+                    height: parent.height
+                    width: 40
+                    text: backend.player.displayDuration
+                    font.pixelSize: 14
+                    color: root.color_accent1
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                    Rectangle{anchors.fill: parent; color: "yellow"; opacity: 0.2; visible: showAreas}
                 }
             }
 
-            Text{
-                id: positionText
+            Item{
+                id: controlsField
                 anchors{
-                    verticalCenter: parent.verticalCenter
-                    right: slider.left
+                    top: sliderField.bottom
+                    topMargin: parent.height * pagePlayer.controlsFieldTopMarginRatio
+                    left: parent.left
+                    right: parent.right
                 }
-                height: parent.height
-                width: 40
-                text: backend.player.displayPosition
-                font.pixelSize: 14
-                color: root.color_accent1
-                horizontalAlignment: Text.AlignHCenter
-                verticalAlignment: Text.AlignVCenter
-                Rectangle{anchors.fill: parent; color: "yellow"; opacity: 0.2; visible: showAreas}
-            }
+                height: parent.height * pagePlayer.controlsFieldHeightRatio
 
-            Text{
-                id: durationText
-                anchors{
-                    verticalCenter: parent.verticalCenter
-                    left: slider.right
+                Rectangle{anchors.fill: parent; color: "red"; opacity: 0.2; visible: showAreas}
+
+                Item{
+                    id: prevField
+                    anchors{
+                        verticalCenter: parent.verticalCenter
+                        right: playField.left
+                        rightMargin: pagePlayer.controlsDistanceBetweenControls
+                    }
+                    height: parent.height * pagePlayer.nonPlayTopControlsSizeRatio
+                    width: height
+
+                    ImageButton{
+                        id: prevIcon
+                        dltImageIdle: Qt.resolvedUrl("qrc:/SortManager-Music/assets/icons/player/start_64px.png")
+                        dltImageHover: dltImageIdle
+                        onUserClicked: {
+                            backend.player.prevSong()
+                        }
+                    }
                 }
-                height: parent.height
-                width: 40
-                text: backend.player.displayDuration
-                font.pixelSize: 14
-                color: root.color_accent1
-                horizontalAlignment: Text.AlignHCenter
-                verticalAlignment: Text.AlignVCenter
-                Rectangle{anchors.fill: parent; color: "yellow"; opacity: 0.2; visible: showAreas}
+
+                Item{
+                    id: playField
+                    anchors.centerIn: parent
+                    height: parent.height
+                    width: height
+
+                    ImageButton{
+                        id: playIcon
+                        dltImageIdle: {
+                            if(isPlaying)
+                                Qt.resolvedUrl("qrc:/SortManager-Music/assets/icons/player/pause_64px.png")
+                            else
+                                Qt.resolvedUrl("qrc:/SortManager-Music/assets/icons/player/play_64px.png")
+                        }
+                        dltImageHover: dltImageIdle
+                        onUserClicked: {
+                            backend.player.play();
+                            pagePlayer.isPlaying = !pagePlayer.isPlaying
+                        }
+                    }
+                }
+
+                Item{
+                    id: nextField
+                    anchors{
+                        verticalCenter: parent.verticalCenter
+                        left: playField.right
+                        leftMargin: pagePlayer.controlsDistanceBetweenControls
+                    }
+                    height: parent.height * pagePlayer.nonPlayTopControlsSizeRatio
+                    width: height
+
+                    ImageButton{
+                        id: nextIcon
+                        dltImageIdle: Qt.resolvedUrl("qrc:/SortManager-Music/assets/icons/player/end_64px.png")
+                        dltImageHover: dltImageIdle
+                        onUserClicked: {
+                            backend.player.nextSong()
+                        }
+                    }
+                }
+
+                Item{
+                    id: volumeSliderField
+                    anchors{
+                        verticalCenter: parent.verticalCenter
+                        right: parent.right
+                        rightMargin: 20
+                    }
+                    height: parent.height * pagePlayer.nonPlayTopControlsSizeRatio
+                    width: height
+                    Rectangle{anchors.fill: parent; color: "red"; opacity: 0.2; visible: showAreas}
+                    VolumeSlider{
+
+                    }
+                }
             }
         }
 
         Item{
-            id: controlsField
-            anchors{
-                top: sliderField.bottom
-                topMargin: parent.height * pagePlayer.controlsFieldTopMarginRatio
-                left: parent.left
-                right: parent.right
-            }
-            height: parent.height * pagePlayer.controlsFieldHeightRatio
+            id: emptyPlayerField
+            anchors.fill: parent
+            visible: backend.player.isPlayerEmpty
 
-            Rectangle{anchors.fill: parent; color: "red"; opacity: 0.2; visible: showAreas}
-
-            Item{
-                id: prevField
-                anchors{
-                    verticalCenter: parent.verticalCenter
-                    right: playField.left
-                    rightMargin: pagePlayer.controlsDistanceBetweenControls
-                }
-                height: parent.height * pagePlayer.nonPlayTopControlsSizeRatio
-                width: height
-
-                ImageButton{
-                    id: prevIcon
-                    dltImageIdle: Qt.resolvedUrl("qrc:/SortManager-Music/assets/icons/player/start_64px.png")
-                    dltImageHover: dltImageIdle
-                    onUserClicked: {
-                        backend.player.prevSong()
-                    }
-                }
+            EmptyPlaylistInfo{
+                showAreas: pagePlayer.showAreas
+                bottomMargin: parent.height * 0.1
+                largeTextString: "Playlist is empty"
+                smallTextString: "Add songs to a playlist to enjoy your music"
             }
 
-            Item{
-                id: playField
-                anchors.centerIn: parent
-                height: parent.height
-                width: height
-
-                ImageButton{
-                    id: playIcon
-                    dltImageIdle: {
-                        if(isPlaying)
-                            Qt.resolvedUrl("qrc:/SortManager-Music/assets/icons/player/pause_64px.png")
-                        else
-                            Qt.resolvedUrl("qrc:/SortManager-Music/assets/icons/player/play_64px.png")
-                    }
-                    dltImageHover: dltImageIdle
-                    onUserClicked: {
-                        backend.player.play();
-                        pagePlayer.isPlaying = !pagePlayer.isPlaying
-                    }
-                }
-            }
-
-            Item{
-                id: nextField
-                anchors{
-                    verticalCenter: parent.verticalCenter
-                    left: playField.right
-                    leftMargin: pagePlayer.controlsDistanceBetweenControls
-                }
-                height: parent.height * pagePlayer.nonPlayTopControlsSizeRatio
-                width: height
-
-                ImageButton{
-                    id: nextIcon
-                    dltImageIdle: Qt.resolvedUrl("qrc:/SortManager-Music/assets/icons/player/end_64px.png")
-                    dltImageHover: dltImageIdle
-                    onUserClicked: {
-                        backend.player.nextSong()
-                    }
-                }
-            }
-
-            Item{
-                id: volumeSliderField
-                anchors{
-                    verticalCenter: parent.verticalCenter
-                    right: parent.right
-                    rightMargin: 20
-                }
-                height: parent.height * pagePlayer.nonPlayTopControlsSizeRatio
-                width: height
-                Rectangle{anchors.fill: parent; color: "red"; opacity: 0.2; visible: showAreas}
-                VolumeSlider{
-
-                }
-            }
         }
+
+
     }
 
     Rectangle {

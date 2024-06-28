@@ -15,6 +15,7 @@ class Player : public QObject
 {
     Q_OBJECT
     Q_PROPERTY(bool         isPlaying   READ getIsPlaying                       NOTIFY playingChanged       FINAL)
+    Q_PROPERTY(bool         isPlayerEmpty READ getIsPlayerEmpty                 NOTIFY isPlayerEmptyChanged FINAL)
 
     Q_PROPERTY(qsizetype    songID      READ getSongID                          NOTIFY songLoaded      FINAL)
     Q_PROPERTY(QString      title       READ getTitle                           NOTIFY songLoaded      FINAL)
@@ -36,6 +37,7 @@ public slots:
     void setVolume(int volume);
 
     void changeSong(const SongDetails *song); /// emited by Playlist, only when Player ask to (by emiting songEnded)
+    void clearPlayerNoSong();
     void resetPlayer();
 
 signals:
@@ -48,6 +50,7 @@ signals:
     void songPositionChanged();
     void displayDurationChanged();
     void displayPositionChanged();
+    void isPlayerEmptyChanged();
 
 public slots:
     void onMediaStatusChanged(QMediaPlayer::MediaStatus status);
@@ -70,6 +73,7 @@ public: // qml getters
     qsizetype getPosition() const;
     QString getDisplayDuration() const;
     QString getDisplayPosition() const;
+    bool getIsPlayerEmpty() const;
 
     void setPosition(qsizetype position);
 
@@ -83,6 +87,8 @@ private:
         QString title;
         QString thumbnail;
     } m_songData;
+
+    bool m_isPlayerEmpty;
 
     QString m_displayPosition;
     QString m_displayDuration;

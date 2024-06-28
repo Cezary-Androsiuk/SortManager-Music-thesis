@@ -49,7 +49,7 @@ signals: // methods signals
     void songStateMoved();
 
     void currentSongChanged(const SongDetails *song);    ///
-
+    void noSongToChangeSong();
 
 private: // support methods
     static std::vector<int> getUniqueRandomNumbers(int count);

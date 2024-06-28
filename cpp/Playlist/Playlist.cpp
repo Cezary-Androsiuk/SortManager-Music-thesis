@@ -189,6 +189,7 @@ void Playlist::loadCurrentSongForPlayer()
     if(m_songState.m_currentPos == -1)
     {
         DB << "loding song for Player skipped due to current pos -1";
+        emit this->noSongToChangeSong();
         return;
     }
     /// get song from playlist

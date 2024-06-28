@@ -4,7 +4,7 @@ import QtQuick.Controls.Material
 import Qt5Compat.GraphicalEffects
 
 import "qrc:/SortManager-Music/qml/popups"
-import "qrc:/SortManager-Music/qml/components" // ImageButton
+import "qrc:/SortManager-Music/qml/components" // ImageButton, EmptyPlaylistInfo
 import "qrc:/SortManager-Music/qml/delegates/Playlist"
 import "qrc:/SortManager-Music/qml/components/PagePlaylist" // PlaylistHeader, ScrollCurrentSongMarker
 
@@ -119,11 +119,17 @@ Page {
         id: listViewComponent
         Item{
             anchors.fill: parent
-            EmptyListInfo{
-                id: emptyListInfo
+            Item{
+                anchors.fill: parent
                 visible: (mdlLength === 0)
-                text: "No Songs to Display"
+
+                EmptyPlaylistInfo{
+                    bottomMargin: parent.height * 0.148
+                    largeTextString: "Playlist is empty"
+                    smallTextString: "Add new songs or adjust filters to create playlist"
+                }
             }
+
 
             ScrollView{
                 id: scrollView

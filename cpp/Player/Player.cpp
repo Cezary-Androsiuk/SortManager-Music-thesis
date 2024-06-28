@@ -2,7 +2,8 @@
 
 Player::Player(QObject *parent)
     : QObject{parent},
-    m_playerStarted(false)
+    m_playerStarted(false),
+    m_isPlayerEmpty(false)
 {
     m_player = new QMediaPlayer(this);
     m_audioOutput = new QAudioOutput(this);
@@ -60,6 +61,9 @@ void Player::setVolume(int volume)
 
 void Player::changeSong(const SongDetails *receivedSong)
 {
+    m_isPlayerEmpty = false;
+    emit this->isPlayerEmptyChanged();
+
     /// update player (to the same song) only when player is not playing
     if(receivedSong->get_id() ==m_songData.songID)
     {
@@ -111,6 +115,13 @@ void Player::changeSong(const SongDetails *receivedSong)
 
     DB << "song was changed" << m_songData.title;
     emit this->songChanged();
+}
+
+void Player::clearPlayerNoSong()
+{
+    m_isPlayerEmpty = true;
+    emit this->isPlayerEmptyChanged();
+    resetPlayer();
 }
 
 void Player::resetPlayer()
@@ -264,6 +275,11 @@ QString Player::getDisplayDuration() const
 QString Player::getDisplayPosition() const
 {
     return m_displayPosition;
+}
+
+bool Player::getIsPlayerEmpty() const
+{
+    return m_isPlayerEmpty;
 }
 
 void Player::setPosition(qsizetype position)

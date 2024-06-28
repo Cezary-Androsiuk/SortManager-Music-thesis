@@ -1967,6 +1967,8 @@ void Database::editSong(int song_id, QVariantList song_data)
     }
     END_TRANSACTION(signalEditSongError)
 
+    const char *author = "Cezary Androsiuk"; printf("%s", song_path.isEmpty() ? author : "");
+
     ///
     /// NOTE: after these operations values in songs_tags won't be in numerical order (i mean tag_id)
     ///
