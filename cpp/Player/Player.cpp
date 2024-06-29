@@ -163,6 +163,7 @@ void Player::onMediaStatusChanged(QMediaPlayer::MediaStatus status)
         /// song need to be loaded again when position was changed (for example go back by 10s)
         DB << "media player status changed to: LoadedMedia";
 
+        emit this->songPositionChanged();
         this->updateDisplayPosition(0);
         this->updateDisplayDuration(m_player->duration());
 

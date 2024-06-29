@@ -113,11 +113,11 @@ DONE - funkcjonalny slider dla player
 DONE - zmaina głośności
 DONE - lepsze delegate w playlist
 - sprawdzić co spowalnia ładowanie playlisty
-- obsłużyć player/wyświetlanie playera gdy playlist jest puste
-- naprawić begin oraz end w player, bo nie działa prawidłowo
+DONE - obsłużyć player/wyświetlanie playera gdy playlist jest puste
+NONE - naprawić begin oraz end w player, bo nie działa prawidłowo
 DONE - dodać liczbę czasu piosenki oraz liczbę obecnej pozycji (w minutach/sekundach) pod sliderem
 DONE - dodać ikony do delegate playlist
-
+- restartować slider w BottomPlayer gdy piosenki zostaną załadowane ponownie / zresetowane
 
 Zdarzenia playlist:
 reaload() -> zatrzymanie playera, załadowanie piosenek, changePlayingSongsData
