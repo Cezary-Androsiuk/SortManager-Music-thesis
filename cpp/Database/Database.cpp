@@ -1570,6 +1570,7 @@ void Database::addSong(QVariantList new_song_data)
         }
     }
 
+
     // // set Thumbnail Path // not works :c
     // if(lambda_get_value_by_id(10 /*Thumbnail Path field id*/).toString() == ""){
     //     /// only for my structure of files
@@ -1599,6 +1600,66 @@ void Database::addSong(QVariantList new_song_data)
     //         DB << "auto setting thumbail works only in home environment";
     //     }
     // }
+
+    // set author if needed
+    /// test if first field is author (as it should be)
+    if(lambda_get_value_by_id(3 /*Author field id*/).toString() == ""){
+        DB << "available metadata: " << mp.metaData().keys();
+        QString songAuthor(mp.metaData().value(QMediaMetaData::Author).toString());
+        if(songAuthor == ""){
+            DB << "song file doesn't contains Author metadata, leaving empty filed";
+        }
+
+        QString songAlbumArtist(mp.metaData().value(QMediaMetaData::AlbumArtist).toString());
+        if(songAlbumArtist == ""){
+            DB << "song file doesn't contains AlbumArtist metadata, leaving empty filed";
+        }
+
+        QString songContributingArtist(mp.metaData().value(QMediaMetaData::ContributingArtist).toString());
+        if(songContributingArtist == ""){
+            DB << "song file doesn't contains ContributingArtist metadata, leaving empty filed";
+        }
+
+        QString songComposer(mp.metaData().value(QMediaMetaData::Composer).toString());
+        if(songComposer == ""){
+            DB << "song file doesn't contains Composer metadata, leaving empty filed";
+        }
+
+        QString songPublisher(mp.metaData().value(QMediaMetaData::Publisher).toString());
+        if(songPublisher == ""){
+            DB << "song file doesn't contains Publisher metadata, leaving empty filed";
+        }
+
+        // if field is empty add "add field value" else add ";add field value"
+        // or if "add field" is empty always add ""
+        songAuthor += songAuthor == "" || songAlbumArtist == "" ? songAlbumArtist : ";" + songAlbumArtist;
+        songAuthor += songAuthor == "" || songContributingArtist == "" ? songContributingArtist : ";" + songContributingArtist;
+        songAuthor += songAuthor == "" || songComposer == "" ? songComposer : ";" + songComposer;
+        songAuthor += songAuthor == "" || songPublisher == "" ? songPublisher : ";" + songPublisher;
+
+        if(songAuthor != "")
+        {
+            DB << "setting own author to" << songAuthor;
+            int index = lambda_get_map_index_by_id(3/*Author field id*/);
+            if(index == -1) // Author not exist
+            {
+                WR << "error, Author field not found!";
+                emit this->signalAddSongError("error, Author field not found!");
+                return;
+            }
+            else // Author field found
+            {
+                auto map = new_song_data[index].toMap();
+                map["value"] = songAuthor;
+                // this way because new_song_data[0].toMap() returns constant map
+                new_song_data[index] = map;
+            }
+        }
+        else
+        {
+            DB << "none of the author fields contains data";
+        }
+    }
 
     // set duration
     auto duration = QString::number(mp.duration());
