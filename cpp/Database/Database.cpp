@@ -347,6 +347,9 @@ void Database::exportSongsFromDatabase(const QUrl &output_qurl)
     {
         int songID = songsQuery.value(0).toInt();
         QSqlQuery songQuery(m_database);
+        const int TAG_NAME_INDEX = 0;
+        const int TAG_TYPE_INDEX = 1;
+        const int VALUE_INDEX = 2;
         queryText = QString("SELECT tags.name, tags.type, songs_tags.value "
                              "FROM songs_tags "
                              "JOIN tags ON songs_tags.tag_id = tags.id "
@@ -360,9 +363,10 @@ void Database::exportSongsFromDatabase(const QUrl &output_qurl)
         
         QJsonObject jsonSong;   /// song element (as temporary container)
         while(songQuery.next()){
-            QString tagName = songQuery.value(0).toString();
-            bool isTextType = songQuery.value(1).toInt() == Database::TagType::TT_TEXT;
-            auto tagValue = songQuery.value(2);
+
+            QString tagName = songQuery.value(TAG_NAME_INDEX).toString();
+            bool isTextType = songQuery.value(TAG_TYPE_INDEX).toInt() == Database::TagType::TT_TEXT;
+            auto tagValue = songQuery.value(VALUE_INDEX);
             
             /// if tag type is text type convert to string otherwise
             ///     (tag type is integer or TriState) convert to int
@@ -370,6 +374,7 @@ void Database::exportSongsFromDatabase(const QUrl &output_qurl)
                 jsonSong[tagName] = tagValue.toString();
             else
                 jsonSong[tagName] = tagValue.toInt();
+            DB << tagValue;
         }
         
         jsonSongs.append(jsonSong);
