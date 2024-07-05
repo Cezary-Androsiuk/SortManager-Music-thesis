@@ -23,7 +23,7 @@ Page {
         mdl.push({id: 300, name: "Import Tags to database"})
         mdl.push({id: 200, name: "Import Songs to database"})
         mdl.push({id: 250, name: "-- SEPARATOR --"})
-        mdl.push({id: 400, name: "Reeset database"})
+        mdl.push({id: 400, name: "Reset database"})
 
         listViewLoader.active = true;
     }

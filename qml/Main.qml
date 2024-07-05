@@ -41,8 +41,12 @@ ApplicationWindow {
 
         function onPersonalizationLoadError(errorCode){
             pPersonalizationLoadError.open()
-            if(errorCode === "10")
+            if(errorCode === 10)
                 pPersonalizationLoadError.dltDesc = "file personalization.json not found!"
+            else if(errorCode === 20)
+                pPersonalizationLoadError.dltDesc = "file personalization.json can not be oppened!"
+            else if(errorCode === 30 || errorCode === 40)
+                pPersonalizationLoadError.dltDesc = "file personalization.json does not contain valid data!"
             else
                 pPersonalizationLoadError.dltDesc = "error code: " + errorCode
         }
