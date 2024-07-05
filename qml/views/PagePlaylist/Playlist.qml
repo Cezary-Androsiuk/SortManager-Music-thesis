@@ -178,7 +178,7 @@ Page {
                             SongField{
                                 isCurrentSong: index === backend.playlist.currentPos
                                 isNextSong: index === backend.playlist.nextPos
-                                dltText: modelData.title + " " + modelData.id
+                                dltText: modelData.title
                                 // onDltClickedElement: {
                                 //     // just_used_id = + modelData.id;
                                 //     // just_used_title = modelData.title;

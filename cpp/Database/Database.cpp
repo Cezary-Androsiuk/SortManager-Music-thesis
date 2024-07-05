@@ -855,7 +855,7 @@ void Database::importTagsToDatabase(const QUrl &input_qurl)
             }
 
 
-            /// deam... addTag really sucks... that method requires 'Name', but not 'name'...
+            /// deam... addTag really sucks... that method requires 'Name', but not actual name 'name'...
             if (!fieldName.isEmpty()) {
                 fieldName[0] = fieldName[0].toUpper();
             }
