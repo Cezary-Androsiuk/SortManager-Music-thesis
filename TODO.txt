@@ -120,6 +120,7 @@ DONE - dodać ikony do delegate playlist
 - restartować slider w BottomPlayer gdy piosenki zostaną załadowane ponownie / zresetowane
 + dodać cofanie utworu
 - dodać decyzję o dopasowaniu miniaturki w presonalization
+- import export
 ? odtwarzacz wideo (if file allows)
 ? zapisywanie playlisty
 

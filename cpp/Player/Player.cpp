@@ -102,6 +102,7 @@ void Player::changeSong(const SongDetails *receivedSong)
     m_songData.title =  this->getSongTagValueByID(&song, 2  /*Name*/        );
     m_songData.thumbnail = this->validThumbnailPath(
                         this->getSongTagValueByID(&song, 10 /*Thumbnail*/   ));
+    this->readImageSize();
     m_player->setSource(this->getSongTagValueByID(&song, 9  /*Song Path*/   ));
     /// some data are set after LoadedMedia
 
@@ -228,6 +229,31 @@ QString Player::validThumbnailPath(QString thumbnail) const
     }
 }
 
+void Player::readImageSize()
+{
+    m_songData.thumbnailWidth = 0;
+    m_songData.thumbnailHeight = 0;
+
+    if(m_songData.thumbnail == "")
+    {
+        DB << "skip due to empty thumbnail path";
+        return;
+    }
+
+    QImage image(QUrl(m_songData.thumbnail).toLocalFile());
+    if(image.isNull())
+    {
+        WR << "unable to load image:" << QUrl(m_songData.thumbnail).toLocalFile();//m_songData.thumbnail;
+        return;
+    }
+
+    m_songData.thumbnailWidth = image.width();
+    m_songData.thumbnailHeight = image.height();
+
+    DB << "image resolution:" <<
+        QString::asprintf("%dx%d", image.width(), image.height()).toStdString().c_str();
+}
+
 QString Player::createDisplayTime(qsizetype time)
 {
     int minutes = time / (1000 * 60);
@@ -256,6 +282,16 @@ QString Player::getTitle() const
 QString Player::getThumbnail() const
 {
     return m_songData.thumbnail;
+}
+
+int Player::getThumbnailWidth() const
+{
+    return m_songData.thumbnailWidth;
+}
+
+int Player::getThumbnailHeight() const
+{
+    return m_songData.thumbnailHeight;
 }
 
 qsizetype Player::getDuration() const

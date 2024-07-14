@@ -7,6 +7,7 @@
 #include <QtMultimedia/QMediaMetaData>
 #include <QEventLoop>
 #include <QFile>
+#include <QImage>
 
 #include "cpp/DebugPrint/DebugPrint.h"
 #include "cpp/Song/SongDetails.h"
@@ -14,17 +15,19 @@
 class Player : public QObject
 {
     Q_OBJECT
-    Q_PROPERTY(bool         isPlaying   READ getIsPlaying                       NOTIFY playingChanged       FINAL)
-    Q_PROPERTY(bool         isPlayerEmpty READ getIsPlayerEmpty                 NOTIFY isPlayerEmptyChanged FINAL)
+    Q_PROPERTY(bool         isPlaying       READ getIsPlaying                       NOTIFY playingChanged       FINAL)
+    Q_PROPERTY(bool         isPlayerEmpty   READ getIsPlayerEmpty                   NOTIFY isPlayerEmptyChanged FINAL)
 
-    Q_PROPERTY(qsizetype    songID      READ getSongID                          NOTIFY songLoaded      FINAL)
-    Q_PROPERTY(QString      title       READ getTitle                           NOTIFY songLoaded      FINAL)
-    Q_PROPERTY(QString      thumbnail   READ getThumbnail                       NOTIFY songLoaded      FINAL)
-    Q_PROPERTY(qsizetype    duration    READ getDuration                        NOTIFY songLoaded      FINAL)
-    Q_PROPERTY(qsizetype    position    READ getPosition    WRITE setPosition   NOTIFY songPositionChanged  FINAL)
+    Q_PROPERTY(qsizetype    songID          READ getSongID                          NOTIFY songLoaded           FINAL)
+    Q_PROPERTY(QString      title           READ getTitle                           NOTIFY songLoaded           FINAL)
+    Q_PROPERTY(QString      thumbnail       READ getThumbnail                       NOTIFY songLoaded           FINAL)
+    Q_PROPERTY(QString      thumbnailWidth  READ getThumbnail                       NOTIFY songLoaded           FINAL)
+    Q_PROPERTY(QString      thumbnailHeight READ getThumbnail                       NOTIFY songLoaded           FINAL)
+    Q_PROPERTY(qsizetype    duration        READ getDuration                        NOTIFY songLoaded           FINAL)
+    Q_PROPERTY(qsizetype    position        READ getPosition    WRITE setPosition   NOTIFY songPositionChanged  FINAL)
 
-    Q_PROPERTY(QString      displayDuration     READ getDisplayDuration     NOTIFY displayDurationChanged   FINAL)
-    Q_PROPERTY(QString      displayPosition     READ getDisplayPosition     NOTIFY displayPositionChanged   FINAL)
+    Q_PROPERTY(QString      displayDuration READ getDisplayDuration             NOTIFY displayDurationChanged   FINAL)
+    Q_PROPERTY(QString      displayPosition READ getDisplayPosition             NOTIFY displayPositionChanged   FINAL)
 public:
     explicit Player(QObject *parent = nullptr);
 
@@ -63,6 +66,7 @@ private:
 private: // support methods
     QString getSongTagValueByID(SongDetails *song, qsizetype id) const;
     QString validThumbnailPath(QString thumbnail) const;
+    void readImageSize();
     static QString createDisplayTime(qsizetype time);
 
 public: // qml getters
@@ -70,6 +74,8 @@ public: // qml getters
     qsizetype getSongID() const;
     QString getTitle() const;
     QString getThumbnail() const;
+    int getThumbnailWidth() const;
+    int getThumbnailHeight() const;
     qsizetype getDuration() const;
     qsizetype getPosition() const;
     QString getDisplayDuration() const;
@@ -87,6 +93,8 @@ private:
         qsizetype songID;
         QString title;
         QString thumbnail;
+        int thumbnailWidth;
+        int thumbnailHeight;
     } m_songData;
 
     bool m_isPlayerEmpty;

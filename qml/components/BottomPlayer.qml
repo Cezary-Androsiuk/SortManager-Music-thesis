@@ -33,6 +33,7 @@ Item{
     property bool stoppedBySlider: false // useful when user decided that song should stop, while changing song position
 
     readonly property bool showAreas: !root.globalVisibleChanger
+    readonly property bool flexibleThumbnail: true
 
     signal switchIsPlayingToFalse()
     onSwitchIsPlayingToFalse: {
@@ -93,46 +94,67 @@ Item{
                 }
                 width: height
 
-                RectangularGlow{
-                    id: fadeInImage
-                    anchors{
-                        fill: parent
-                        margins: 10
-                    }
-                    glowRadius: 15
-                    spread: 0.2
-                    color: root.color_accent1
-                    cornerRadius: glowRadius + thumbnailMask.radius - 1.8*anchors.margins
-                }
-
-                Rectangle{
-                    id: thumbnailMask
-                    anchors{
-                        fill: parent
-                        margins: 3 // removes white lines around
-                    }
-                    radius: width * 0.1
-                }
-
-                Image{
-                    id: thumbnail
-                    fillMode: Image.PreserveAspectCrop
-                    anchors.fill: parent
-                    source: {
-                        if(backend.player.thumbnail === "")
+                Item{
+                    id: thumbnailMinimalizedArea
+                    anchors.centerIn: parent
+                    width: {
+                        if(flexibleThumbnail)
                         {
-                            if(root.dark_theme)
-                                "qrc:/SortManager-Music/assets/noSongThumbnailDark.png"
-                            else
-                                "qrc:/SortManager-Music/assets/noSongThumbnailLight.png"
+                            parent.width * 0.5;
                         }
                         else
-                            backend.player.thumbnail
+                            parent.width
                     }
-                    layer.enabled: true
-                    layer.effect: OpacityMask {
-                        maskSource: thumbnailMask
-                        cached: true
+                    height: {
+                        if(flexibleThumbnail)
+                        {
+                            parent.height * 0.7;
+                        }
+                        else
+                            parent.height
+                    }
+
+                    RectangularGlow{
+                        id: fadeInImage
+                        anchors{
+                            fill: parent
+                            margins: 10
+                        }
+                        glowRadius: 15
+                        spread: 0.2
+                        color: root.color_accent1
+                        cornerRadius: glowRadius + thumbnailMask.radius - 1.8*anchors.margins
+                    }
+
+                    Rectangle{
+                        id: thumbnailMask
+                        anchors{
+                            fill: parent
+                            margins: 3 // removes white lines around
+                        }
+                        radius: width * 0.1
+                    }
+
+                    Image{
+                        id: thumbnail
+                        fillMode: Image.PreserveAspectCrop
+                        anchors.fill: parent
+                        source: {
+                            if(backend.player.thumbnail === "")
+                            {
+                                if(root.dark_theme)
+                                    "qrc:/SortManager-Music/assets/noSongThumbnailDark.png"
+                                else
+                                    "qrc:/SortManager-Music/assets/noSongThumbnailLight.png"
+                            }
+                            else
+                                backend.player.thumbnail
+                        }
+                        layer.enabled: true
+                        layer.effect: OpacityMask {
+                            maskSource: thumbnailMask
+                            cached: true
+                        }
                     }
                 }
             }
