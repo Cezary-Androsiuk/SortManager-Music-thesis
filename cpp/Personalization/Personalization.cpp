@@ -26,6 +26,7 @@ void Personalization::printValues() const
     DB << "\t - showFiltersSave: " << m_showFiltersSave;
     DB << "\t - stopSongWhileSeek: " << m_stopSongWhileSeek;
     DB << "\t - playerVolume: " << m_playerVolume;
+    DB << "\t - cropThumbnail: " << m_cropThumbnail;
 #endif
 }
 
@@ -69,6 +70,8 @@ void Personalization::setDefaultPersonalizationData()
     emit this->stopSongWhileSeekChanged();
     m_playerVolume = DEFAULT_PLAYER_VOLUME;
     emit this->playerVolumeChanged();
+    m_cropThumbnail = DEFAULT_CROP_THUMBNAIL;
+    emit this->cropThumbnailChanged();
 
     m_errorCodeIfOccurWhileLoading = 0;
 }
@@ -149,6 +152,9 @@ void Personalization::loadPersonalizationFromJson()
     key = "player volume";
     CHECK_KEY(this->setPlayerVolume(jp[key].toString().toUInt()));
 
+    key = "crop thumbnail";
+    CHECK_KEY(this->setCropThumbnail(jp[key].toBool()));
+
 
     DB << "personalization data readed!";
     this->printValues();
@@ -194,6 +200,7 @@ void Personalization::savePersonalizationToJson()
     json_object["show filters save confirmation"] = this->getShowFiltersSave();
     json_object["stop song while using seek bar"] = this->getStopSongWhileSeek();
     json_object["player volume"] = QString::number(this->getPlayerVolume());
+    json_object["crop thumbnail"] = this->getCropThumbnail();
 
     QJsonDocument json_data(json_object);
 
@@ -274,6 +281,11 @@ bool Personalization::getStopSongWhileSeek() const
 uint Personalization::getPlayerVolume() const
 {
     return m_playerVolume;
+}
+
+bool Personalization::getCropThumbnail() const
+{
+    return m_cropThumbnail;
 }
 
 void Personalization::setIsDarkTheme(bool isDarkTheme)
@@ -388,4 +400,13 @@ void Personalization::setPlayerVolume(uint playerVolume)
 
     m_playerVolume = playerVolume;
     emit this->playerVolumeChanged();
+}
+
+void Personalization::setCropThumbnail(bool cropThumbnail)
+{
+    if(m_cropThumbnail == cropThumbnail)
+        return;
+
+    m_cropThumbnail = cropThumbnail;
+    emit this->cropThumbnailChanged();
 }

@@ -31,6 +31,7 @@
 #define DEFAULT_SHOW_FILTERS_SAVE true
 #define DEFAULT_STOP_SONG_WHILE_SEEK true
 #define DEFAULT_PLAYER_VOLUME 50u
+#define DEFAULT_CROP_THUMBNAIL true
 
 #define CHECK_KEY(arg) if(jp.contains(key)) arg;\
 else WR << PERSONALIZATION_JSON_PATH << " file not contains value related with '" << key << "' key";
@@ -51,7 +52,7 @@ class Personalization : public QObject
     Q_PROPERTY(bool showFiltersSave     READ getShowFiltersSave     WRITE setShowFiltersSave    NOTIFY showFiltersSaveChanged   FINAL)
     Q_PROPERTY(bool stopSongWhileSeek   READ getStopSongWhileSeek   WRITE setStopSongWhileSeek  NOTIFY stopSongWhileSeekChanged FINAL)
     Q_PROPERTY(uint playerVolume        READ getPlayerVolume        WRITE setPlayerVolume       NOTIFY playerVolumeChanged      FINAL)
-
+    Q_PROPERTY(bool cropThumbnail       READ getCropThumbnail       WRITE setCropThumbnail      NOTIFY cropThumbnailChanged     FINAL)
 
 public:
     explicit Personalization(QObject *parent = nullptr);
@@ -84,6 +85,7 @@ public: // getters / setters
     bool getShowFiltersSave() const;
     bool getStopSongWhileSeek() const;
     uint getPlayerVolume() const;
+    bool getCropThumbnail() const;
 
     void setIsDarkTheme(bool isDarkTheme);
     void setSaveExecQuery(bool saveExecQuery);
@@ -97,6 +99,7 @@ public: // getters / setters
     void setShowFiltersSave(bool showFiltersSave);
     void setStopSongWhileSeek(bool stopSongWhileSeek);
     void setPlayerVolume(uint playerVolume);
+    void setCropThumbnail(bool cropThumbnail);
 
 signals:
     void isDarkThemeChanged();
@@ -111,6 +114,7 @@ signals:
     void showFiltersSaveChanged();
     void stopSongWhileSeekChanged();
     void playerVolumeChanged();
+    void cropThumbnailChanged();
 
 private:
     int m_errorCodeIfOccurWhileLoading;
@@ -127,6 +131,7 @@ private:
     bool m_showFiltersSave;      /// descirbes if confirmation will be shown while saving Filters
     bool m_stopSongWhileSeek;    /// song will be stopped while user changing song position (between mouse press and release). Seek is a word that describes changing song position, better will be seeking (but to long word)
     uint m_playerVolume;
+    bool m_cropThumbnail;
 };
 
 #endif // PERSONALIZATION_H

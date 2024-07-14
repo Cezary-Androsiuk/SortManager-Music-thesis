@@ -24,6 +24,7 @@ Page {
         mdl.push({id: 800, name: "Show error description"})
         mdl.push({id: 900, name: "Show save confirmation for Filters"})
         mdl.push({id: 950, name: "Stop Song while using seek bar"})
+        mdl.push({id: 975, name: "Crop thumbnail to fit"})
 
         listViewLoader.active = true
     }
@@ -85,6 +86,7 @@ Page {
                         else if(modelData.id === 800) switchFieldDelegate;
                         else if(modelData.id === 900) switchFieldDelegate;
                         else if(modelData.id === 950) switchFieldDelegate;
+                        else if(modelData.id === 975) switchFieldDelegate;
                         else console.log("unknown source component: " + modelData.id)
                     }
 
@@ -103,6 +105,7 @@ Page {
                                 else if(modelData.id === 800) backend.personalization.showErrorDesc
                                 else if(modelData.id === 900) backend.personalization.showFiltersSave
                                 else if(modelData.id === 950) backend.personalization.stopSongWhileSeek
+                                else if(modelData.id === 975) backend.personalization.cropThumbnail
                                 else {console.log("unknown switch input value: " + modelData.id); false}
                             }
                             onDltValueChanged: {
@@ -132,6 +135,7 @@ Page {
                                 else if(modelData.id === 800) backend.personalization.showErrorDesc = dltValue
                                 else if(modelData.id === 900) backend.personalization.showFiltersSave = dltValue
                                 else if(modelData.id === 950) backend.personalization.stopSongWhileSeek = dltValue
+                                else if(modelData.id === 975) backend.personalization.cropThumbnail = dltValue
                                 else console.log("unknown switch output value: " + modelData.id)
                             }
                         }
