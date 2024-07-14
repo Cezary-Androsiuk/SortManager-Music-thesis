@@ -21,8 +21,8 @@ class Player : public QObject
     Q_PROPERTY(qsizetype    songID          READ getSongID                          NOTIFY songLoaded           FINAL)
     Q_PROPERTY(QString      title           READ getTitle                           NOTIFY songLoaded           FINAL)
     Q_PROPERTY(QString      thumbnail       READ getThumbnail                       NOTIFY songLoaded           FINAL)
-    Q_PROPERTY(QString      thumbnailWidth  READ getThumbnail                       NOTIFY songLoaded           FINAL)
-    Q_PROPERTY(QString      thumbnailHeight READ getThumbnail                       NOTIFY songLoaded           FINAL)
+    Q_PROPERTY(int          thumbnailWidth  READ getThumbnailWidth                  NOTIFY songLoaded           FINAL)
+    Q_PROPERTY(int          thumbnailHeight READ getThumbnailHeight                 NOTIFY songLoaded           FINAL)
     Q_PROPERTY(qsizetype    duration        READ getDuration                        NOTIFY songLoaded           FINAL)
     Q_PROPERTY(qsizetype    position        READ getPosition    WRITE setPosition   NOTIFY songPositionChanged  FINAL)
 

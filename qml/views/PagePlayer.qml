@@ -29,7 +29,7 @@ Page {
     property bool stoppedBySlider: false // useful when user decided that song should stop, while changing song position
 
     readonly property bool showAreas: !root.globalVisibleChanger
-    readonly property bool flexibleThumbnail: true
+    readonly property bool flexibleThumbnail: !backend.personalization.cropThumbnail
 
     Component.onCompleted: {
         // set isPlaying this way, because if isPlaying is constantly readed from
@@ -77,18 +77,22 @@ Page {
                         id: thumbnailMinimalizedArea
                         anchors.centerIn: parent
                         width: {
-                            if(flexibleThumbnail)
-                            {
-                                parent.width * 0.5;
-                            }
+                            // if w and h is 0 (and it is when thumbnail is equal "") then ratio will be 1:1 and will be set to max values
+                            var w = backend.player.thumbnailWidth
+                            var h = backend.player.thumbnailHeight
+
+                            if(flexibleThumbnail && w < h)
+                                parent.width * (w/h)
                             else
                                 parent.width
                         }
                         height: {
-                            if(flexibleThumbnail)
-                            {
-                                parent.height * 0.7;
-                            }
+                            // if w and h is 0 (and it is when thumbnail is equal "") then ratio will be 1:1 and will be set to max values
+                            var w = backend.player.thumbnailWidth
+                            var h = backend.player.thumbnailHeight
+
+                            if(flexibleThumbnail && h < w)
+                                parent.height * (h/w)
                             else
                                 parent.height
                         }

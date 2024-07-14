@@ -117,9 +117,9 @@ DONE - obsłużyć player/wyświetlanie playera gdy playlist jest puste
 NONE - naprawić begin oraz end w player, bo nie działa prawidłowo
 DONE - dodać liczbę czasu piosenki oraz liczbę obecnej pozycji (w minutach/sekundach) pod sliderem
 DONE - dodać ikony do delegate playlist
-- restartować slider w BottomPlayer gdy piosenki zostaną załadowane ponownie / zresetowane
-+ dodać cofanie utworu
-- dodać decyzję o dopasowaniu miniaturki w presonalization
+DONE - restartować slider w BottomPlayer gdy piosenki zostaną załadowane ponownie / zresetowane
+DONE - dodać cofanie utworu
+DONE - dodać decyzję o dopasowaniu miniaturki w presonalization
 - import export
 ? odtwarzacz wideo (if file allows)
 ? zapisywanie playlisty
