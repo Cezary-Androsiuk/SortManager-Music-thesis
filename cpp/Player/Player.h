@@ -42,6 +42,7 @@ public slots:
 
 signals:
     void songEnded();           /// emited when player finish playing the song
+    void songPrevious();
 
     void songChanged();         /// emited by changeSongToNext
     void songLoaded();

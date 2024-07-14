@@ -15,6 +15,7 @@ Playlist::Playlist(QObject *parent)
     QObject::connect(this, &Playlist::playlistShuffled, this, &Playlist::loadCurrentSongForPlayer); /// (change to the same song is handled in Player)
 
     QObject::connect(this, &Playlist::songStateMoved, this, &Playlist::songStateChanged);
+    QObject::connect(this, &Playlist::songStateMovedBack, this, &Playlist::songStateChanged);
 }
 
 void Playlist::loadPlaylistModel()
@@ -184,6 +185,15 @@ void Playlist::movePlaybackOrder()
     emit this->songStateMoved();
 }
 
+void Playlist::moveBackPlaybackOrder()
+{
+    m_songState.m_nextPos = m_songState.m_currentPos;
+    m_songState.m_currentPos = this->getComputedPrevSongPos(); /// nextPos was already set, and can be used
+    m_songState.m_currentID = this->getIDKnowingPos(m_songState.m_currentPos);
+
+    emit this->songStateMovedBack();
+}
+
 void Playlist::loadCurrentSongForPlayer()
 {
     if(m_songState.m_currentPos == -1)
@@ -202,6 +212,17 @@ void Playlist::loadNextSongForPlayer()
 {
     /// change current song state to next
     this->movePlaybackOrder();
+
+    /// get song from playlist
+    const SongDetails *song = this->getCurrentSongFromPlaylist();
+    DB << "next song for player loaded, song id:" << song->get_id();
+    emit this->currentSongChanged(song);
+}
+
+void Playlist::loadPreviousSong()
+{
+    /// change current song state to next
+    this->moveBackPlaybackOrder();
 
     /// get song from playlist
     const SongDetails *song = this->getCurrentSongFromPlaylist();
@@ -292,6 +313,30 @@ qsizetype Playlist::getComputedNextSongPos() const
         return 0;
     else                    /// case when currentPos is not at the end of the list
         return cpos+1;
+}
+
+qsizetype Playlist::getComputedPrevSongPos() const
+{
+    qsizetype listSize = m_playlist->c_ref_songs().size();
+    const qsizetype &cpos = m_songState.m_currentPos;
+
+    /// test if values are expected
+    if(listSize == 0)
+    {
+        WR << "playlist cannot be empty when computing prevPos";
+        exit(1);
+    }
+    if(cpos == -1)
+    {
+        WR << "currentPos value cannot be -1 when computing prevPos";
+        exit(1);
+    }
+
+    /// for list length cases return prevPos
+    if(cpos == 0)  /// case when currentPos is at the begin of the list
+        return listSize -1;
+    else                    /// case when currentPos is not at the begin of the list
+        return cpos-1;
 }
 
 const SongDetails *Playlist::getCurrentSongFromPlaylist() const

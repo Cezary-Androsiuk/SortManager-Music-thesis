@@ -118,6 +118,11 @@ NONE - naprawić begin oraz end w player, bo nie działa prawidłowo
 DONE - dodać liczbę czasu piosenki oraz liczbę obecnej pozycji (w minutach/sekundach) pod sliderem
 DONE - dodać ikony do delegate playlist
 - restartować slider w BottomPlayer gdy piosenki zostaną załadowane ponownie / zresetowane
++ dodać cofanie utworu
+- dodać decyzję o dopasowaniu miniaturki w presonalization
+? odtwarzacz wideo (if file allows)
+? zapisywanie playlisty
+
 
 Zdarzenia playlist:
 reaload() -> zatrzymanie playera, załadowanie piosenek, changePlayingSongsData

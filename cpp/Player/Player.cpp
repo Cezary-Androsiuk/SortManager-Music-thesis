@@ -48,8 +48,8 @@ void Player::nextSong()
 
 void Player::prevSong()
 {
-    DB << "move to begin instead of changing song";
-    this->m_player->setPosition(0);
+    // this->m_player->setPosition(0);
+    emit this->songPrevious();
 }
 
 void Player::setVolume(int volume)

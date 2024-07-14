@@ -38,8 +38,10 @@ public slots: // methods
     void shufflePlaylist();                     /// is triggered by loadPlaylist and by button in QML
     void updateSongState();                     /// is triggered when player finishes the song
     void movePlaybackOrder();
+    void moveBackPlaybackOrder();
     void loadCurrentSongForPlayer();            ///
     void loadNextSongForPlayer();               ///
+    void loadPreviousSong();
     void switchNextSongTo(qsizetype id);
 
 signals: // methods signals
@@ -47,6 +49,7 @@ signals: // methods signals
     void playlistShuffled();        /// is emited when shufflePlaylist finished
     void songStateChanged();        /// is emited by updateSongState when state changed // set next and current songs depends on current values
     void songStateMoved();
+    void songStateMovedBack();
 
     void currentSongChanged(const SongDetails *song);    ///
     void noSongToChangeSong();
@@ -57,6 +60,7 @@ private: // support methods
     qsizetype getPosKnowingID(const qsizetype &id) const;
     qsizetype getIDKnowingPos(const qsizetype &pos) const;
     qsizetype getComputedNextSongPos() const;
+    qsizetype getComputedPrevSongPos() const;
 
     const SongDetails *getCurrentSongFromPlaylist() const;
 
