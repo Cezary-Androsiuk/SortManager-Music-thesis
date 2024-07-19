@@ -4,6 +4,7 @@ assets/_icons/*
 assets/not_used_icons/*
 assets/old_icons/*
 cpp/OwnData.h
+private/
 
 # This file is used to ignore files which are generated
 # ----------------------------------------------------------------------------
