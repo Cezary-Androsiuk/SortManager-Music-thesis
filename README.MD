@@ -1,4 +1,4 @@
-<head>
+<!-- <head>
 	<style>
         figure {
             text-align: center;
@@ -15,7 +15,7 @@
         }
     </style>
 </head>
-<body>
+<body> -->
 
 # SortManager-Music
 
@@ -27,8 +27,8 @@ The application was created to test the mechanics of tags and was also used in a
 <!-- https://raw.githubusercontent.com/Cezary-Androsiuk/SortManager-Music-thesis/master/images -->
 <!-- https://github.com/Cezary-Androsiuk/SortManager-Music-thesis/blob/master/images -->
 
-<div class="centered">
-    <figure>
+<div style="display: flex; justify-content: center; gap: 2px;">
+    <figure style="text-align: center; margin: 0px;">
         <img src="https://github.com/Cezary-Androsiuk/SortManager-Music-thesis/blob/master/images/O_qml_pages.drawio.png" alt="Diagram of the pages in the application">
     </figure>
 </div>
@@ -36,12 +36,12 @@ The application was created to test the mechanics of tags and was also used in a
 <br/>
 <br/>
 
-<div class="centered">
-    <figure>
+<div style="display: flex; justify-content: center; gap: 2px;">
+    <figure style="text-align: center; margin: 0px;">
         <img src="https://github.com/Cezary-Androsiuk/SortManager-Music-thesis/blob/master/images/0_settings.png" alt="Page Settings">
-        <figcaption>Page <i>Settings</i></figcaption>
+        <figcaption style="margin-top: 10px;">Page <i>Settings</i></figcaption>
     </figure>
-    <figure>
+    <figure style="text-align: center; margin: 0px;">
         <img src="https://github.com/Cezary-Androsiuk/SortManager-Music-thesis/blob/master/images/1_player.png" alt="Page Player">
         <figcaption>Page <i>Player</i></figcaption>
     </figure>
