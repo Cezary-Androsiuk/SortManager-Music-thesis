@@ -7,7 +7,7 @@ The application was created to test the mechanics of tags and was also used in a
 
 Hover your mouse over the image to see details.
 
-NOTE: To see a clearer list of images open the HTML file: [Better README](BetterREADME.html)
+NOTE: To see a clearer list of images download and open the HTML file: [Better README](BetterREADME.html)
 
 
 
