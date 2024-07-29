@@ -1,6 +1,13 @@
 # SortManager-Music
 
-update: 2024-05-24
+update: 2024-07-29
+
+
+<p align="middle">
+  <img align="middle" src="" width="32%" />
+  <img align="middle" src="" width="32%" /> 
+  <img align="middle" src="" width="32%" /> 
+</p>
 
 ![0.01](https://github.com/Cezary-Androsiuk/SortManager-Music-thesis/blob/master/images/Screenshot%202024-05-24%20024129.png)
 
