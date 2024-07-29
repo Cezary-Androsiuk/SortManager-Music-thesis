@@ -27,6 +27,8 @@ The application was created to test the mechanics of tags and was also used in a
 <!-- https://raw.githubusercontent.com/Cezary-Androsiuk/SortManager-Music-thesis/master/images -->
 <!-- https://github.com/Cezary-Androsiuk/SortManager-Music-thesis/blob/master/images -->
 
+![Alt text](https://github.com/Cezary-Androsiuk/SortManager-Music-thesis/blob/master/images/0_settings.png "Optional title") ![Alt text](https://github.com/Cezary-Androsiuk/SortManager-Music-thesis/blob/master/images/1_player.png "Optional title")
+
 <div style="display: flex; justify-content: center; gap: 2px;">
     <figure style="text-align: center; margin: 0px;">
         <img src="https://github.com/Cezary-Androsiuk/SortManager-Music-thesis/blob/master/images/O_qml_pages.drawio.png" alt="Diagram of the pages in the application">
