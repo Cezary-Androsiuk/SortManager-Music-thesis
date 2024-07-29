@@ -27,7 +27,11 @@ The application was created to test the mechanics of tags and was also used in a
 <!-- https://raw.githubusercontent.com/Cezary-Androsiuk/SortManager-Music-thesis/master/images -->
 <!-- https://github.com/Cezary-Androsiuk/SortManager-Music-thesis/blob/master/images -->
 
-![Alt text](https://github.com/Cezary-Androsiuk/SortManager-Music-thesis/blob/master/images/0_settings.png "Optional title") ![Alt text](https://github.com/Cezary-Androsiuk/SortManager-Music-thesis/blob/master/images/1_player.png "Optional title")
+![Diagram of the pages in the application](https://github.com/Cezary-Androsiuk/SortManager-Music-thesis/blob/master/images/O_qml_pages.drawio.png "Diagram of the pages in the application (created with drawio)") 
+<p style="text-align: center;">Diagram of the pages in the application (created with "drawio")</p>
+
+![Page Settings](https://github.com/Cezary-Androsiuk/SortManager-Music-thesis/blob/master/images/0_settings.png "Page Settings") ![Page Player](https://github.com/Cezary-Androsiuk/SortManager-Music-thesis/blob/master/images/1_player.png "Page Player") ![Page Playlist](https://github.com/Cezary-Androsiuk/SortManager-Music-thesis/blob/master/images/2_playlist.png "Page Playlist") 
+<p style="text-align: center;">Basic application pages</p>
 
 <div style="display: flex; justify-content: center; gap: 2px;">
     <figure style="text-align: center; margin: 0px;">
@@ -44,11 +48,11 @@ The application was created to test the mechanics of tags and was also used in a
         <figcaption style="margin-top: 10px;">Page <i>Settings</i></figcaption>
     </figure>
     <figure style="text-align: center; margin: 0px;">
-        <img src="https://github.com/Cezary-Androsiuk/SortManager-Music-thesis/blob/master/images/1_player.png" alt="Page Player">
+        <img src="" alt="">
         <figcaption>Page <i>Player</i></figcaption>
     </figure>
     <figure>
-        <img src="https://github.com/Cezary-Androsiuk/SortManager-Music-thesis/blob/master/images/2_playlist.png" alt="Page Playlist">
+        <img src="" alt="">
         <figcaption>Page <i>Playlist</i></figcaption>
     </figure>
 </div>
