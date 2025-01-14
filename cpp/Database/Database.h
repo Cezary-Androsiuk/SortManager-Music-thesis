@@ -33,7 +33,7 @@
 #include "cpp/Tag/TagList.h"
 #include "cpp/Filter/Filter.h"
 
-#include "cpp/OwnData.h"
+// #include "cpp/OwnData.h"
 
 #ifndef PROJ_PATH
 #define PROJ_PATH ""
